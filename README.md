@@ -95,6 +95,37 @@ The application uses PostgreSQL with the following main tables:
 ### Dashboard
 - `GET /api/dashboard/stats` - Get dashboard statistics
 
+### Admin (Admin access required)
+- `GET /api/admin/stats` - Get platform statistics and analytics
+- `GET /api/admin/users` - Get user analytics and management
+- `PUT /api/admin/users` - Update user roles
+- `GET /api/admin/analytics` - Get popular cities and activities data
+
+## Admin Dashboard
+
+The application includes a comprehensive admin dashboard for platform management:
+
+### Admin Features
+- **Platform Statistics**: Total users, trips, budget tracking
+- **User Management**: View user analytics, manage roles (admin/moderator/user)
+- **Content Analytics**: Popular cities and activities tracking
+- **Growth Metrics**: User and trip growth charts
+- **System Health**: Real-time platform metrics
+
+### Admin Access
+1. Set a user's role to 'admin' in the database:
+   ```sql
+   UPDATE users SET role = 'admin' WHERE email = 'your-admin-email@example.com';
+   ```
+2. Or use the sample admin user:
+   - Email: `admin@globetrotter.com`
+   - Password: `admin123`
+   - (Created by running `scripts/admin-sample-data.sql`)
+
+### Admin Routes
+- `/admin` - Main admin dashboard
+- Admin button appears in main dashboard header for admin users
+
 ## Project Structure
 
 \`\`\`
