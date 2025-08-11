@@ -673,7 +673,7 @@ export async function searchUsers(query: string, limit: number = 50): Promise<an
 export async function getSystemMetrics(): Promise<any> {
   try {
     const result = await pool.query(`
-      SELECT 
+      SELECT
         (SELECT COUNT(*) FROM users WHERE role = 'admin') as admin_count,
         (SELECT COUNT(*) FROM trips WHERE created_at >= CURRENT_DATE) as trips_today,
         (SELECT COUNT(*) FROM users WHERE created_at >= CURRENT_DATE) as users_today,
@@ -686,5 +686,478 @@ export async function getSystemMetrics(): Promise<any> {
   } catch (error) {
     console.error("Database error:", error)
     throw error
+  }
+}
+
+// Password Reset Functions
+export async function createPasswordResetToken(userId: string): Promise<string> {
+  const crypto = require('crypto')
+  const token = crypto.randomUUID().replace(/-/g, '') // Generate a secure random token
+  const expiresAt = new Date(Date.now() + 3600000) // 1 hour from now
+
+  // Clean up any existing expired tokens for this user
+  await pool.query(
+    `DELETE FROM password_resets 
+     WHERE user_id = $1 AND (expires_at <= CURRENT_TIMESTAMP OR used = TRUE)`,
+    [userId]
+  )
+
+  // Insert new token
+  await pool.query(
+    `INSERT INTO password_resets (user_id, token, expires_at) 
+     VALUES ($1, $2, $3)`,
+    [userId, token, expiresAt]
+  )
+
+  return token
+}
+
+export async function verifyPasswordResetToken(token: string): Promise<string | null> {
+  const result = await pool.query(
+    `SELECT user_id FROM password_resets 
+     WHERE token = $1 AND expires_at > CURRENT_TIMESTAMP AND used = FALSE`,
+    [token]
+  )
+
+  return result.rows.length > 0 ? result.rows[0].user_id : null
+}
+
+export async function resetUserPassword(token: string, newPassword: string): Promise<boolean> {
+  const client = await pool.connect()
+  
+  try {
+    await client.query('BEGIN')
+
+    // Verify token and get user ID
+    const tokenResult = await client.query(
+      `SELECT user_id FROM password_resets 
+       WHERE token = $1 AND expires_at > CURRENT_TIMESTAMP AND used = FALSE`,
+      [token]
+    )
+
+    if (tokenResult.rows.length === 0) {
+      await client.query('ROLLBACK')
+      return false
+    }
+
+    const userId = tokenResult.rows[0].user_id
+
+    // Hash the new password
+    const bcrypt = require('bcryptjs')
+    const hashedPassword = await bcrypt.hash(newPassword, 12)
+
+    // Update user password
+    await client.query(
+      'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [hashedPassword, userId]
+    )
+
+    // Mark token as used
+    await client.query(
+      'UPDATE password_resets SET used = TRUE WHERE token = $1',
+      [token]
+    )
+
+    await client.query('COMMIT')
+    return true
+
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error("Password reset error:", error)
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+export async function cleanupExpiredPasswordResets(): Promise<void> {
+  await pool.query(
+    'DELETE FROM password_resets WHERE expires_at < CURRENT_TIMESTAMP OR used = TRUE'
+  )
+}// ============================================================================
+// CONTENT MANAGEMENT FUNCTIONS (ADMIN)
+// ============================================================================
+
+// City Management Functions
+export async function getAllCities(limit: number = 50, offset: number = 0): Promise<any[]> {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        id, name, country, latitude, longitude, timezone, 
+        description, cost_index, popularity_score, created_at, updated_at,
+        (SELECT COUNT(*) FROM trips t JOIN trip_cities tc ON t.id = tc.trip_id WHERE tc.city_id = cities.id) as trip_count
+      FROM cities 
+      ORDER BY popularity_score DESC, name ASC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset])
+    return result.rows
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getCityById(cityId: number): Promise<any | null> {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        id, name, country, latitude, longitude, timezone, 
+        description, cost_index, popularity_score, created_at, updated_at,
+        (SELECT COUNT(*) FROM trips t JOIN trip_cities tc ON t.id = tc.trip_id WHERE tc.city_id = cities.id) as trip_count,
+        (SELECT COUNT(*) FROM activities WHERE city_id = cities.id) as activity_count
+      FROM cities 
+      WHERE id = $1
+    `, [cityId])
+    return result.rows[0] || null
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function createCity(cityData: {
+  name: string
+  country: string
+  latitude: number
+  longitude: number
+  timezone: string
+  description?: string
+  cost_index?: number
+  popularity_score?: number
+}): Promise<any> {
+  try {
+    const result = await pool.query(`
+      INSERT INTO cities (name, country, latitude, longitude, timezone, description, cost_index, popularity_score)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *
+    `, [
+      cityData.name,
+      cityData.country,
+      cityData.latitude,
+      cityData.longitude,
+      cityData.timezone,
+      cityData.description || null,
+      cityData.cost_index || 50,
+      cityData.popularity_score || 0
+    ])
+    return result.rows[0]
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function updateCity(cityId: number, updateData: {
+  name?: string
+  country?: string
+  latitude?: number
+  longitude?: number
+  timezone?: string
+  description?: string
+  cost_index?: number
+  popularity_score?: number
+}): Promise<any | null> {
+  try {
+    const fields = []
+    const values = []
+    let paramIndex = 1
+
+    Object.entries(updateData).forEach(([key, value]) => {
+      if (value !== undefined) {
+        fields.push(`${key} = $${paramIndex}`)
+        values.push(value)
+        paramIndex++
+      }
+    })
+
+    if (fields.length === 0) {
+      return null
+    }
+
+    fields.push(`updated_at = CURRENT_TIMESTAMP`)
+    values.push(cityId)
+
+    const query = `
+      UPDATE cities 
+      SET ${fields.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `
+
+    const result = await pool.query(query, values)
+    return result.rows[0] || null
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function deleteCity(cityId: number): Promise<boolean> {
+  try {
+    // Check if city has associated trips or activities
+    const checkResult = await pool.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM trip_cities WHERE city_id = $1) as trip_count,
+        (SELECT COUNT(*) FROM activities WHERE city_id = $1) as activity_count
+    `, [cityId])
+
+    const { trip_count, activity_count } = checkResult.rows[0]
+
+    if (trip_count > 0 || activity_count > 0) {
+      throw new Error("Cannot delete city: has associated trips or activities")
+    }
+
+    const result = await pool.query('DELETE FROM cities WHERE id = $1', [cityId])
+    return (result.rowCount || 0) > 0
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+// Activity Management Functions
+export async function getAllActivities(limit: number = 50, offset: number = 0): Promise<any[]> {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        a.id, a.name, a.description, a.category, a.price_range, a.rating, 
+        a.duration_hours, a.latitude, a.longitude, a.created_at, a.updated_at,
+        c.name as city_name, c.country,
+        (SELECT COUNT(*) FROM trip_activities ta WHERE ta.activity_id = a.id) as booking_count
+      FROM activities a
+      LEFT JOIN cities c ON a.city_id = c.id
+      ORDER BY a.rating DESC, a.name ASC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset])
+    return result.rows
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getActivityById(activityId: number): Promise<any | null> {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        a.*, c.name as city_name, c.country,
+        (SELECT COUNT(*) FROM trip_activities ta WHERE ta.activity_id = a.id) as booking_count
+      FROM activities a
+      LEFT JOIN cities c ON a.city_id = c.id
+      WHERE a.id = $1
+    `, [activityId])
+    return result.rows[0] || null
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function createActivity(activityData: {
+  name: string
+  description: string
+  category: string
+  price_range: string
+  rating?: number
+  duration_hours?: number
+  city_id: number
+  latitude?: number
+  longitude?: number
+}): Promise<any> {
+  try {
+    const result = await pool.query(`
+      INSERT INTO activities (name, description, category, price_range, rating, duration_hours, city_id, latitude, longitude)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+    `, [
+      activityData.name,
+      activityData.description,
+      activityData.category,
+      activityData.price_range,
+      activityData.rating || null,
+      activityData.duration_hours || null,
+      activityData.city_id,
+      activityData.latitude || null,
+      activityData.longitude || null
+    ])
+    return result.rows[0]
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function updateActivity(activityId: number, updateData: {
+  name?: string
+  description?: string
+  category?: string
+  price_range?: string
+  rating?: number
+  duration_hours?: number
+  city_id?: number
+  latitude?: number
+  longitude?: number
+}): Promise<any | null> {
+  try {
+    const fields = []
+    const values = []
+    let paramIndex = 1
+
+    Object.entries(updateData).forEach(([key, value]) => {
+      if (value !== undefined) {
+        fields.push(`${key} = $${paramIndex}`)
+        values.push(value)
+        paramIndex++
+      }
+    })
+
+    if (fields.length === 0) {
+      return null
+    }
+
+    fields.push(`updated_at = CURRENT_TIMESTAMP`)
+    values.push(activityId)
+
+    const query = `
+      UPDATE activities 
+      SET ${fields.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `
+
+    const result = await pool.query(query, values)
+    return result.rows[0] || null
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function deleteActivity(activityId: number): Promise<boolean> {
+  try {
+    // Check if activity has associated bookings
+    const checkResult = await pool.query(`
+      SELECT COUNT(*) as booking_count
+      FROM trip_activities 
+      WHERE activity_id = $1
+    `, [activityId])
+
+    const { booking_count } = checkResult.rows[0]
+
+    if (booking_count > 0) {
+      throw new Error("Cannot delete activity: has associated bookings")
+    }
+
+    const result = await pool.query('DELETE FROM activities WHERE id = $1', [activityId])
+    return (result.rowCount || 0) > 0
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+// User Management Functions
+export async function updateUserStatus(userId: string, status: 'active' | 'suspended' | 'banned'): Promise<void> {
+  await pool.query(
+    'UPDATE users SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+    [status, userId]
+  )
+}
+
+export async function createUserActivityLog(
+  userId: string, 
+  action: string, 
+  details: any,
+  ipAddress?: string
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO user_activity_logs (user_id, action, details, ip_address, timestamp)
+     VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)`,
+    [userId, action, JSON.stringify(details), ipAddress]
+  )
+}
+
+export async function getUserActivityLogs(userId: string, limit: number = 50): Promise<any[]> {
+  const result = await pool.query(
+    `SELECT id, user_id, action, details, ip_address, timestamp
+     FROM user_activity_logs
+     WHERE user_id = $1
+     ORDER BY timestamp DESC
+     LIMIT $2`,
+    [userId, limit]
+  )
+  
+  return result.rows.map(row => ({
+    ...row,
+    details: typeof row.details === 'string' ? JSON.parse(row.details) : row.details
+  }))
+}
+
+export async function getUsersWithDetails(): Promise<any[]> {
+  const result = await pool.query(`
+    SELECT 
+      u.id,
+      u.name,
+      u.email,
+      u.role,
+      u.status,
+      u.created_at,
+      u.updated_at,
+      u.last_login,
+      COUNT(t.id) as trip_count,
+      COALESCE(SUM(t.budget), 0) as total_spent
+    FROM users u
+    LEFT JOIN trips t ON u.id = t.user_id
+    GROUP BY u.id, u.name, u.email, u.role, u.status, u.created_at, u.updated_at, u.last_login
+    ORDER BY u.created_at DESC
+  `)
+  
+  return result.rows
+}
+
+export async function bulkUpdateUsers(
+  userIds: string[], 
+  action: string, 
+  params: any
+): Promise<void> {
+  const client = await pool.connect()
+  
+  try {
+    await client.query('BEGIN')
+    
+    switch (action) {
+      case 'suspend':
+      case 'activate':
+      case 'ban':
+        const status = action === 'activate' ? 'active' : action === 'suspend' ? 'suspended' : 'banned'
+        await client.query(
+          'UPDATE users SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = ANY($2)',
+          [status, userIds]
+        )
+        break
+        
+      case 'change_role':
+        await client.query(
+          'UPDATE users SET role = $1, updated_at = CURRENT_TIMESTAMP WHERE id = ANY($2)',
+          [params.new_role, userIds]
+        )
+        break
+    }
+    
+    // Log bulk action for each user
+    for (const userId of userIds) {
+      await client.query(
+        `INSERT INTO user_activity_logs (user_id, action, details, timestamp)
+         VALUES ($1, $2, $3, CURRENT_TIMESTAMP)`,
+        [userId, `bulk_${action}`, JSON.stringify(params)]
+      )
+    }
+    
+    await client.query('COMMIT')
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
   }
 }

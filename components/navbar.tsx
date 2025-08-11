@@ -13,13 +13,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { LogOut, Plus, User, Home } from "lucide-react"
+import { LogOut, Plus, User, Home, Shield, Settings } from "lucide-react"
 
 export default function Navbar() {
   const { data: session } = useSession()
   const router = useRouter()
 
   const initial = ((session?.user?.name || session?.user?.email || "U")[0] || "U").toUpperCase()
+  const isAdmin = session?.user?.role === 'admin'
 
   return (
     <header className="border-b border-gray-200 bg-white/80 backdrop-blur sticky top-0 z-30">
@@ -45,15 +46,30 @@ export default function Navbar() {
               <>
                 <DropdownMenuLabel className="truncate">{session.user.name || session.user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/dashboard")} className="cursor-pointer">
-                  <User className="w-4 h-4 mr-2" /> Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/trips/create")} className="cursor-pointer">
-                  <Plus className="w-4 h-4 mr-2" /> Plan a trip
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/landing")} className="cursor-pointer">
-                  <Home className="w-4 h-4 mr-2" /> Explore
-                </DropdownMenuItem>
+                {isAdmin ? (
+                  // Admin navigation
+                  <>
+                    <DropdownMenuItem onClick={() => router.push("/admin")} className="cursor-pointer">
+                      <Shield className="w-4 h-4 mr-2" /> Admin Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/admin")} className="cursor-pointer">
+                      <Settings className="w-4 h-4 mr-2" /> System Management
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  // Regular user navigation
+                  <>
+                    <DropdownMenuItem onClick={() => router.push("/dashboard")} className="cursor-pointer">
+                      <User className="w-4 h-4 mr-2" /> Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/trips/create")} className="cursor-pointer">
+                      <Plus className="w-4 h-4 mr-2" /> Plan a trip
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/trips")} className="cursor-pointer">
+                      <Home className="w-4 h-4 mr-2" /> My Trips
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut({ redirect: true, callbackUrl: "/" })} className="cursor-pointer text-red-600 focus:text-red-600">
                   <LogOut className="w-4 h-4 mr-2" /> Logout

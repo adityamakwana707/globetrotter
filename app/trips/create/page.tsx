@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
+import { isUserAdmin } from "@/lib/database"
 import TripForm from "@/components/trips/trip-form"
 
 export default async function CreateTripPage() {
@@ -8,6 +9,13 @@ export default async function CreateTripPage() {
 
   if (!session) {
     redirect("/auth/login")
+  }
+
+  // Check if user is admin and redirect to admin dashboard
+  const isAdmin = await isUserAdmin(session.user.id)
+  
+  if (isAdmin) {
+    redirect("/admin")
   }
 
   return (

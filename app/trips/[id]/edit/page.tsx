@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
-import { getTripById } from "@/lib/database"
+import { getTripById, isUserAdmin } from "@/lib/database"
 import TripForm from "@/components/trips/trip-form"
 
 interface EditTripPageProps {
@@ -15,6 +15,13 @@ export default async function EditTripPage({ params }: EditTripPageProps) {
 
   if (!session) {
     redirect("/auth/login")
+  }
+
+  // Check if user is admin and redirect to admin dashboard
+  const isAdmin = await isUserAdmin(session.user.id)
+  
+  if (isAdmin) {
+    redirect("/admin")
   }
 
   let trip = null

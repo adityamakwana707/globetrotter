@@ -152,6 +152,16 @@
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Password reset tokens table (UUID for security)
+    CREATE TABLE IF NOT EXISTS password_resets (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token VARCHAR(255) UNIQUE NOT NULL,
+        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        used BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- ============================================================================
     -- STRATEGIC INDEXING FOR PERFORMANCE AND SCALABILITY
     -- ============================================================================
@@ -172,6 +182,9 @@
     CREATE INDEX IF NOT EXISTS idx_shared_trips_token ON shared_trips(share_token);
     CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(session_token);
+    CREATE INDEX IF NOT EXISTS idx_password_resets_user_id ON password_resets(user_id);
+    CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);
+    CREATE INDEX IF NOT EXISTS idx_password_resets_expires ON password_resets(expires_at);
 
     -- Composite indexes for common query patterns
     CREATE INDEX IF NOT EXISTS idx_trips_user_status ON trips(user_id, status);
