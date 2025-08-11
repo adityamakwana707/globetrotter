@@ -185,179 +185,212 @@ export default function TripForm({ trip }: TripFormProps) {
   }
 
   return (
-    <Card className="bg-gray-800 border-gray-700">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-white flex items-center gap-2">
-            <MapPin className="w-5 h-5" />
-            {trip ? "Edit Trip" : "Create New Trip"}
-          </CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-            className="border-gray-600 text-gray-300 hover:bg-gray-700"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Cover Image Upload */}
-          <div className="space-y-2">
-            <Label className="text-white">Cover Image</Label>
-            <div className="flex flex-col gap-4">
-              {coverImage && (
-                <div className="relative w-full h-48 bg-gray-700 rounded-lg overflow-hidden">
-                  <Image
-                    src={coverImage}
-                    alt="Trip cover"
-                    fill
-                    className="object-cover"
+    <div className="min-h-screen bg-gray-50 py-8 sm:py-10">
+      <div className="container mx-auto px-4">
+        {/* Page header */}
+     
+        <Card className="bg-white border-gray-200 rounded-2xl shadow-md">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-slate-900 flex items-center gap-2 text-xl sm:text-2xl">
+                <MapPin className="w-5 h-5 text-emerald-600" />
+                {trip ? "Edit Trip" : "Create New Trip"}
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.back()}
+                className="border-gray-300 text-slate-700 hover:bg-slate-50"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Cover Image Upload */}
+              <div className="space-y-2">
+                <Label className="text-slate-800">Cover Image</Label>
+                <div className="flex flex-col gap-4">
+                  {coverImage && (
+                    <div className="relative w-full h-48 bg-gray-100 rounded-xl overflow-hidden ring-1 ring-gray-200">
+                      <Image
+                        src={coverImage}
+                        alt="Trip cover"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="border-gray-300 text-slate-700 hover:bg-slate-50"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {isUploading ? "Uploading..." : "Upload Image"}
+                    </Button>
+                    {coverImage && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setCoverImage("")}
+                        className="border-gray-300 text-slate-700 hover:bg-slate-50"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
                   />
                 </div>
-              )}
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {isUploading ? "Uploading..." : "Upload Image"}
-                </Button>
-                {coverImage && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setCoverImage("")}
-                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                  >
-                    Remove
-                  </Button>
-                )}
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </div>
-          </div>
 
-          {/* Trip Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-white">Trip Name</Label>
-            <Input
-              id="name"
-              {...register("name")}
-              className="bg-gray-700 border-gray-600 text-white"
-              placeholder="Enter trip name"
-            />
-            {errors.name && (
-              <p className="text-red-400 text-sm">{errors.name.message}</p>
-            )}
-          </div>
+              {/* Plan a new trip section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-slate-900">Plan a new trip</h3>
+                {/* Trip Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-slate-800">Trip Name</Label>
+                  <Input
+                    id="name"
+                    {...register("name")}
+                    className="bg-white border-gray-300 text-slate-900"
+                    placeholder="Enter trip name"
+                  />
+                  {errors.name && (
+                    <p className="text-red-500 text-sm">{errors.name.message}</p>
+                  )}
+                </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-white">Description</Label>
-            <Textarea
-              id="description"
-              {...register("description")}
-              className="bg-gray-700 border-gray-600 text-white"
-              placeholder="Describe your trip..."
-              rows={3}
-            />
-            {errors.description && (
-              <p className="text-red-400 text-sm">{errors.description.message}</p>
-            )}
-          </div>
+                {/* Select a Place (UI-only) */}
+                <div className="space-y-2">
+                  <Label className="text-slate-800">Select a Place</Label>
+                  <Input
+                    placeholder="Search or select a place (UI only)"
+                    className="bg-white border-gray-300 text-slate-900"
+                    readOnly
+                  />
+                </div>
 
-          {/* Dates */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="startDate" className="text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Start Date
-              </Label>
-              <Input
-                id="startDate"
-                type="date"
-                {...register("startDate")}
-                className="bg-gray-700 border-gray-600 text-white"
-              />
-              {errors.startDate && (
-                <p className="text-red-400 text-sm">{errors.startDate.message}</p>
-              )}
-            </div>
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-slate-800">Description</Label>
+                  <Textarea
+                    id="description"
+                    {...register("description")}
+                    className="bg-white border-gray-300 text-slate-900"
+                    placeholder="Describe your trip..."
+                    rows={3}
+                  />
+                  {errors.description && (
+                    <p className="text-red-500 text-sm">{errors.description.message}</p>
+                  )}
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="endDate" className="text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                End Date
-              </Label>
-              <Input
-                id="endDate"
-                type="date"
-                {...register("endDate")}
-                className="bg-gray-700 border-gray-600 text-white"
-              />
-              {errors.endDate && (
-                <p className="text-red-400 text-sm">{errors.endDate.message}</p>
-              )}
-            </div>
-          </div>
+                {/* Dates */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate" className="text-slate-800 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-emerald-600" />
+                      Start Date
+                    </Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      {...register("startDate")}
+                      className="bg-white border-gray-300 text-slate-900"
+                    />
+                    {errors.startDate && (
+                      <p className="text-red-500 text-sm">{errors.startDate.message}</p>
+                    )}
+                  </div>
 
-          {/* Status */}
-          <div className="space-y-2">
-            <Label className="text-white">Status</Label>
-            <Select
-              value={watch("status")}
-              onValueChange={(value: "planning" | "active" | "completed") => setValue("status", value)}
-            >
-              <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-700 border-gray-600">
-                <SelectItem value="planning" className="text-white hover:bg-gray-600">Planning</SelectItem>
-                <SelectItem value="active" className="text-white hover:bg-gray-600">Active</SelectItem>
-                <SelectItem value="completed" className="text-white hover:bg-gray-600">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate" className="text-slate-800 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-emerald-600" />
+                      End Date
+                    </Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      {...register("endDate")}
+                      className="bg-white border-gray-300 text-slate-900"
+                    />
+                    {errors.endDate && (
+                      <p className="text-red-500 text-sm">{errors.endDate.message}</p>
+                    )}
+                  </div>
+                </div>
 
-          {/* Public/Private */}
-          <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
-            <div className="space-y-1">
-              <Label className="text-white">Make trip public</Label>
-              <p className="text-sm text-gray-400">Allow others to view and copy your trip</p>
-            </div>
-            <Switch
-              checked={watch("isPublic")}
-              onCheckedChange={(checked) => setValue("isPublic", checked)}
-            />
-          </div>
+                {/* Status */}
+                <div className="space-y-2">
+                  <Label className="text-slate-800">Status</Label>
+                  <Select
+                    value={watch("status")}
+                    onValueChange={(value: "planning" | "active" | "completed") => setValue("status", value)}
+                  >
+                    <SelectTrigger className="bg-white border-gray-300 text-slate-900">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-200">
+                      <SelectItem value="planning">Planning</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-          {/* Submit Button */}
-          <div className="flex gap-4 pt-4">
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700 flex-1"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {isSubmitting ? "Saving..." : (trip ? "Update Trip" : "Create Trip")}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+                {/* Public/Private */}
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl ring-1 ring-gray-200">
+                  <div className="space-y-1">
+                    <Label className="text-slate-800">Make trip public</Label>
+                    <p className="text-sm text-slate-500">Allow others to view and copy your trip</p>
+                  </div>
+                  <Switch
+                    checked={watch("isPublic")}
+                    onCheckedChange={(checked) => setValue("isPublic", checked)}
+                  />
+                </div>
+              </div>
+
+              {/* Suggestions grid (static UI) */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-slate-900">Suggestions for Places to Visit / Activities to Perform</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {["/paris-eiffel-tower.png", "/bali-beach.png", "/vibrant-nyc-street.png", "/serene-asian-temples.png", "/oceania-beaches.png", "/european-landmarks.png"].map((img, idx) => (
+                    <div key={idx} className="relative rounded-2xl overflow-hidden ring-1 ring-gray-200 shadow-sm h-48">
+                      <Image src={img} alt="suggestion" fill className="object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex gap-4 pt-4">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-emerald-600 hover:bg-emerald-700 flex-1"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {isSubmitting ? "Saving..." : (trip ? "Update Trip" : "Create Trip")}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   )
 }

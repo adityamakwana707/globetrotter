@@ -33,41 +33,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-gray-200 bg-white/80 backdrop-blur">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full grid place-items-center bg-[#1E40AF] text-white">
-              <span className="text-xl font-bold">GT</span>
-            </div>
-            <span className="text-2xl font-semibold tracking-tight">GlobeTrotter</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {session?.user ? (
-              <Link href="/dashboard" className="inline-flex items-center">
-                <Avatar className="h-9 w-9 border border-gray-200">
-                  <AvatarImage src={(session.user as any)?.image || ""} alt={(session.user as any)?.name || "User"} />
-                  <AvatarFallback>
-                    {((session.user?.name || session.user?.email || "U").charAt(0) || "U").toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </Link>
-            ) : (
-              <>
-                <Link href="/auth/login">
-                  <Button variant="ghost" className="text-slate-700 hover:text-emerald-600">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/auth/register">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">Get Started</Button>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
-
       {/* Banner Image Area - Image Carousel */}
       <section className="px-4 pt-8">
         <div className="container mx-auto">
