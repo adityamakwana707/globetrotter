@@ -12,7 +12,7 @@ import { toast } from "@/hooks/use-toast"
 import { 
   Share2, Copy, ExternalLink, Users, Globe, 
   Lock, QrCode, Mail, MessageCircle, Facebook,
-  Twitter, Linkedin, Eye, EyeOff
+  Twitter, Linkedin, Eye, EyeOff, FileText
 } from "lucide-react"
 
 interface TripSharingProps {
@@ -25,6 +25,8 @@ export default function TripSharing({ tripId, isPublic }: TripSharingProps) {
   const [shareToken, setShareToken] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [emailTo, setEmailTo] = useState<string>("")
+  const [isEmailing, setIsEmailing] = useState(false)
 
   const generateShareLink = async () => {
     setIsGenerating(true)
@@ -333,6 +335,48 @@ export default function TripSharing({ tripId, isPublic }: TripSharingProps) {
                       QR Code
                     </Button>
                   </div>
+                </div>
+
+                <Separator className="bg-gray-700" />
+
+                {/* Email PDF */}
+                <div className="space-y-2">
+                  <Label className="text-white">Email Trip PDF (beautiful HTML)</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      placeholder="Recipient email"
+                      value={emailTo}
+                      onChange={(e) => setEmailTo(e.target.value)}
+                      className="bg-gray-700 border-gray-600 text-white"
+                    />
+                    <Button
+                      variant="outline"
+                      disabled={!emailTo || isEmailing}
+                      onClick={async () => {
+                        try {
+                          setIsEmailing(true)
+                          const resp = await fetch(`/api/trips/${tripId}/email-pdf`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ to: emailTo })
+                          })
+                          if (!resp.ok) throw new Error('Failed to send email')
+                          toast({ title: 'Email sent', description: 'Your trip has been emailed.' })
+                          setEmailTo("")
+                        } catch (err) {
+                          console.error(err)
+                          toast({ title: 'Error', description: 'Could not send email.', variant: 'destructive' })
+                        } finally {
+                          setIsEmailing(false)
+                        }
+                      }}
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      {isEmailing ? 'Sending...' : 'Send PDF'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-400">We generate a beautiful HTML itinerary that email clients can print to PDF. Full attachment PDF can be added later.</p>
                 </div>
               </div>
             )}

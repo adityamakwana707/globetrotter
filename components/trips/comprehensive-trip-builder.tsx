@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -26,7 +26,23 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { formatDateForInput } from "@/lib/date-utils"
-import ActivitySearchModal from "@/components/trips/activity-search-modal"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { 
+  DndContext, 
+  DragOverlay, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+  useDraggable,
+  useDroppable
+} from '@dnd-kit/core'
+import {
+  CSS
+} from '@dnd-kit/utilities'
 
 // Enhanced schema with itinerary validation
 const tripSchema = z.object({
@@ -196,6 +212,18 @@ export default function ComprehensiveTripBuilder({
     existingItinerary.length > 0 ? existingItinerary : []
   )
   const [showActivitySearch, setShowActivitySearch] = useState(false)
+  const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const [aiSuggestions, setAISuggestions] = useState<Array<any>>([])
+  const [aiSchedule, setAISchedule] = useState<Array<any>>([])
+  const [dragSuggestion, setDragSuggestion] = useState<any | null>(null)
+  const [timeDialog, setTimeDialog] = useState<{ open: boolean; dayId: string; suggestion: any | null; slots: string[] }>({ open: false, dayId: "", suggestion: null, slots: [] })
+  const [activeDragId, setActiveDragId] = useState<string | null>(null)
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor)
+  )
   const [selectedDestinations, setSelectedDestinations] = useState<string[]>(
     existingDestinations.length > 0 ? existingDestinations : []
   )
@@ -386,26 +414,51 @@ export default function ComprehensiveTripBuilder({
   }
 
   // Add activity to a specific day
-  const addActivityToDay = (dayId: string, activity: any) => {
+  const addActivityToDay = (dayId: string, activity: any, selectedTime?: string) => {
     const updatedDays = itineraryDays.map(day => {
       if (day.id === dayId) {
         // Calculate estimated cost from price_range if available
         let estimatedCost = 0
-        if (activity.price_range) {
+        if (activity.estimatedCost && typeof activity.estimatedCost === 'number') {
+          estimatedCost = activity.estimatedCost
+        } else if (activity.price_range) {
           // Convert price_range string to estimated cost
           // Assuming price_range is like "$", "$$", "$$$", "$$$$"
           const priceLevel = activity.price_range.length
           estimatedCost = priceLevel * 25 // $25 per level as a reasonable estimate
         }
         
+        // Calculate end time based on duration
+        const startTime = selectedTime || activity.startTime || '09:00:00'
+        const duration = activity.duration_hours || 2
+        const startMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1])
+        const endMinutes = startMinutes + (duration * 60)
+        const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}:00`
+        
         const newActivity = {
-          ...activity,
-          startTime: '09:00:00',
-          endTime: '10:00:00',
+          id: activity.id || null, // Keep original ID if from database
+          name: activity.name || 'Untitled Activity',
+          description: activity.description || activity.notes || '',
+          category: activity.category || 'general',
+          price_range: activity.price_range || '$',
+          rating: activity.rating || null,
+          duration_hours: activity.duration_hours || 2,
+          city_id: activity.city_id || null,
+          image_url: activity.image_url || null,
+          startTime: startTime,
+          endTime: endTime,
           orderIndex: day.activities.length + 1,
-          notes: '',
-          estimatedCost: estimatedCost
+          notes: activity.notes || '',
+          estimatedCost: estimatedCost,
+          // Enhanced fields from web scraping
+          coordinates: activity.coordinates || null,
+          openingHours: activity.openingHours || null,
+          wikipediaUrl: activity.wikipediaUrl || null,
+          enriched: activity.enriched || false,
+          enrichedAt: activity.enrichedAt || null
         }
+        
+        console.log(`Adding activity to day ${dayId}:`, newActivity)
         
         return {
           ...day,
@@ -426,7 +479,231 @@ export default function ComprehensiveTripBuilder({
     const total = updatedDays.reduce((sum, day) => sum + day.budget.estimated, 0)
     setTotalEstimatedBudget(total)
     setValue("totalBudget", total)
+    
+    console.log(`Total activities across all days: ${updatedDays.reduce((sum, day) => sum + day.activities.length, 0)}`)
   }
+
+  // Fetch AI suggestions for the first destination
+  const fetchAISuggestions = async () => {
+    if (selectedDestinations.length === 0) {
+      toast({ title: "Add a destination first", variant: "destructive" })
+      return
+    }
+    setIsLoadingAI(true)
+    try {
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destination: selectedDestinations[0], days: itineraryDays.length || 2, interests: [] })
+      })
+      const data = await res.json()
+      setAISuggestions(Array.isArray(data?.suggestions) ? data.suggestions : [])
+      setAISchedule(Array.isArray(data?.scheduled) ? data.scheduled : [])
+      toast({ title: "AI suggestions ready", description: `Planned ${(data?.scheduled||[]).length} timed items` })
+    } catch (e) {
+      console.error(e)
+      toast({ title: "Failed to get suggestions", variant: "destructive" })
+    } finally {
+      setIsLoadingAI(false)
+    }
+  }
+
+  // Helpers: compute available slots for a day
+  const timeToMinutes = useCallback((t: string) => {
+    const [hh, mm] = t.split(":")
+    return parseInt(hh) * 60 + parseInt(mm)
+  }, [])
+  
+  const minutesToTime = useCallback((m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:00`, [])
+  
+  const computeAvailableSlots = useCallback((day: ItineraryDay, durationHours: number) => {
+    const startHour = 9
+    const endHour = 18
+    const step = 30 // minutes
+    const durationMin = Math.round((durationHours || 2) * 60)
+    const occupied: Array<[number, number]> = []
+    for (const a of day.activities) {
+      if (!a.startTime) continue
+      const s = timeToMinutes(a.startTime)
+      const d = Math.round(((a as any).duration_hours || 1) * 60)
+      occupied.push([s, s + d])
+    }
+    occupied.sort((x, y) => x[0] - y[0])
+    const free: string[] = []
+    for (let t = startHour * 60; t + durationMin <= endHour * 60; t += step) {
+      const slot: [number, number] = [t, t + durationMin]
+      const overlaps = occupied.some(([s, e]) => Math.max(s, slot[0]) < Math.min(e, slot[1]))
+      if (!overlaps) free.push(minutesToTime(t))
+    }
+    return free
+  }, [timeToMinutes, minutesToTime])
+
+  // Drag handlers with useCallback to prevent re-creation
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveDragId(event.active.id as string)
+    const suggestionId = event.active.id as string
+    if (suggestionId.startsWith('suggestion-')) {
+      const index = parseInt(suggestionId.split('-')[1])
+      setDragSuggestion(aiSuggestions[index])
+    }
+  }, [aiSuggestions])
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveDragId(null)
+    setDragSuggestion(null)
+
+    if (!over) return
+
+    const suggestionId = active.id as string
+    const dayId = over.id as string
+
+    if (suggestionId.startsWith('suggestion-') && dayId.startsWith('day-')) {
+      const suggestionIndex = parseInt(suggestionId.split('-')[1])
+      const suggestion = aiSuggestions[suggestionIndex]
+      const targetDayId = dayId.replace('day-', '')
+      
+      const targetDay = itineraryDays.find(d => d.id === targetDayId)
+      if (!targetDay || !suggestion) return
+
+      // Show time slot selection dialog
+      const slots = computeAvailableSlots(targetDay, suggestion.duration_hours || 2)
+      setTimeDialog({ 
+        open: true, 
+        dayId: targetDayId, 
+        suggestion: suggestion, 
+        slots 
+      })
+    }
+  }, [aiSuggestions, itineraryDays, computeAvailableSlots])
+
+  // Enrich place information using web scraping
+  const handleEnrichPlace = async (suggestion: any) => {
+    try {
+      const response = await fetch('/api/enrich-place', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: suggestion.name,
+          city: selectedDestinations[0], // Use first destination as context
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to enrich place information')
+      }
+
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        // Update the suggestion with enriched information
+        const enrichedSuggestion = {
+          ...suggestion,
+          description: result.data.description,
+          duration_hours: result.data.estimatedDuration,
+          openingHours: result.data.openingHours,
+          coordinates: result.data.coordinates,
+          enriched: true,
+          enrichedAt: new Date().toISOString()
+        }
+
+        // Update the suggestions array
+        setAISuggestions(prev => prev.map(s => 
+          s.name === suggestion.name ? enrichedSuggestion : s
+        ))
+
+        toast({
+          title: "Place enriched!",
+          description: `Updated information for ${suggestion.name}`,
+        })
+      }
+    } catch (error) {
+      console.error('Error enriching place:', error)
+      toast({
+        title: "Enrichment failed",
+        description: "Could not fetch additional information for this place.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Simple suggestion component with click-to-add
+  const SuggestionCard = React.memo(({ suggestion, index }: { suggestion: any, index: number }) => {
+    return (
+      <div
+        className={`p-3 bg-gray-800 rounded border ${
+          suggestion.enriched ? 'border-green-500 bg-gray-800/80' : 'border-gray-700'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-white font-medium text-sm">{suggestion.name}</p>
+            <p className="text-xs text-gray-400">
+              {suggestion.category || 'general'} 
+              {suggestion.price_range ? ` • ${suggestion.price_range}` : ''}
+              {suggestion.duration_hours ? ` • ${suggestion.duration_hours}h` : ''}
+              {suggestion.enriched && <span className="text-green-400"> • Enriched</span>}
+            </p>
+            {suggestion.description && suggestion.enriched && (
+              <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                {suggestion.description.slice(0, 100)}...
+              </p>
+            )}
+          </div>
+          <div className="flex flex-col gap-1 ml-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="text-xs bg-gray-700 border-gray-600 hover:bg-gray-600"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleEnrichPlace(suggestion)
+              }}
+            >
+              Enrich
+            </Button>
+            <div className="flex gap-1">
+              {itineraryDays.slice(0, 3).map(d => (
+                <Button 
+                  key={d.id} 
+                  type="button" 
+                  size="sm" 
+                  className="text-xs bg-blue-600 hover:bg-blue-700" 
+                  onClick={() => {
+                    const slots = computeAvailableSlots(d, suggestion.duration_hours || 2)
+                    setTimeDialog({ open: true, dayId: d.id, suggestion, slots })
+                  }}
+                >
+                  Day {d.dayNumber}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  })
+
+  // Simple droppable wrapper component
+  const DroppableWrapper = React.memo(({ day, children }: { day: ItineraryDay, children: React.ReactNode }) => {
+    const { setNodeRef, isOver } = useDroppable({ 
+      id: `day-${day.id}`,
+      data: { day }
+    })
+
+    return (
+      <div ref={setNodeRef} className="relative">
+        {/* Drop indicator overlay */}
+        {isOver && (
+          <div className="absolute -inset-2 bg-blue-500/10 border-2 border-blue-500 border-dashed rounded-lg pointer-events-none z-10" />
+        )}
+        {children}
+      </div>
+    )
+  })
 
   // Handle file upload
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1070,46 +1347,78 @@ export default function ComprehensiveTripBuilder({
                   </p>
                 </div>
               </div>
+            {/* AI Suggestions Drawer */}
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-white">AI Suggestions</CardTitle>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700" onClick={fetchAISuggestions} disabled={isLoadingAI}>
+                    {isLoadingAI ? 'Loading…' : 'Get Suggestions'}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-white font-medium mb-2">Untimed suggestions</h4>
+                    {aiSuggestions.length === 0 ? (
+                      <p className="text-gray-400 text-sm">Click Get Suggestions.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-3">
+                        {aiSuggestions.map((s, i) => (
+                          <SuggestionCard key={`sugg-${i}`} suggestion={s} index={i} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-white font-medium mb-2">Timed day plan</h4>
+                    {aiSchedule.length === 0 ? (
+                      <p className="text-gray-400 text-sm">Will appear if the model returns schedule.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {aiSchedule.map((s, i) => (
+                          <div key={`sched-${i}`} className="p-3 bg-gray-800 rounded border border-gray-700 flex items-center justify-between">
+                            <div>
+                              <p className="text-white text-sm">Day {s.dayNumber} • {s.startTime?.slice(0,5) || '09:00'} • {s.name}</p>
+                              <p className="text-xs text-gray-400">{s.category || 'general'} {s.price_range ? `• ${s.price_range}` : ''}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button type="button" size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => {
+                                const day = itineraryDays.find(d => d.dayNumber === s.dayNumber) || itineraryDays[0]
+                                if (!day) return
+                                const slots = computeAvailableSlots(day, s.duration_hours || 2)
+                                // preselect the suggested time if available, otherwise show slots
+                                setTimeDialog({ open: true, dayId: day.id, suggestion: { ...s }, slots })
+                              }}>Add</Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              <Card className="bg-white border-gray-200 shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 flex items-center">
-                    <DollarSign className="w-5 h-5 mr-2 text-emerald-600" />
-                    Budget Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-emerald-700">Total Estimated</p>
-                          <p className="text-2xl font-bold text-emerald-800">${totalEstimatedBudget.toLocaleString()}</p>
-                        </div>
-                        <DollarSign className="w-8 h-8 text-emerald-600" />
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-blue-700">Days Planned</p>
-                          <p className="text-2xl font-bold text-blue-800">{itineraryDays.length}</p>
-                        </div>
-                        <Calendar className="w-8 h-8 text-blue-600" />
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-purple-700">Avg. Per Day</p>
-                          <p className="text-2xl font-bold text-purple-800">
-                            ${itineraryDays.length > 0 ? Math.round(totalEstimatedBudget / itineraryDays.length) : 0}
-                          </p>
-                        </div>
-                        <Clock className="w-8 h-8 text-purple-600" />
-                      </div>
+            {itineraryDays.map((day, index) => (
+              <ItineraryDayBuilder
+                key={day.id}
+                day={day}
+                onUpdate={(updates) => updateItineraryDay(day.id, updates)}
+                onRemove={() => removeItineraryDay(day.id)}
+                activityTypes={ACTIVITY_TYPES}
+                destinations={selectedDestinations}
+              />
+            ))}
+
+            {itineraryDays.length === 0 && (
+              <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 border-2 border-dashed">
+                <CardContent className="py-12 text-center">
+                  <div className="relative">
+                    <MapPin className="mx-auto h-16 w-16 text-gray-400 mb-4 animate-bounce" />
+                    <div className="absolute -top-2 -right-2">
+                      <Star className="w-6 h-6 text-yellow-400 animate-spin" />
                     </div>
                   </div>
 
@@ -1300,7 +1609,29 @@ export default function ComprehensiveTripBuilder({
           }}
         />
       )}
-    </div>
-    </div>
+      {/* Time selection dialog for dropped/added suggestion */}
+      <Dialog open={timeDialog.open} onOpenChange={(open) => setTimeDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="bg-gray-900 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Select a start time</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-gray-300 text-sm">{timeDialog.suggestion?.name}</p>
+            <div className="flex flex-wrap gap-2">
+              {(timeDialog.slots || []).slice(0, 20).map((t) => (
+                <Button key={t} type="button" size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => {
+                  const s = timeDialog.suggestion || {}
+                  addActivityToDay(timeDialog.dayId, s, t)
+                  setTimeDialog({ open: false, dayId: "", suggestion: null, slots: [] })
+                }}>{t.slice(0,5)}</Button>
+              ))}
+            </div>
+            {timeDialog.slots.length === 0 && (
+              <p className="text-gray-400 text-sm">No free slots available. Adjust existing items or day times.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      </div>
   )
 }
