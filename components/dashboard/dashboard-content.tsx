@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Plus, Users, LogOut, User, Pencil } from "lucide-react"
+import { Calendar, MapPin, Plus, TrendingUp, Users, LogOut, Shield } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
@@ -31,6 +31,7 @@ interface Trip {
 export default function DashboardContent({ user }: { user: UserType }) {
   const [recentTrips, setRecentTrips] = useState<Trip[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
   const { trips, setTrips, clearStore } = useTripStore()
 
@@ -40,8 +41,10 @@ export default function DashboardContent({ user }: { user: UserType }) {
 
   const fetchDashboardData = async () => {
     try {
-      const [tripsResponse] = await Promise.all([
-        fetch("/api/trips?limit=12"),
+      const [tripsResponse, statsResponse, adminCheckResponse] = await Promise.all([
+        fetch("/api/trips?limit=5"),
+        fetch("/api/dashboard/stats"),
+        fetch("/api/admin/stats?type=platform").then(res => res.ok).catch(() => false)
       ])
 
       if (tripsResponse.ok) {
@@ -49,6 +52,9 @@ export default function DashboardContent({ user }: { user: UserType }) {
         setRecentTrips(tripsData)
         setTrips(tripsData)
       }
+
+      // Check if user has admin access
+      setIsAdmin(adminCheckResponse)
     } catch (error) {
       console.error("Error fetching dashboard data:", error)
       toast({
@@ -96,8 +102,43 @@ export default function DashboardContent({ user }: { user: UserType }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-slate-900">
-      <div className="h-2" />
+    <div className="min-h-screen bg-gray-900">
+      {/* Header */}
+      <header className="border-b border-gray-800 bg-gray-800/50">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+              <span className="text-xl font-bold">GT</span>
+            </div>
+            <span className="text-2xl font-bold">GlobeTrotter</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-gray-300">Welcome, {user.name || user.email}</span>
+            {isAdmin && (
+              <Button 
+                onClick={() => router.push("/admin")} 
+                variant="outline"
+                className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Admin
+              </Button>
+            )}
+            <Button onClick={() => router.push("/trips/create")} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-2" />
+              New Trip
+            </Button>
+            <Button 
+              onClick={handleLogout} 
+              variant="outline" 
+              className="border-gray-600 text-gray-300 hover:bg-red-600 hover:text-white hover:border-red-600"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
+        </div>
+      </header>
 
       <div className="container mx-auto px-4 py-8">
         {/* Profile header card */}

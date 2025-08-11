@@ -33,6 +33,8 @@ export interface User {
   phone_number?: string
   city?: string
   country?: string
+  role?: string
+  last_login_at?: Date
   created_at: Date
   updated_at: Date
 }
@@ -237,7 +239,7 @@ export async function deleteTrip(tripId: string, userId: string): Promise<boolea
       `DELETE FROM trips WHERE id = $1 AND user_id = $2`,
       [tripId, userId]
     )
-    return result.rowCount > 0
+    return (result.rowCount || 0) > 0
   } catch (error) {
     console.error("Database error:", error)
     throw error
@@ -482,7 +484,7 @@ export async function removeTripCity(tripCityId: string): Promise<boolean> {
       `DELETE FROM trip_cities WHERE id = $1`,
       [tripCityId]
     )
-    return result.rowCount > 0
+    return (result.rowCount || 0) > 0
   } catch (error) {
     console.error("Database error:", error)
     throw error
@@ -495,7 +497,192 @@ export async function removeTripActivity(tripActivityId: string): Promise<boolea
       `DELETE FROM trip_activities WHERE id = $1`,
       [tripActivityId]
     )
-    return result.rowCount > 0
+    return (result.rowCount || 0) > 0
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+// ============================================================================
+// ADMIN FUNCTIONS
+// ============================================================================
+
+export async function isUserAdmin(userId: string): Promise<boolean> {
+  try {
+    const result = await pool.query(
+      `SELECT role FROM users WHERE id = $1`,
+      [userId]
+    )
+    return result.rows[0]?.role === 'admin'
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function updateUserLastLogin(userId: string): Promise<void> {
+  try {
+    await pool.query(
+      `UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1`,
+      [userId]
+    )
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getPlatformStats(): Promise<any> {
+  try {
+    // Refresh materialized view first
+    await pool.query('REFRESH MATERIALIZED VIEW platform_stats')
+    
+    const result = await pool.query('SELECT * FROM platform_stats')
+    return result.rows[0]
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getUserAnalytics(limit?: number, offset?: number): Promise<any[]> {
+  try {
+    // Refresh materialized view first
+    await pool.query('REFRESH MATERIALIZED VIEW user_analytics')
+    
+    let query = 'SELECT * FROM user_analytics'
+    const params = []
+    
+    if (limit) {
+      query += ` LIMIT $${params.length + 1}`
+      params.push(limit)
+      
+      if (offset) {
+        query += ` OFFSET $${params.length + 1}`
+        params.push(offset)
+      }
+    }
+    
+    const result = await pool.query(query, params)
+    return result.rows
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getPopularCitiesAdmin(): Promise<any[]> {
+  try {
+    // Refresh materialized view first
+    await pool.query('REFRESH MATERIALIZED VIEW popular_cities')
+    
+    const result = await pool.query('SELECT * FROM popular_cities LIMIT 20')
+    return result.rows
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getPopularActivitiesAdmin(): Promise<any[]> {
+  try {
+    // Refresh materialized view first
+    await pool.query('REFRESH MATERIALIZED VIEW popular_activities')
+    
+    const result = await pool.query('SELECT * FROM popular_activities LIMIT 20')
+    return result.rows
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getUserGrowthStats(): Promise<any[]> {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        DATE_TRUNC('month', created_at) as month,
+        COUNT(*) as new_users,
+        SUM(COUNT(*)) OVER (ORDER BY DATE_TRUNC('month', created_at)) as total_users
+      FROM users 
+      WHERE role = 'user'
+      GROUP BY DATE_TRUNC('month', created_at)
+      ORDER BY month DESC
+      LIMIT 12
+    `)
+    return result.rows
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getTripGrowthStats(): Promise<any[]> {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        DATE_TRUNC('month', created_at) as month,
+        COUNT(*) as new_trips,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_trips,
+        SUM(COUNT(*)) OVER (ORDER BY DATE_TRUNC('month', created_at)) as total_trips
+      FROM trips 
+      GROUP BY DATE_TRUNC('month', created_at)
+      ORDER BY month DESC
+      LIMIT 12
+    `)
+    return result.rows
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function updateUserRole(userId: string, role: string): Promise<boolean> {
+  try {
+    const result = await pool.query(
+      `UPDATE users SET role = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+      [role, userId]
+    )
+    return (result.rowCount || 0) > 0
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function searchUsers(query: string, limit: number = 50): Promise<any[]> {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        id, display_id, email, first_name, last_name, role, 
+        created_at, last_login_at
+      FROM users 
+      WHERE (first_name ILIKE $1 OR last_name ILIKE $1 OR email ILIKE $1)
+      AND role != 'admin'
+      ORDER BY created_at DESC
+      LIMIT $2
+    `, [`%${query}%`, limit])
+    return result.rows
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getSystemMetrics(): Promise<any> {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM users WHERE role = 'admin') as admin_count,
+        (SELECT COUNT(*) FROM trips WHERE created_at >= CURRENT_DATE) as trips_today,
+        (SELECT COUNT(*) FROM users WHERE created_at >= CURRENT_DATE) as users_today,
+        (SELECT COUNT(*) FROM expenses WHERE expense_date >= CURRENT_DATE) as expenses_today,
+        (SELECT COUNT(*) FROM shared_trips WHERE created_at >= CURRENT_DATE - INTERVAL '7 days') as shares_7d,
+        (SELECT ROUND(AVG(rating), 2) FROM activities WHERE rating IS NOT NULL) as avg_activity_rating,
+        (SELECT COUNT(*) FROM trip_activities WHERE created_at >= CURRENT_DATE - INTERVAL '7 days') as activities_added_7d
+    `)
+    return result.rows[0]
   } catch (error) {
     console.error("Database error:", error)
     throw error
