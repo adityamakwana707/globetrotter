@@ -111,17 +111,17 @@ export default function PostDetailPage() {
   const getPostTypeBadgeColor = (type: string) => {
     switch (type) {
       case "experience": return "bg-purple-100 text-purple-800";
-      case "review": return "bg-yellow-100 text-yellow-800";
+      case "review": return "bg-amber-100 text-amber-800";
       case "tip": return "bg-blue-100 text-blue-800";
-      case "recommendation": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "recommendation": return "bg-emerald-100 text-emerald-800";
+      default: return "bg-slate-100 text-slate-800";
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div className="min-h-screen bg-gray-50 text-slate-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
       </div>
     );
   }
@@ -130,17 +130,17 @@ export default function PostDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 py-8">
-          <Link href="/community" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
+          <Link href="/community" className="inline-flex items-center text-emerald-600 hover:text-emerald-700 mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Community
           </Link>
           <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">😞</div>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">
+            <div className="text-slate-400 text-6xl mb-4">😞</div>
+            <h3 className="text-xl font-medium text-slate-900 mb-2">
               {error || "Post not found"}
             </h3>
             <Link href="/community">
-              <Button>Back to Community</Button>
+              <Button className="bg-emerald-600 hover:bg-emerald-700">Back to Community</Button>
             </Link>
           </div>
         </div>
@@ -153,13 +153,13 @@ export default function PostDetailPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6">
-          <Link href="/community" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
+          <Link href="/community" className="inline-flex items-center text-emerald-600 hover:text-emerald-700 mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Community
           </Link>
         </div>
 
-        <Card className="mb-6">
+        <Card className="mb-6 bg-white border-gray-200 shadow-md">
           <CardHeader className="pb-4">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -170,8 +170,8 @@ export default function PostDetailPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-medium">{post.user_name}</h3>
-                  <p className="text-sm text-gray-500">
+                  <h3 className="font-medium text-slate-900">{post.user_name}</h3>
+                  <p className="text-sm text-slate-600">
                     {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                   </p>
                 </div>
@@ -181,10 +181,10 @@ export default function PostDetailPage() {
                   {getPostTypeIcon(post.post_type)} {post.post_type}
                 </Badge>
                 {post.is_featured && (
-                  <Badge variant="secondary">Featured</Badge>
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-800">Featured</Badge>
                 )}
                 {post.is_verified && (
-                  <Badge className="bg-green-100 text-green-800">Verified</Badge>
+                  <Badge className="bg-emerald-100 text-emerald-800">Verified</Badge>
                 )}
               </div>
             </div>
@@ -193,10 +193,10 @@ export default function PostDetailPage() {
           <CardContent>
             <div className="space-y-6">
               {/* Title */}
-              <h1 className="text-3xl font-bold text-gray-900">{post.title}</h1>
+              <h1 className="text-3xl font-bold text-slate-900">{post.title}</h1>
 
               {/* Location and Trip Info */}
-              <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+              <div className="flex flex-wrap gap-4 text-sm text-slate-600">
                 {post.city_name && (
                   <div className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
@@ -231,7 +231,7 @@ export default function PostDetailPage() {
                       />
                     ))}
                   </div>
-                  <span className="text-lg font-medium text-gray-700">
+                  <span className="text-lg font-medium text-slate-700">
                     {post.rating}/5
                   </span>
                 </div>
@@ -239,7 +239,7 @@ export default function PostDetailPage() {
 
               {/* Content */}
               <div className="prose prose-gray max-w-none">
-                <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                <div className="whitespace-pre-wrap text-slate-700 leading-relaxed">
                   {post.content}
                 </div>
               </div>
@@ -247,7 +247,7 @@ export default function PostDetailPage() {
               {/* Images */}
               {post.images && post.images.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Photos</h3>
+                  <h3 className="text-lg font-semibold text-slate-900">Photos</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {post.images.map((image, index) => (
                       <div key={index} className="relative aspect-video rounded-lg overflow-hidden">
@@ -265,10 +265,10 @@ export default function PostDetailPage() {
               {/* Tags */}
               {post.tags && post.tags.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">Tags</h3>
+                  <h3 className="text-lg font-semibold text-slate-900">Tags</h3>
                   <div className="flex flex-wrap gap-2">
                     {post.tags.map((tag, index) => (
-                      <Badge key={index} variant="outline">
+                      <Badge key={index} variant="outline" className="border-gray-300 text-slate-700">
                         #{tag}
                       </Badge>
                     ))}
@@ -277,14 +277,14 @@ export default function PostDetailPage() {
               )}
 
               {/* Actions */}
-              <div className="flex items-center justify-between pt-6 border-t">
+              <div className="flex items-center justify-between pt-6 border-t border-gray-200">
                 <div className="flex items-center gap-6">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleLike}
-                    className={`flex items-center gap-2 ${
-                      post.is_liked ? "text-red-500" : ""
+                    className={`flex items-center gap-2 hover:bg-gray-50 ${
+                      post.is_liked ? "text-red-500" : "text-slate-600"
                     }`}
                     disabled={!session}
                   >
@@ -292,24 +292,24 @@ export default function PostDetailPage() {
                     {post.likes_count} {post.likes_count === 1 ? "Like" : "Likes"}
                   </Button>
                   
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-slate-600">
                     <MessageCircle className="h-5 w-5" />
                     {commentsCount} {commentsCount === 1 ? "Comment" : "Comments"}
                   </div>
                   
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-slate-600">
                     <Eye className="h-5 w-5" />
                     {post.views_count} {post.views_count === 1 ? "View" : "Views"}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleShare}>
+                  <Button variant="outline" size="sm" onClick={handleShare} className="border-gray-300 text-slate-700 hover:bg-gray-50">
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
                   </Button>
                   
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="border-gray-300 text-slate-700 hover:bg-gray-50">
                     <Flag className="h-4 w-4 mr-2" />
                     Report
                   </Button>

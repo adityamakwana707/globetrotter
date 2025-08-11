@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const existingUnverifiedUser = await getUnverifiedUserByEmail(email)
     
     if (existingUser || existingUnverifiedUser) {
-      return NextResponse.json({ message: "User already exists" }, { status: 409 })
+      return NextResponse.json({ message: "User already exists" }, { status: 409 }
     }
 
     // Hash password

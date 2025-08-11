@@ -98,7 +98,8 @@ export default function ActivityDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gray-50 text-slate-900">
+        <div className="container mx-auto px-4 py-8">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
@@ -108,23 +109,26 @@ export default function ActivityDetailPage() {
             <div className="h-4 bg-gray-200 rounded w-5/6"></div>
           </div>
         </div>
+        </div>
       </div>
     )
   }
 
   if (error || !data) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gray-50 text-slate-900">
+        <div className="container mx-auto px-4 py-8">
         <div className="text-center py-12">
-          <ActivityIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">{error || "Activity not found"}</h3>
-          <p className="text-muted-foreground mb-4">
+          <ActivityIcon className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+          <h3 className="text-lg font-semibold mb-2 text-slate-900">{error || "Activity not found"}</h3>
+          <p className="text-slate-600 mb-4">
             Sorry, we couldn't find the activity you're looking for.
           </p>
-          <Button onClick={() => router.push("/activities")} variant="outline">
+          <Button onClick={() => router.push("/activities")} variant="outline" className="border-gray-300 text-slate-700 hover:bg-gray-50">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Activities
           </Button>
+        </div>
         </div>
       </div>
     )
@@ -137,9 +141,9 @@ export default function ActivityDetailPage() {
     if (!priceRange) return { level: "Unknown", color: "bg-gray-100" }
     
     const price = priceRange.toLowerCase()
-    if (price.includes('free') || price.includes('$0')) return { level: "Free", color: "bg-green-100 text-green-800" }
+    if (price.includes('free') || price.includes('$0')) return { level: "Free", color: "bg-emerald-100 text-emerald-800" }
     if (price.includes('$') && (price.includes('1') || price.includes('2'))) return { level: "Budget", color: "bg-blue-100 text-blue-800" }
-    if (price.includes('$') && (price.includes('3') || price.includes('4'))) return { level: "Moderate", color: "bg-yellow-100 text-yellow-800" }
+    if (price.includes('$') && (price.includes('3') || price.includes('4'))) return { level: "Moderate", color: "bg-amber-100 text-amber-800" }
     return { level: "Premium", color: "bg-red-100 text-red-800" }
   }
 
@@ -155,19 +159,21 @@ export default function ActivityDetailPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 text-slate-900">
+      <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-6 flex items-center gap-4">
         <Button 
           variant="outline" 
           size="sm" 
+          className="border-gray-300 text-slate-700 hover:bg-gray-50"
           onClick={() => router.push("/activities")}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Activities
         </Button>
-        <div className="text-sm text-muted-foreground">
-          <Link href="/activities" className="hover:text-foreground">Activities</Link>
+        <div className="text-sm text-slate-600">
+          <Link href="/activities" className="hover:text-slate-900">Activities</Link>
           <span className="mx-2">/</span>
           <span>{activity.name}</span>
         </div>
@@ -213,6 +219,7 @@ export default function ActivityDetailPage() {
                 <Button
                   size="sm"
                   variant={isLiked ? "default" : "secondary"}
+                  className={isLiked ? "bg-emerald-600 hover:bg-emerald-700" : "bg-white/20 text-white border-white/30 hover:bg-white/30"}
                   onClick={() => setIsLiked(!isLiked)}
                 >
                   <Heart className={`h-4 w-4 mr-2 ${isLiked ? "fill-current" : ""}`} />
@@ -221,12 +228,13 @@ export default function ActivityDetailPage() {
                 <Button
                   size="sm"
                   variant={isBookmarked ? "default" : "secondary"}
+                  className={isBookmarked ? "bg-emerald-600 hover:bg-emerald-700" : "bg-white/20 text-white border-white/30 hover:bg-white/30"}
                   onClick={() => setIsBookmarked(!isBookmarked)}
                 >
                   <Bookmark className={`h-4 w-4 mr-2 ${isBookmarked ? "fill-current" : ""}`} />
                   {isBookmarked ? "Saved" : "Save"}
                 </Button>
-                <Button size="sm" variant="secondary">
+                <Button size="sm" variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
                   <Share2 className="h-4 w-4 mr-2" />
                   Share
                 </Button>
@@ -238,36 +246,36 @@ export default function ActivityDetailPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Card>
+        <Card className="bg-white border-gray-200 shadow-md">
           <CardContent className="p-4 text-center">
             <Star className="h-6 w-6 mx-auto mb-2 text-yellow-600" />
-            <p className="text-sm text-muted-foreground">Rating</p>
+            <p className="text-sm text-slate-600">Rating</p>
             <p className="font-semibold">
               {activity.rating ? `${activity.rating.toFixed(1)} ⭐` : "No rating"}
             </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-white border-gray-200 shadow-md">
           <CardContent className="p-4 text-center">
-            <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-600" />
-            <p className="text-sm text-muted-foreground">Price</p>
+            <DollarSign className="h-6 w-6 mx-auto mb-2 text-emerald-600" />
+            <p className="text-sm text-slate-600">Price</p>
             <p className="font-semibold">{activity.price_range || "Contact for price"}</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-white border-gray-200 shadow-md">
           <CardContent className="p-4 text-center">
             <Clock className="h-6 w-6 mx-auto mb-2 text-blue-600" />
-            <p className="text-sm text-muted-foreground">Duration</p>
+            <p className="text-sm text-slate-600">Duration</p>
             <p className="font-semibold">{getDurationText(activity.duration_hours)}</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-white border-gray-200 shadow-md">
           <CardContent className="p-4 text-center">
             <Users className="h-6 w-6 mx-auto mb-2 text-purple-600" />
-            <p className="text-sm text-muted-foreground">Bookings</p>
+            <p className="text-sm text-slate-600">Bookings</p>
             <p className="font-semibold">{activity.booking_count}</p>
           </CardContent>
         </Card>
@@ -275,30 +283,30 @@ export default function ActivityDetailPage() {
 
       {/* Main Content */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="location">Location</TabsTrigger>
-          <TabsTrigger value="similar">Similar ({similarActivities.length})</TabsTrigger>
-          <TabsTrigger value="trips">Trips ({trips.length})</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 bg-white border border-gray-200 shadow-sm rounded-lg p-0 gap-0 overflow-x-auto">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3 py-2 data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=inactive]:text-slate-600 whitespace-nowrap">Overview</TabsTrigger>
+          <TabsTrigger value="location" className="text-xs sm:text-sm px-2 sm:px-3 py-2 data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=inactive]:text-slate-600 whitespace-nowrap">Location</TabsTrigger>
+          <TabsTrigger value="similar" className="text-xs sm:text-sm px-2 sm:px-3 py-2 data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=inactive]:text-slate-600 whitespace-nowrap">Similar ({similarActivities.length})</TabsTrigger>
+          <TabsTrigger value="trips" className="text-xs sm:text-sm px-2 sm:px-3 py-2 data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=inactive]:text-slate-600 whitespace-nowrap">Trips ({trips.length})</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="mt-12 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Info */}
             <div className="lg:col-span-2">
-              <Card>
+              <Card className="bg-white border-gray-200 shadow-md">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ActivityIcon className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 text-slate-900">
+                    <ActivityIcon className="h-5 w-5 text-emerald-600" />
                     Activity Details
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {activity.description && (
                     <div>
-                      <h4 className="font-medium mb-2">About this Activity</h4>
-                      <p className="text-muted-foreground">{activity.description}</p>
+                      <h4 className="font-medium mb-2 text-slate-900">About this Activity</h4>
+                      <p className="text-slate-600">{activity.description}</p>
                     </div>
                   )}
                   
@@ -308,16 +316,16 @@ export default function ActivityDetailPage() {
                     <div className="space-y-3">
                       {activity.category && (
                         <div className="flex items-center gap-2">
-                          <ActivityIcon className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">Category:</span>
-                          <Badge variant="outline">{activity.category}</Badge>
+                          <ActivityIcon className="h-4 w-4 text-slate-500" />
+                          <span className="font-medium text-slate-900">Category:</span>
+                          <Badge variant="outline" className="border-gray-300 text-slate-700">{activity.category}</Badge>
                         </div>
                       )}
                       
                       {activity.price_range && (
                         <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">Price Range:</span>
+                          <DollarSign className="h-4 w-4 text-slate-500" />
+                          <span className="font-medium text-slate-900">Price Range:</span>
                           <Badge variant="outline" className={priceInfo.color}>
                             {activity.price_range}
                           </Badge>
@@ -328,16 +336,16 @@ export default function ActivityDetailPage() {
                     <div className="space-y-3">
                       {activity.duration_hours && (
                         <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">Duration:</span>
+                          <Clock className="h-4 w-4 text-slate-500" />
+                          <span className="font-medium text-slate-900">Duration:</span>
                           <span>{getDurationText(activity.duration_hours)}</span>
                         </div>
                       )}
                       
                       {activity.rating && (
                         <div className="flex items-center gap-2">
-                          <Star className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">Rating:</span>
+                          <Star className="h-4 w-4 text-slate-500" />
+                          <span className="font-medium text-slate-900">Rating:</span>
                           <div className="flex items-center gap-1">
                             <span>{activity.rating.toFixed(1)}</span>
                             <div className="flex">
@@ -362,7 +370,7 @@ export default function ActivityDetailPage() {
                     <>
                       <Separator />
                       <div>
-                        <Button variant="outline" asChild>
+                        <Button variant="outline" asChild className="border-gray-300 text-slate-700 hover:bg-gray-50">
                           <a 
                             href={activity.website_url} 
                             target="_blank" 
@@ -382,21 +390,21 @@ export default function ActivityDetailPage() {
             {/* Sidebar */}
             <div>
               {activity.city_name && (
-                <Card>
+                <Card className="bg-white border-gray-200 shadow-md">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MapPin className="h-5 w-5" />
+                    <CardTitle className="flex items-center gap-2 text-slate-900">
+                      <MapPin className="h-5 w-5 text-emerald-600" />
                       Location
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div>
-                      <p className="font-medium">{activity.city_name}</p>
-                      <p className="text-sm text-muted-foreground">{activity.city_country}</p>
+                      <p className="font-medium text-slate-900">{activity.city_name}</p>
+                      <p className="text-sm text-slate-600">{activity.city_country}</p>
                     </div>
                     
                     {activity.city_description && (
-                      <p className="text-sm text-muted-foreground">{activity.city_description}</p>
+                      <p className="text-sm text-slate-600">{activity.city_description}</p>
                     )}
                     
                     <Separator />
@@ -404,14 +412,14 @@ export default function ActivityDetailPage() {
                     <div className="space-y-2 text-sm">
                       {activity.latitude && activity.longitude && (
                         <div className="flex items-center gap-2">
-                          <Navigation className="h-3 w-3 text-muted-foreground" />
+                          <Navigation className="h-3 w-3 text-slate-500" />
                           <span>{activity.latitude.toFixed(4)}, {activity.longitude.toFixed(4)}</span>
                         </div>
                       )}
                       
                       {activity.city_timezone && (
                         <div className="flex items-center gap-2">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <Clock className="h-3 w-3 text-slate-500" />
                           <span>{activity.city_timezone}</span>
                         </div>
                       )}
@@ -420,7 +428,7 @@ export default function ActivityDetailPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="w-full"
+                      className="w-full border-gray-300 text-slate-700 hover:bg-gray-50"
                       onClick={() => router.push(`/cities/${activity.city_id}`)}
                     >
                       <Globe className="h-4 w-4 mr-2" />
@@ -434,36 +442,36 @@ export default function ActivityDetailPage() {
         </TabsContent>
 
         {/* Location Tab */}
-        <TabsContent value="location">
-          <Card>
+        <TabsContent value="location" className="mt-12">
+          <Card className="bg-white border-gray-200 shadow-md">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Map className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-slate-900">
+                <Map className="h-5 w-5 text-emerald-600" />
                 Location & Getting There
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-medium mb-3">Address & Coordinates</h4>
+                  <h4 className="font-medium mb-3 text-slate-900">Address & Coordinates</h4>
                   <div className="space-y-2 text-sm">
                     <p>{activity.city_name}, {activity.city_country}</p>
                     {activity.latitude && activity.longitude && (
-                      <p className="text-muted-foreground">
+                      <p className="text-slate-600">
                         Coordinates: {activity.latitude.toFixed(6)}, {activity.longitude.toFixed(6)}
                       </p>
                     )}
                     {activity.city_timezone && (
-                      <p className="text-muted-foreground">Timezone: {activity.city_timezone}</p>
+                      <p className="text-slate-600">Timezone: {activity.city_timezone}</p>
                     )}
                   </div>
                 </div>
                 
                 <div>
-                  <h4 className="font-medium mb-3">Quick Actions</h4>
+                  <h4 className="font-medium mb-3 text-slate-900">Quick Actions</h4>
                   <div className="space-y-2">
                     {activity.website_url && (
-                      <Button variant="outline" size="sm" asChild className="w-full justify-start">
+                      <Button variant="outline" size="sm" asChild className="w-full justify-start border-gray-300 text-slate-700 hover:bg-gray-50">
                         <a href={activity.website_url} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="h-4 w-4 mr-2" />
                           Official Website
@@ -474,7 +482,7 @@ export default function ActivityDetailPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="w-full justify-start"
+                      className="w-full justify-start border-gray-300 text-slate-700 hover:bg-gray-50"
                       onClick={() => router.push(`/cities/${activity.city_id}`)}
                     >
                       <MapPin className="h-4 w-4 mr-2" />
@@ -488,16 +496,16 @@ export default function ActivityDetailPage() {
 
           {/* Other activities in the same city */}
           {cityActivities.length > 0 && (
-            <Card>
+            <Card className="bg-white border-gray-200 shadow-md">
               <CardHeader>
-                <CardTitle>More Activities in {activity.city_name}</CardTitle>
+                <CardTitle className="text-slate-900">More Activities in {activity.city_name}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {cityActivities.slice(0, 3).map((cityActivity) => (
                     <Card 
                       key={cityActivity.id}
-                      className="cursor-pointer hover:shadow-md transition-shadow"
+                      className="cursor-pointer hover:shadow-md transition-shadow bg-white border-gray-200 shadow-sm"
                       onClick={() => router.push(`/activities/${cityActivity.id}`)}
                     >
                       <div className="aspect-video relative">
@@ -516,9 +524,9 @@ export default function ActivityDetailPage() {
                       </div>
                       
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">{cityActivity.name}</CardTitle>
+                        <CardTitle className="text-sm text-slate-900">{cityActivity.name}</CardTitle>
                         {cityActivity.price_range && (
-                          <CardDescription className="text-xs">
+                          <CardDescription className="text-xs text-slate-600">
                             {cityActivity.price_range}
                           </CardDescription>
                         )}
@@ -531,6 +539,7 @@ export default function ActivityDetailPage() {
                   <div className="mt-4 text-center">
                     <Button 
                       variant="outline" 
+                      className="border-gray-300 text-slate-700 hover:bg-gray-50"
                       onClick={() => router.push(`/cities/${activity.city_id}`)}
                     >
                       View All Activities in {activity.city_name}
@@ -543,13 +552,13 @@ export default function ActivityDetailPage() {
         </TabsContent>
 
         {/* Similar Activities Tab */}
-        <TabsContent value="similar">
+        <TabsContent value="similar" className="mt-12">
           {similarActivities.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {similarActivities.map((similar) => (
                 <Card 
                   key={similar.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  className="cursor-pointer hover:shadow-md transition-shadow bg-white border-gray-200 shadow-md"
                   onClick={() => router.push(`/activities/${similar.id}`)}
                 >
                   <div className="aspect-video relative">
@@ -573,7 +582,7 @@ export default function ActivityDetailPage() {
                   </div>
                   
                   <CardHeader>
-                    <CardTitle className="text-lg">{similar.name}</CardTitle>
+                    <CardTitle className="text-lg text-slate-900">{similar.name}</CardTitle>
                     <CardDescription className="flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
                       {similar.city_name}, {similar.city_country}
@@ -582,7 +591,7 @@ export default function ActivityDetailPage() {
                   
                   <CardContent>
                     <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-4 text-sm text-slate-500">
                         {similar.price_range && (
                           <span className="flex items-center gap-1">
                             <DollarSign className="h-3 w-3" />
@@ -602,11 +611,11 @@ export default function ActivityDetailPage() {
               ))}
             </div>
           ) : (
-            <Card>
+            <Card className="bg-white border-gray-200 shadow-md">
               <CardContent className="text-center py-12">
-                <ActivityIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No similar activities</h3>
-                <p className="text-muted-foreground">
+                <ActivityIcon className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+                <h3 className="text-lg font-semibold mb-2 text-slate-900">No similar activities</h3>
+                <p className="text-slate-600">
                   We couldn't find other activities in the {activity.category} category.
                 </p>
               </CardContent>
@@ -615,18 +624,18 @@ export default function ActivityDetailPage() {
         </TabsContent>
 
         {/* Trips Tab */}
-        <TabsContent value="trips">
+        <TabsContent value="trips" className="mt-12">
           {trips.length > 0 ? (
             <div className="space-y-4">
               {trips.map((trip) => (
-                <Card key={trip.id}>
+                <Card key={trip.id} className="bg-white border-gray-200 shadow-md">
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle className="text-lg">{trip.title}</CardTitle>
-                        <CardDescription>Status: {trip.status}</CardDescription>
+                        <CardTitle className="text-lg text-slate-900">{trip.title}</CardTitle>
+                        <CardDescription className="text-slate-600">Status: {trip.status}</CardDescription>
                       </div>
-                      <Badge variant="outline">
+                      <Badge variant="outline" className="border-gray-300 text-slate-700">
                         {new Date(trip.start_date).toLocaleDateString()}
                       </Badge>
                     </div>
@@ -634,15 +643,15 @@ export default function ActivityDetailPage() {
                   
                   {trip.description && (
                     <CardContent>
-                      <p className="text-muted-foreground mb-4">{trip.description}</p>
+                      <p className="text-slate-600 mb-4">{trip.description}</p>
                       <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-4 text-sm text-slate-500">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()}
                           </span>
                         </div>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" className="border-gray-300 text-slate-700 hover:bg-gray-50">
                           View Trip
                         </Button>
                       </div>
@@ -652,11 +661,11 @@ export default function ActivityDetailPage() {
               ))}
             </div>
           ) : (
-            <Card>
+            <Card className="bg-white border-gray-200 shadow-md">
               <CardContent className="text-center py-12">
-                <Plane className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No trips available</h3>
-                <p className="text-muted-foreground">
+                <Plane className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+                <h3 className="text-lg font-semibold mb-2 text-slate-900">No trips available</h3>
+                <p className="text-slate-600">
                   This activity hasn't been included in any public trips yet.
                 </p>
               </CardContent>
@@ -664,6 +673,7 @@ export default function ActivityDetailPage() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

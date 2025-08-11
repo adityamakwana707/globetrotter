@@ -124,20 +124,20 @@ export default function ImageUpload({
           
           {uploading ? (
             <div className="space-y-2">
-              <Loader2 className="h-8 w-8 text-blue-500 mx-auto animate-spin" />
-              <p className="text-gray-600">Uploading images...</p>
+              <Loader2 className="h-8 w-8 text-emerald-600 mx-auto animate-spin" />
+              <p className="text-slate-600">Uploading images...</p>
             </div>
           ) : (
             <div className="space-y-2">
-              <Upload className={`h-8 w-8 mx-auto ${disabled ? "text-gray-300" : "text-gray-400"}`} />
+              <Upload className={`h-8 w-8 mx-auto ${disabled ? "text-slate-300" : "text-slate-400"}`} />
               <div>
-                <p className={`font-medium ${disabled ? "text-gray-400" : "text-gray-700"}`}>
+                <p className={`font-medium ${disabled ? "text-slate-400" : "text-slate-700"}`}>
                   Drop images here or click to browse
                 </p>
-                <p className={`text-sm ${disabled ? "text-gray-300" : "text-gray-500"}`}>
+                <p className={`text-sm ${disabled ? "text-slate-300" : "text-slate-500"}`}>
                   PNG, JPG, WebP up to 5MB each. Max {maxImages} images.
                 </p>
-                <p className={`text-xs ${disabled ? "text-gray-300" : "text-gray-400"}`}>
+                <p className={`text-xs ${disabled ? "text-slate-300" : "text-slate-400"}`}>
                   {images.length}/{maxImages} images uploaded
                 </p>
               </div>
@@ -151,7 +151,7 @@ export default function ImageUpload({
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {images.map((imageUrl, index) => (
             <div key={index} className="relative group">
-              <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border">
+              <div className="aspect-square rounded-lg overflow-hidden bg-slate-100 border">
                 <img
                   src={imageUrl}
                   alt={`Upload ${index + 1}`}
@@ -194,7 +194,7 @@ export default function ImageUpload({
           variant="outline"
           onClick={openFileDialog}
           disabled={disabled}
-          className="w-full"
+          className="w-full border-gray-300 text-slate-700 hover:bg-gray-50"
         >
           <ImageIcon className="h-4 w-4 mr-2" />
           Add More Images ({images.length}/{maxImages})

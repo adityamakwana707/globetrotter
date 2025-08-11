@@ -110,43 +110,45 @@ export default function CommunityPage({}: CommunityPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 text-slate-900">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-6">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Community</h1>
-              <p className="text-gray-600">Share your travel experiences and discover amazing stories from fellow travelers</p>
+              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">Community</h1>
+              <p className="text-slate-600 text-sm sm:text-base">Share your travel experiences and discover amazing stories from fellow travelers</p>
             </div>
             {session && (
-              <Link href="/community/create">
-                <Button className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Share Experience
-                </Button>
-              </Link>
+              <div className="flex justify-start lg:justify-end">
+                <Link href="/community/create">
+                  <Button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700">
+                    <Plus className="h-4 w-4" />
+                    Share Experience
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
 
           {/* Search and Filters */}
-          <div className="flex flex-col lg:flex-row gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
               <Input
                 placeholder="Search posts, cities, or activities..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-white border-gray-300 text-slate-900"
               />
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[160px] bg-white border-gray-300 text-slate-900">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border-gray-200">
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="experience">🌟 Experiences</SelectItem>
                   <SelectItem value="review">⭐ Reviews</SelectItem>
@@ -156,10 +158,10 @@ export default function CommunityPage({}: CommunityPageProps) {
               </Select>
               
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[140px] bg-white border-gray-300 text-slate-900">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border-gray-200">
                   <SelectItem value="newest">Newest</SelectItem>
                   <SelectItem value="oldest">Oldest</SelectItem>
                   <SelectItem value="most_liked">Most Liked</SelectItem>
@@ -174,7 +176,7 @@ export default function CommunityPage({}: CommunityPageProps) {
         {/* Posts Grid */}
         <div className="grid gap-6">
           {posts.map((post) => (
-            <Card key={post.id} className="hover:shadow-lg transition-shadow">
+            <Card key={post.id} className="bg-white border-gray-200 shadow-md hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -185,8 +187,8 @@ export default function CommunityPage({}: CommunityPageProps) {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium text-sm">{post.user_name}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="font-medium text-sm text-slate-900">{post.user_name}</p>
+                      <p className="text-xs text-slate-500">
                         {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                       </p>
                     </div>
@@ -196,7 +198,7 @@ export default function CommunityPage({}: CommunityPageProps) {
                       {getPostTypeIcon(post.post_type)} {post.post_type}
                     </Badge>
                     {post.is_featured && (
-                      <Badge variant="secondary">Featured</Badge>
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">Featured</Badge>
                     )}
                   </div>
                 </div>
@@ -205,12 +207,12 @@ export default function CommunityPage({}: CommunityPageProps) {
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-xl font-semibold mb-2">{post.title}</h3>
-                    <p className="text-gray-600 line-clamp-3">{post.content}</p>
+                    <h3 className="text-xl font-semibold mb-2 text-slate-900">{post.title}</h3>
+                    <p className="text-slate-600 line-clamp-3">{post.content}</p>
                   </div>
 
                   {/* Location and Trip Info */}
-                  <div className="flex flex-wrap gap-2 text-sm text-gray-500">
+                  <div className="flex flex-wrap gap-2 text-sm text-slate-500">
                     {post.city_name && (
                       <div className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
@@ -238,12 +240,12 @@ export default function CommunityPage({}: CommunityPageProps) {
                           key={i}
                           className={`h-4 w-4 ${
                             i < post.rating! 
-                              ? "fill-yellow-400 text-yellow-400" 
-                              : "text-gray-300"
+                              ? "fill-amber-500 text-amber-500" 
+                              : "text-slate-300"
                           }`}
                         />
                       ))}
-                      <span className="text-sm text-gray-600 ml-1">
+                      <span className="text-sm text-slate-600 ml-1">
                         {post.rating}/5
                       </span>
                     </div>
@@ -253,7 +255,7 @@ export default function CommunityPage({}: CommunityPageProps) {
                   {post.tags && post.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {post.tags.map((tag, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
+                        <Badge key={index} variant="outline" className="text-xs border-gray-300 text-slate-700">
                           #{tag}
                         </Badge>
                       ))}
@@ -284,13 +286,13 @@ export default function CommunityPage({}: CommunityPageProps) {
 
                   {/* Actions */}
                   <div className="flex items-center justify-between pt-4 border-t">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex items-center gap-4 text-sm text-slate-500">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleLike(post.id)}
                         className={`flex items-center gap-2 ${
-                          post.is_liked ? "text-red-500" : ""
+                          post.is_liked ? "text-red-500" : "hover:text-emerald-600"
                         }`}
                       >
                         <Heart className={`h-4 w-4 ${post.is_liked ? "fill-current" : ""}`} />
@@ -309,7 +311,7 @@ export default function CommunityPage({}: CommunityPageProps) {
                     </div>
 
                     <Link href={`/community/posts/${post.id}`}>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="border-gray-300 text-slate-700 hover:bg-gray-50">
                         Read More
                       </Button>
                     </Link>
@@ -323,7 +325,7 @@ export default function CommunityPage({}: CommunityPageProps) {
         {/* Load More */}
         {hasMore && !loading && (
           <div className="text-center mt-8">
-            <Button onClick={() => fetchPosts(false)} variant="outline">
+            <Button onClick={() => fetchPosts(false)} variant="outline" className="border-gray-300 text-slate-700 hover:bg-gray-50">
               Load More Posts
             </Button>
           </div>
@@ -332,18 +334,18 @@ export default function CommunityPage({}: CommunityPageProps) {
         {/* Loading */}
         {loading && (
           <div className="text-center mt-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div>
           </div>
         )}
 
         {/* Empty State */}
         {posts.length === 0 && !loading && (
           <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">🌍</div>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">
+            <div className="text-slate-400 text-6xl mb-4">🌍</div>
+            <h3 className="text-xl font-medium text-slate-900 mb-2">
               No posts found
             </h3>
-            <p className="text-gray-500 mb-4">
+            <p className="text-slate-500 mb-4">
               {searchTerm 
                 ? "Try adjusting your search terms or filters"
                 : "Be the first to share your travel experience!"
@@ -351,7 +353,7 @@ export default function CommunityPage({}: CommunityPageProps) {
             </p>
             {session && (
               <Link href="/community/create">
-                <Button>
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
                   <Plus className="h-4 w-4 mr-2" />
                   Share Your Experience
                 </Button>
