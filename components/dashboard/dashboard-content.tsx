@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Plus, TrendingUp, Users, LogOut, Shield , Pencil} from "lucide-react"
+import { Calendar, MapPin, Plus, Users, LogOut, Pencil } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
@@ -31,7 +31,6 @@ interface Trip {
 export default function DashboardContent({ user }: { user: UserType }) {
   const [recentTrips, setRecentTrips] = useState<Trip[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
   const { trips, setTrips, clearStore } = useTripStore()
 
@@ -41,20 +40,13 @@ export default function DashboardContent({ user }: { user: UserType }) {
 
   const fetchDashboardData = async () => {
     try {
-      const [tripsResponse, statsResponse, adminCheckResponse] = await Promise.all([
-        fetch("/api/trips?limit=5"),
-        fetch("/api/dashboard/stats"),
-        fetch("/api/admin/stats?type=platform").then(res => res.ok).catch(() => false)
-      ])
+      const tripsResponse = await fetch("/api/trips?limit=12")
 
       if (tripsResponse.ok) {
         const tripsData = await tripsResponse.json()
         setRecentTrips(tripsData)
         setTrips(tripsData)
       }
-
-      // Check if user has admin access
-      setIsAdmin(adminCheckResponse)
     } catch (error) {
       console.error("Error fetching dashboard data:", error)
       toast({
@@ -103,10 +95,7 @@ export default function DashboardContent({ user }: { user: UserType }) {
 
   return (
     <div className="min-h-screen bg-gray-50 text-slate-900">
-      {/* Header */}
-      <div className="h-[4vh]">
-
-      </div>
+      <div className="h-[4vh]" />
 
       <div className="container mx-auto px-4 py-8">
         {/* Profile header card */}

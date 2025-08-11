@@ -126,10 +126,10 @@ export default function CurrencyConverter({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-white border-gray-200 shadow-md">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-white flex items-center gap-2">
+            <CardTitle className="text-slate-900 flex items-center gap-2">
               <Calculator className="w-5 h-5" />
               Currency Converter
             </CardTitle>
@@ -137,13 +137,13 @@ export default function CurrencyConverter({
               onClick={fetchExchangeRates}
               size="sm"
               variant="outline"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              className="border-gray-300 text-slate-700 hover:bg-gray-50"
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
           </div>
           {lastUpdated && (
-            <p className="text-gray-400 text-sm">
+            <p className="text-slate-600 text-sm">
               Last updated: {lastUpdated.toLocaleTimeString()}
             </p>
           )}
@@ -151,13 +151,13 @@ export default function CurrencyConverter({
         <CardContent className="space-y-6">
           {/* Amount Input */}
           <div className="space-y-2">
-            <Label className="text-white">Amount</Label>
+            <Label className="text-slate-800">Amount</Label>
             <Input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Enter amount"
-              className="bg-gray-700 border-gray-600 text-white text-lg"
+              className="bg-white border-gray-300 text-slate-900 text-lg"
               min="0"
               step="0.01"
             />
@@ -166,18 +166,18 @@ export default function CurrencyConverter({
           {/* Currency Selection */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div className="space-y-2">
-              <Label className="text-white">From</Label>
+              <Label className="text-slate-800">From</Label>
               <Select value={fromCurrency} onValueChange={setFromCurrency}>
-                <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-700 border-gray-600">
+                <SelectContent className="bg-white border-gray-300">
                   {SUPPORTED_CURRENCIES.map((currency) => (
-                    <SelectItem key={currency.code} value={currency.code} className="text-white hover:bg-gray-600">
+                    <SelectItem key={currency.code} value={currency.code} className="text-slate-900 hover:bg-gray-50">
                       <div className="flex items-center space-x-2">
                         <span>{currency.flag}</span>
                         <span>{currency.code}</span>
-                        <span className="text-gray-400">- {currency.name}</span>
+                        <span className="text-slate-600">- {currency.name}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -190,25 +190,25 @@ export default function CurrencyConverter({
                 onClick={swapCurrencies}
                 variant="outline"
                 size="sm"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                className="border-gray-300 text-slate-700 hover:bg-gray-50"
               >
                 <ArrowRightLeft className="w-4 h-4" />
               </Button>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-white">To</Label>
+              <Label className="text-slate-800">To</Label>
               <Select value={toCurrency} onValueChange={setToCurrency}>
-                <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-700 border-gray-600">
+                <SelectContent className="bg-white border-gray-300">
                   {SUPPORTED_CURRENCIES.map((currency) => (
-                    <SelectItem key={currency.code} value={currency.code} className="text-white hover:bg-gray-600">
+                    <SelectItem key={currency.code} value={currency.code} className="text-slate-900 hover:bg-gray-50">
                       <div className="flex items-center space-x-2">
                         <span>{currency.flag}</span>
                         <span>{currency.code}</span>
-                        <span className="text-gray-400">- {currency.name}</span>
+                        <span className="text-slate-600">- {currency.name}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -219,28 +219,28 @@ export default function CurrencyConverter({
 
           {/* Conversion Result */}
           {conversionResult && (
-            <div className="p-4 bg-gray-700 rounded-lg">
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="text-center space-y-2">
                 <div className="flex items-center justify-center space-x-3">
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-400">
+                    <p className="text-2xl font-bold text-blue-600">
                       {conversionResult.formatted.original}
                     </p>
-                    <p className="text-gray-400 text-sm">{getCurrencyFlag(fromCurrency)} {fromCurrency}</p>
+                    <p className="text-slate-600 text-sm">{getCurrencyFlag(fromCurrency)} {fromCurrency}</p>
                   </div>
-                  <ArrowRightLeft className="w-6 h-6 text-gray-400" />
+                  <ArrowRightLeft className="w-6 h-6 text-slate-500" />
                   <div className="text-left">
-                    <p className="text-2xl font-bold text-green-400">
+                    <p className="text-2xl font-bold text-emerald-600">
                       {conversionResult.formatted.converted}
                     </p>
-                    <p className="text-gray-400 text-sm">{getCurrencyFlag(toCurrency)} {toCurrency}</p>
+                    <p className="text-slate-600 text-sm">{getCurrencyFlag(toCurrency)} {toCurrency}</p>
                   </div>
                 </div>
                 
                 {isLoading && (
                   <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
-                    <span className="text-gray-400 text-sm">Converting...</span>
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-emerald-500"></div>
+                    <span className="text-slate-600 text-sm">Converting...</span>
                   </div>
                 )}
               </div>
@@ -250,20 +250,20 @@ export default function CurrencyConverter({
           {/* Exchange Rate Info */}
           {rateInfo && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-3 bg-gray-700 rounded-lg text-center">
-                <p className="text-white font-semibold">{rateInfo.direct}</p>
-                <p className="text-gray-400 text-sm">Direct Rate</p>
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center">
+                <p className="text-slate-900 font-semibold">{rateInfo.direct}</p>
+                <p className="text-slate-600 text-sm">Direct Rate</p>
               </div>
-              <div className="p-3 bg-gray-700 rounded-lg text-center">
-                <p className="text-white font-semibold">{rateInfo.inverse}</p>
-                <p className="text-gray-400 text-sm">Inverse Rate</p>
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center">
+                <p className="text-slate-900 font-semibold">{rateInfo.inverse}</p>
+                <p className="text-slate-600 text-sm">Inverse Rate</p>
               </div>
             </div>
           )}
 
           {/* Popular Amounts */}
           <div>
-            <Label className="text-white text-sm mb-3 block">Quick Convert</Label>
+            <Label className="text-slate-800 text-sm mb-3 block">Quick Convert</Label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {popularAmounts.map(({ amount: popularAmount, converted }) => (
                 <Button
@@ -271,11 +271,11 @@ export default function CurrencyConverter({
                   onClick={() => setAmount(popularAmount.toString())}
                   variant="outline"
                   size="sm"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700 flex flex-col h-auto py-2"
+                  className="border-gray-300 text-slate-700 hover:bg-gray-50 flex flex-col h-auto py-2"
                 >
                   <span className="font-semibold">{formatCurrency(popularAmount, fromCurrency)}</span>
                   {converted && (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-slate-600">
                       ≈ {formatCurrency(parseFloat(converted), toCurrency)}
                     </span>
                   )}
@@ -287,26 +287,26 @@ export default function CurrencyConverter({
       </Card>
 
       {/* Exchange Rate Trends (Mock) */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-white border-gray-200 shadow-md">
         <CardHeader>
-          <CardTitle className="text-white text-sm">Exchange Rate Trends</CardTitle>
+          <CardTitle className="text-slate-900 text-sm">Exchange Rate Trends</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-400">24h Change</span>
-            <div className="flex items-center space-x-1 text-green-400">
+            <span className="text-slate-600">24h Change</span>
+            <div className="flex items-center space-x-1 text-emerald-600">
               <TrendingUp className="w-4 h-4" />
               <span>+0.23%</span>
             </div>
           </div>
           <div className="flex items-center justify-between text-sm mt-2">
-            <span className="text-gray-400">7d Change</span>
-            <div className="flex items-center space-x-1 text-red-400">
+            <span className="text-slate-600">7d Change</span>
+            <div className="flex items-center space-x-1 text-red-500">
               <TrendingDown className="w-4 h-4" />
               <span>-1.45%</span>
             </div>
           </div>
-          <p className="text-gray-500 text-xs mt-3">
+          <p className="text-slate-500 text-xs mt-3">
             Historical data and trends coming soon
           </p>
         </CardContent>

@@ -165,7 +165,7 @@ export default function TripForm({ trip }: TripFormProps) {
 
       // Update Zustand store
       if (trip) {
-        updateTrip(trip.id, result)
+        updateTrip(trip.id.toString(), result)
       } else {
         addTrip(result)
       }
@@ -175,7 +175,7 @@ export default function TripForm({ trip }: TripFormProps) {
         description: trip ? "Your trip has been updated successfully." : "Your new trip has been created successfully.",
       })
 
-      router.push('/dashboard')
+      router.push('/landing')
     } catch (error) {
       console.error('Submit error:', error)
       toast({
@@ -319,43 +319,22 @@ export default function TripForm({ trip }: TripFormProps) {
                     )}
                   </div>
 
-          {/* Status Preview - Auto-detected */}
-          <div className="space-y-2">
-            <Label className="text-white">Trip Status (Auto-detected)</Label>
-            <div className="p-3 bg-gray-700 rounded-lg border-2 border-dashed border-gray-600">
-              <div className="flex items-center space-x-2">
-                <span className="text-lg">
-                  {(() => {
-                    const now = new Date()
-                    const startDate = new Date(watch("startDate"))
-                    const endDate = new Date(watch("endDate"))
-                    
-                    if (!watch("startDate") || !watch("endDate")) return "📅"
-                    if (now >= startDate && now <= endDate) return "🌍"
-                    if (now > endDate) return "🏆"
-                    return "📋"
-                  })()}
-                </span>
-                <div>
-                  <p className="text-white font-medium">
-                    Status: {(() => {
-                      const now = new Date()
-                      const startDate = new Date(watch("startDate"))
-                      const endDate = new Date(watch("endDate"))
-                      
-                      if (!watch("startDate") || !watch("endDate")) return "Set dates to see status"
-                      if (now >= startDate && now <= endDate) return "Active"
-                      if (now > endDate) return "Completed"
-                      return "Planning"
-                    })()}
-                  </p>
-                  <p className="text-gray-400 text-sm">
-                    Automatically determined based on travel dates
-                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate" className="text-slate-800 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-emerald-600" />
+                      End Date
+                    </Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      {...register("endDate")}
+                      className="bg-white border-gray-300 text-slate-900"
+                    />
+                    {errors.endDate && (
+                      <p className="text-red-500 text-sm">{errors.endDate.message}</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
                 {/* Status */}
                 <div className="space-y-2">
