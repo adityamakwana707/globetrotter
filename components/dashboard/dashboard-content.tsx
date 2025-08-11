@@ -157,7 +157,7 @@ export default function DashboardContent({ user }: { user: UserType }) {
                       <p className="text-slate-500 text-sm truncate">{trip.description}</p>
                       <div className="flex items-center justify-between mt-2">
                         <Badge className={`${getStatusColor(trip.status)} text-white`}>{trip.status}</Badge>
-                        <Button size="sm" variant="outline" className="border-gray-300" onClick={() => router.push(`/trips/${trip.id}`)}>View</Button>
+                        <Button size="sm" variant="outline" className="border-gray-300" onClick={() => router.push(`/trips/${trip.display_id}`)}>View</Button>
                       </div>
                     </div>
                   </CardContent>
@@ -195,7 +195,7 @@ export default function DashboardContent({ user }: { user: UserType }) {
                       <p className="text-slate-500 text-sm truncate">{trip.description}</p>
                       <div className="flex items-center justify-between mt-2">
                         <Badge className={`${getStatusColor(trip.status)} text-white`}>{trip.status}</Badge>
-                        <Button size="sm" variant="outline" className="border-gray-300" onClick={() => router.push(`/trips/${trip.id}`)}>View</Button>
+                        <Button size="sm" variant="outline" className="border-gray-300" onClick={() => router.push(`/trips/${trip.display_id}`)}>View</Button>
                       </div>
                     </div>
                   </CardContent>

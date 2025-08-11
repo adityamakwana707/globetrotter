@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { isUserAdmin } from "@/lib/database"
 
-import ComprehensiveTripBuilder from "@/components/trips/comprehensive-trip-builder"
+import TripBuilderClientWrapper from "@/components/trips/trip-builder-client-wrapper"
 
 export default async function CreateTripPage() {
   const session = await getServerSession(authOptions)
@@ -27,7 +27,7 @@ export default async function CreateTripPage() {
           <p className="text-gray-400 text-lg">Plan every detail with our comprehensive itinerary builder</p>
         </div>
         
-        <ComprehensiveTripBuilder />
+        <TripBuilderClientWrapper />
       </div>
     </div>
   )
