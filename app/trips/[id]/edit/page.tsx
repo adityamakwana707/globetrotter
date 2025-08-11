@@ -26,7 +26,13 @@ export default async function EditTripPage({ params }: EditTripPageProps) {
 
   let trip = null
   try {
-    trip = await getTripById(params.id, session.user.id)
+    // Parse the ID as number since we're using SERIAL IDs now
+    const tripId = parseInt(params.id)
+    if (isNaN(tripId)) {
+      redirect("/dashboard")
+    }
+
+    trip = await getTripById(tripId, session.user.id)
   } catch (error) {
     console.error("Error fetching trip:", error)
   }

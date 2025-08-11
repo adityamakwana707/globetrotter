@@ -28,6 +28,10 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import LocationSearch from "@/components/maps/location-search"
+import LeafletMap from "@/components/maps/leaflet-map"
+import TravelTimeCalculator from "./travel-time-calculator"
+import DragDropItinerary from "./drag-drop-itinerary"
 
 interface City {
   id: string
@@ -228,12 +232,21 @@ export default function ItineraryBuilder({ tripId }: ItineraryBuilderProps) {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="cities" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-gray-800 border-gray-700">
+        <TabsList className="grid w-full grid-cols-5 bg-gray-800 border-gray-700">
           <TabsTrigger value="cities" className="data-[state=active]:bg-gray-700">
             Cities ({tripCities.length})
           </TabsTrigger>
           <TabsTrigger value="activities" className="data-[state=active]:bg-gray-700">
             Activities ({tripActivities.length})
+          </TabsTrigger>
+          <TabsTrigger value="map" className="data-[state=active]:bg-gray-700">
+            Map View
+          </TabsTrigger>
+          <TabsTrigger value="travel" className="data-[state=active]:bg-gray-700">
+            Travel Times
+          </TabsTrigger>
+          <TabsTrigger value="reorder" className="data-[state=active]:bg-gray-700">
+            Reorder
           </TabsTrigger>
         </TabsList>
 
@@ -262,20 +275,14 @@ export default function ItineraryBuilder({ tripId }: ItineraryBuilderProps) {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label className="text-white">Search Cities</Label>
-                        <div className="relative">
-                          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input
-                            placeholder="Search for cities..."
-                            value={searchCity}
-                            onChange={(e) => {
-                              setSearchCity(e.target.value)
-                              if (e.target.value.length > 2) {
-                                searchCities(e.target.value)
-                              }
-                            }}
-                            className="bg-gray-700 border-gray-600 text-white pl-10"
-                          />
-                        </div>
+                        <LocationAutocomplete
+                          onLocationSelect={(location) => {
+                            addCityToTrip(location.place_id)
+                          }}
+                          placeholder="Search for cities..."
+                          types={['(cities)']}
+                          showSuggestions={true}
+                        />
                       </div>
                       
                       {cities.length > 0 && (
@@ -472,6 +479,75 @@ export default function ItineraryBuilder({ tripId }: ItineraryBuilderProps) {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="map" className="mt-6">
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Trip Map
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {tripCities.length === 0 ? (
+                <div className="text-center py-12">
+                  <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+                  <p className="text-gray-400 mb-4">No locations to display</p>
+                  <p className="text-sm text-gray-500">Add cities to your trip to see them on the map.</p>
+                </div>
+              ) : (
+                <InteractiveMap
+                  locations={[
+                    ...tripCities.map(city => ({
+                      id: city.id,
+                      name: city.name,
+                      latitude: city.latitude || 0,
+                      longitude: city.longitude || 0,
+                      type: 'city' as const,
+                      description: `${city.name}, ${city.country}`
+                    })),
+                    ...tripActivities.map(activity => ({
+                      id: activity.id,
+                      name: activity.name,
+                      latitude: 0, // Would need to get from activity data
+                      longitude: 0,
+                      type: 'activity' as const,
+                      description: activity.description || ''
+                    }))
+                  ].filter(location => location.latitude !== 0 && location.longitude !== 0)}
+                  showRoute={tripCities.length > 1}
+                  height="500px"
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="travel" className="mt-6">
+          <TravelTimeCalculator 
+            tripId={tripId}
+            locations={[
+              ...tripCities.map(city => ({
+                id: city.id,
+                name: city.name,
+                latitude: city.latitude || 0,
+                longitude: city.longitude || 0,
+                type: 'city' as const
+              })),
+              ...tripActivities.map(activity => ({
+                id: activity.id,
+                name: activity.name,
+                latitude: 0, // Would need to get from activity data
+                longitude: 0,
+                type: 'activity' as const
+              }))
+            ].filter(location => location.latitude !== 0 && location.longitude !== 0)}
+          />
+        </TabsContent>
+
+        <TabsContent value="reorder" className="mt-6">
+          <DragDropItinerary tripId={tripId} />
         </TabsContent>
       </Tabs>
     </div>
