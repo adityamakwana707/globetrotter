@@ -78,7 +78,6 @@ export default function TripsListing() {
   const filterTrips = () => {
     let filtered = trips
 
-    // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(trip =>
         trip.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -86,7 +85,6 @@ export default function TripsListing() {
       )
     }
 
-    // Filter by status
     if (statusFilter !== "all") {
       filtered = filtered.filter(trip => trip.status === statusFilter)
     }
@@ -133,24 +131,24 @@ export default function TripsListing() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <Button
               variant="outline"
               onClick={() => router.push('/dashboard')}
-              className="border-gray-300 text-slate-700 hover:bg-slate-50"
+              className="border-gray-300 text-slate-700 hover:bg-slate-50 w-full sm:w-auto"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Profile
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">My Trips</h1>
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">My Trips</h1>
               <p className="text-slate-600">Manage all your travel plans</p>
             </div>
           </div>
           <Button
             onClick={() => router.push('/trips/create')}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Trip
@@ -206,7 +204,7 @@ export default function TripsListing() {
                 {!searchQuery && statusFilter === "all" && (
                   <Button 
                     onClick={() => router.push('/trips/create')}
-                    className="bg-emerald-600 hover:bg-emerald-700"
+                    className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Create Your First Trip

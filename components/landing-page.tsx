@@ -64,8 +64,8 @@ export default function LandingPage() {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur border-gray-200 h-9 w-9 sm:h-10 sm:w-10" />
-              <CarouselNext className="right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur border-gray-200 h-9 w-9 sm:h-10 sm:w-10" />
+              <CarouselPrevious className="hidden sm:flex left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur border-gray-200 h-9 w-9 sm:h-10 sm:w-10" />
+              <CarouselNext className="hidden sm:flex right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur border-gray-200 h-9 w-9 sm:h-10 sm:w-10" />
             </Carousel>
           </div>
         </div>
@@ -108,7 +108,7 @@ export default function LandingPage() {
             <Carousel opts={{ align: "start", dragFree: true }}>
               <CarouselContent>
                 {regions.map((region) => (
-                  <CarouselItem key={region.name} className="basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                  <CarouselItem key={region.name} className="basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
                     <Card className="bg-gray-50 border-0 shadow-none">
                       <CardContent className="p-0">
                         <div className="relative rounded-[24px] sm:rounded-[28px] overflow-hidden ring-1 ring-gray-200 shadow-md">
@@ -132,8 +132,8 @@ export default function LandingPage() {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="left-2 sm:-left-6 md:-left-12 bg-white border-gray-200 h-8 w-8" />
-              <CarouselNext className="right-2 sm:-right-6 md:-right-12 bg-white border-gray-200 h-8 w-8" />
+              <CarouselPrevious className="hidden sm:flex left-2 sm:-left-6 md:-left-12 bg-white border-gray-200 h-8 w-8" />
+              <CarouselNext className="hidden sm:flex right-2 sm:-right-6 md:-right-12 bg-white border-gray-200 h-8 w-8" />
             </Carousel>
           </div>
         </div>

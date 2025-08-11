@@ -69,9 +69,6 @@ export default function Navbar() {
                 <DropdownMenuItem onClick={() => router.push("/auth/register")} className="cursor-pointer">
                   Get Started
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/landing")} className="cursor-pointer">
-                  Explore
-                </DropdownMenuItem>
               </>
             )}
           </DropdownMenuContent>
