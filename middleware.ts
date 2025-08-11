@@ -13,6 +13,24 @@ export default withAuth(
       }
     }
 
+    // Admin route protection
+    const token = request.nextauth.token
+    const isAdmin = token?.role === 'admin'
+    
+    // If admin tries to access user routes, redirect to admin dashboard
+    if (isAdmin && (
+      request.nextUrl.pathname.startsWith('/dashboard') ||
+      request.nextUrl.pathname.startsWith('/trips/') ||
+      request.nextUrl.pathname === '/landing'
+    )) {
+      return NextResponse.redirect(new URL('/admin', request.url))
+    }
+    
+    // If non-admin tries to access admin routes, redirect to dashboard
+    if (!isAdmin && request.nextUrl.pathname.startsWith('/admin')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
     // Create response
     const response = NextResponse.next()
 
@@ -37,9 +55,10 @@ export default withAuth(
           return !!token
         }
         
-        // Protect dashboard and trip pages
+        // Protect dashboard, trip, and admin pages
         if (req.nextUrl.pathname.startsWith('/dashboard') || 
-            req.nextUrl.pathname.startsWith('/trips/')) {
+            req.nextUrl.pathname.startsWith('/trips/') ||
+            req.nextUrl.pathname.startsWith('/admin')) {
           return !!token
         }
         
@@ -53,6 +72,8 @@ export const config = {
   matcher: [
     '/api/:path*',
     '/dashboard/:path*',
-    '/trips/:path*'
+    '/trips/:path*',
+    '/admin/:path*',
+    '/landing'
   ]
 }

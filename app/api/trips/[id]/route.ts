@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { getTripById, updateTrip, deleteTrip, duplicateTrip } from "@/lib/database"
+import { getTripById, updateTripById, deleteTripById, duplicateTrip } from "@/lib/database"
 import { z } from "zod"
 
 // Validation schemas
@@ -44,7 +44,13 @@ export async function GET(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const trip = await getTripById(params.id, session.user.id)
+    // Parse the ID as number since we're using SERIAL IDs now
+    const tripId = parseInt(params.id)
+    if (isNaN(tripId)) {
+      return NextResponse.json({ message: "Invalid trip ID" }, { status: 400 })
+    }
+
+    const trip = await getTripById(tripId, session.user.id)
 
     if (!trip) {
       return NextResponse.json({ message: "Trip not found" }, { status: 404 })
@@ -82,7 +88,13 @@ export async function PUT(
       )
     }
 
-    const trip = await updateTrip(params.id, session.user.id, validationResult.data)
+    // Parse the ID as number since we're using SERIAL IDs now
+    const tripId = parseInt(params.id)
+    if (isNaN(tripId)) {
+      return NextResponse.json({ message: "Invalid trip ID" }, { status: 400 })
+    }
+
+    const trip = await updateTripById(tripId, session.user.id, validationResult.data)
 
     return NextResponse.json(trip)
   } catch (error) {
@@ -105,7 +117,13 @@ export async function DELETE(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const success = await deleteTrip(params.id, session.user.id)
+    // Parse the ID as number since we're using SERIAL IDs now
+    const tripId = parseInt(params.id)
+    if (isNaN(tripId)) {
+      return NextResponse.json({ message: "Invalid trip ID" }, { status: 400 })
+    }
+
+    const success = await deleteTripById(tripId, session.user.id)
 
     if (!success) {
       return NextResponse.json({ message: "Trip not found" }, { status: 404 })

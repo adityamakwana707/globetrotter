@@ -70,9 +70,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Auto-calculate status based on dates
+    const now = new Date()
+    const startDate = new Date(validationResult.data.startDate)
+    const endDate = new Date(validationResult.data.endDate)
+    
+    let autoStatus = 'planning'
+    if (now >= startDate && now <= endDate) {
+      autoStatus = 'active'
+    } else if (now > endDate) {
+      autoStatus = 'completed'
+    }
+
     const tripData = {
       userId: session.user.id,
-      ...validationResult.data
+      ...validationResult.data,
+      status: autoStatus // Override with auto-calculated status
     }
 
     const trip = await createTrip(tripData)

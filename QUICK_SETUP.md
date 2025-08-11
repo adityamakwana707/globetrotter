@@ -13,6 +13,12 @@ DATABASE_URL="postgresql://username:password@localhost:5432/globetrotter"
 NEXTAUTH_SECRET="your-nextauth-secret-here-make-it-long-and-random"
 NEXTAUTH_URL="http://localhost:3000"
 
+# Google Maps API (for location search and maps)
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="your-google-maps-api-key"
+
+# Weather API (OpenWeatherMap)
+NEXT_PUBLIC_WEATHER_API_KEY="your-openweather-api-key"
+
 # Optional
 NODE_ENV="development"
 ```
