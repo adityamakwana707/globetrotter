@@ -313,52 +313,52 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
   return (
     <div className="space-y-6">
       {/* Budget Overview */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-white border-gray-200 shadow-md">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
+          <CardTitle className="text-slate-900 flex items-center gap-2">
             <DollarSign className="w-5 h-5" />
             Budget Overview
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="text-center">
-              <p className="text-gray-400 text-sm">Total Planned</p>
-              <p className="text-2xl font-bold text-blue-400">${totals.totalPlanned.toLocaleString()}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <p className="text-slate-600 text-xs sm:text-sm mb-1">Total Planned</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-600">${totals.totalPlanned.toLocaleString()}</p>
             </div>
-            <div className="text-center">
-              <p className="text-gray-400 text-sm">Total Spent</p>
-              <p className="text-2xl font-bold text-red-400">${totals.totalSpent.toLocaleString()}</p>
+            <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <p className="text-slate-600 text-xs sm:text-sm mb-1">Total Spent</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-red-600">${totals.totalSpent.toLocaleString()}</p>
             </div>
-            <div className="text-center">
-              <p className="text-gray-400 text-sm">Remaining</p>
-              <p className={`text-2xl font-bold ${totals.remaining >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <p className="text-slate-600 text-xs sm:text-sm mb-1">Remaining</p>
+              <p className={`text-lg sm:text-xl lg:text-2xl font-bold ${totals.remaining >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                 ${totals.remaining.toLocaleString()}
               </p>
             </div>
-            <div className="text-center">
-              <p className="text-gray-400 text-sm">Spent %</p>
-              <p className={`text-2xl font-bold ${totals.percentageSpent <= 100 ? 'text-yellow-400' : 'text-red-400'}`}>
+            <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <p className="text-slate-600 text-xs sm:text-sm mb-1">Spent %</p>
+              <p className={`text-lg sm:text-xl lg:text-2xl font-bold ${totals.percentageSpent <= 100 ? 'text-amber-600' : 'text-red-600'}`}>
                 {totals.percentageSpent.toFixed(1)}%
               </p>
             </div>
           </div>
 
           <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-400 text-sm">Overall Progress</span>
-              <span className="text-gray-400 text-sm">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
+              <span className="text-slate-600 text-sm font-medium">Overall Progress</span>
+              <span className="text-slate-600 text-xs sm:text-sm">
                 ${totals.totalSpent.toLocaleString()} / ${totals.totalPlanned.toLocaleString()}
               </span>
             </div>
             <Progress 
               value={Math.min(totals.percentageSpent, 100)} 
-              className="h-3"
+              className="h-2 sm:h-3 bg-gray-200 border border-gray-300"
             />
             {totals.percentageSpent > 90 && (
-              <div className="flex items-center gap-2 mt-2 text-yellow-400">
+              <div className="flex items-center gap-2 mt-3 text-amber-600">
                 <AlertTriangle className="w-4 h-4" />
-                <span className="text-sm">Approaching budget limit</span>
+                <span className="text-xs sm:text-sm">Approaching budget limit</span>
               </div>
             )}
           </div>
@@ -367,84 +367,84 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
 
       {/* Tabs for different views */}
       <Tabs defaultValue="categories" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-800 border-gray-700">
-          <TabsTrigger value="categories" className="data-[state=active]:bg-gray-700">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-white border-gray-200 shadow-sm rounded-lg p-0 gap-0">
+          <TabsTrigger value="categories" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg text-xs sm:text-sm px-2 sm:px-4 py-2">
             Categories
           </TabsTrigger>
-          <TabsTrigger value="expenses" className="data-[state=active]:bg-gray-700">
+          <TabsTrigger value="expenses" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg text-xs sm:text-sm px-2 sm:px-4 py-2">
             Expenses
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="data-[state=active]:bg-gray-700">
+          <TabsTrigger value="analytics" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg text-xs sm:text-sm px-2 sm:px-4 py-2">
             Analytics
           </TabsTrigger>
-          <TabsTrigger value="settings" className="data-[state=active]:bg-gray-700">
+          <TabsTrigger value="settings" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none transition-all duration-200 first:rounded-l-lg last:rounded-r-lg text-xs sm:text-sm px-2 sm:px-4 py-2">
             Settings
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="categories" className="mt-6">
-          <Card className="bg-gray-800 border-gray-700">
+          <Card className="bg-white border-gray-200 shadow-md">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Budget Categories</CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <CardTitle className="text-slate-900 text-lg sm:text-xl">Budget Categories</CardTitle>
                 <Dialog open={showAddBudget} onOpenChange={setShowAddBudget}>
                   <DialogTrigger asChild>
-                    <Button className="bg-blue-600 hover:bg-blue-700">
+                    <Button className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto">
                       <Plus className="w-4 h-4 mr-2" />
                       Add Budget
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-gray-800 border-gray-700">
+                  <DialogContent className="bg-white border-gray-200">
                     <DialogHeader>
-                      <DialogTitle className="text-white">Add Budget Category</DialogTitle>
-                      <DialogDescription className="text-gray-400">
+                      <DialogTitle className="text-slate-900">Add Budget Category</DialogTitle>
+                      <DialogDescription className="text-slate-600">
                         Set a budget limit for a spending category.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label className="text-white">Category</Label>
+                        <Label className="text-slate-800">Category</Label>
                         <Select
                           value={budgetForm.category}
                           onValueChange={(value) => setBudgetForm({ ...budgetForm, category: value })}
                         >
-                          <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                          <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
-                          <SelectContent className="bg-gray-700 border-gray-600">
+                          <SelectContent className="bg-white border-gray-300">
                             {BUDGET_CATEGORIES.map((category) => (
-                              <SelectItem key={category} value={category} className="text-white hover:bg-gray-600">
+                              <SelectItem key={category} value={category} className="text-slate-900 hover:bg-gray-50">
                                 {category}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-white">Planned Amount</Label>
+                          <Label className="text-slate-800">Planned Amount</Label>
                           <Input
                             type="number"
                             placeholder="0.00"
                             value={budgetForm.planned_amount}
                             onChange={(e) => setBudgetForm({ ...budgetForm, planned_amount: e.target.value })}
-                            className="bg-gray-700 border-gray-600 text-white"
+                            className="bg-white border-gray-300 text-slate-900"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-white">Currency</Label>
+                          <Label className="text-slate-800">Currency</Label>
                           <Select
                             value={budgetForm.currency}
                             onValueChange={(value) => setBudgetForm({ ...budgetForm, currency: value })}
                           >
-                            <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                            <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="bg-gray-700 border-gray-600">
-                              <SelectItem value="USD" className="text-white hover:bg-gray-600">USD</SelectItem>
-                              <SelectItem value="EUR" className="text-white hover:bg-gray-600">EUR</SelectItem>
-                              <SelectItem value="GBP" className="text-white hover:bg-gray-600">GBP</SelectItem>
-                              <SelectItem value="JPY" className="text-white hover:bg-gray-600">JPY</SelectItem>
+                            <SelectContent className="bg-white border-gray-300">
+                              <SelectItem value="USD" className="text-slate-900 hover:bg-gray-50">USD</SelectItem>
+                              <SelectItem value="EUR" className="text-slate-900 hover:bg-gray-50">EUR</SelectItem>
+                              <SelectItem value="GBP" className="text-slate-900 hover:bg-gray-50">GBP</SelectItem>
+                              <SelectItem value="JPY" className="text-slate-900 hover:bg-gray-50">JPY</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -461,17 +461,17 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
             </CardHeader>
             <CardContent>
               {budgetData.length === 0 ? (
-                <div className="text-center py-12">
-                  <Calculator className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-                  <p className="text-gray-400 mb-4">No budget categories yet</p>
-                  <p className="text-sm text-gray-500">Add budget categories to start tracking your expenses.</p>
+                <div className="text-center py-8 sm:py-12">
+                  <Calculator className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-slate-400" />
+                  <p className="text-slate-600 mb-2 sm:mb-4 text-sm sm:text-base">No budget categories yet</p>
+                  <p className="text-xs sm:text-sm text-slate-500">Add budget categories to start tracking your expenses.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {budgetData.map((budget) => (
-                    <div key={budget.id} className="p-4 bg-gray-700 rounded-lg">
+                    <div key={budget.id} className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-white font-semibold">{budget.category}</h3>
+                        <h3 className="text-slate-900 font-semibold">{budget.category}</h3>
                         <div className="flex items-center space-x-2">
                           <Badge 
                             variant="outline" 
@@ -479,7 +479,7 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
                           >
                             {budget.percentage.toFixed(1)}%
                           </Badge>
-                          <span className="text-gray-300 text-sm">
+                          <span className="text-slate-600 text-sm">
                             ${budget.spent_amount.toLocaleString()} / ${budget.planned_amount.toLocaleString()}
                           </span>
                         </div>
@@ -492,7 +492,7 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
                         <span className={`${budget.remaining >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {budget.remaining >= 0 ? 'Remaining' : 'Over budget'}: ${Math.abs(budget.remaining).toLocaleString()}
                         </span>
-                        <span className="text-gray-400">{budget.currency}</span>
+                        <span className="text-slate-600">{budget.currency}</span>
                       </div>
                     </div>
                   ))}
@@ -503,10 +503,10 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
         </TabsContent>
 
         <TabsContent value="expenses" className="mt-6">
-          <Card className="bg-gray-800 border-gray-700">
+          <Card className="bg-white border-gray-200 shadow-md">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Expense History</CardTitle>
+                <CardTitle className="text-slate-900">Expense History</CardTitle>
                 <Dialog open={showAddExpense} onOpenChange={setShowAddExpense}>
                   <DialogTrigger asChild>
                     <Button className="bg-green-600 hover:bg-green-700">
@@ -514,26 +514,26 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
                       Add Expense
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-gray-800 border-gray-700">
+                  <DialogContent className="bg-white border-gray-200">
                     <DialogHeader>
-                      <DialogTitle className="text-white">Add Expense</DialogTitle>
-                      <DialogDescription className="text-gray-400">
+                      <DialogTitle className="text-slate-900">Add Expense</DialogTitle>
+                      <DialogDescription className="text-slate-600">
                         Record a new expense for this trip.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label className="text-white">Category</Label>
+                        <Label className="text-slate-800">Category</Label>
                         <Select
                           value={expenseForm.category}
                           onValueChange={(value) => setExpenseForm({ ...expenseForm, category: value })}
                         >
-                          <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                          <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
-                          <SelectContent className="bg-gray-700 border-gray-600">
+                          <SelectContent className="bg-white border-gray-300">
                             {BUDGET_CATEGORIES.map((category) => (
-                              <SelectItem key={category} value={category} className="text-white hover:bg-gray-600">
+                              <SelectItem key={category} value={category} className="text-slate-900 hover:bg-gray-50">
                                 {category}
                               </SelectItem>
                             ))}
@@ -542,49 +542,49 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-white">Amount</Label>
+                          <Label className="text-slate-800">Amount</Label>
                           <Input
                             type="number"
                             placeholder="0.00"
                             value={expenseForm.amount}
                             onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
-                            className="bg-gray-700 border-gray-600 text-white"
+                            className="bg-white border-gray-300 text-slate-900"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-white">Currency</Label>
+                          <Label className="text-slate-800">Currency</Label>
                           <Select
                             value={expenseForm.currency}
                             onValueChange={(value) => setExpenseForm({ ...expenseForm, currency: value })}
                           >
-                            <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                            <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="bg-gray-700 border-gray-600">
-                              <SelectItem value="USD" className="text-white hover:bg-gray-600">USD</SelectItem>
-                              <SelectItem value="EUR" className="text-white hover:bg-gray-600">EUR</SelectItem>
-                              <SelectItem value="GBP" className="text-white hover:bg-gray-600">GBP</SelectItem>
-                              <SelectItem value="JPY" className="text-white hover:bg-gray-600">JPY</SelectItem>
+                            <SelectContent className="bg-white border-gray-300">
+                              <SelectItem value="USD" className="text-slate-900 hover:bg-gray-50">USD</SelectItem>
+                              <SelectItem value="EUR" className="text-slate-900 hover:bg-gray-50">EUR</SelectItem>
+                              <SelectItem value="GBP" className="text-slate-900 hover:bg-gray-50">GBP</SelectItem>
+                              <SelectItem value="JPY" className="text-slate-900 hover:bg-gray-50">JPY</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-white">Description</Label>
+                        <Label className="text-slate-800">Description</Label>
                         <Textarea
                           placeholder="What was this expense for?"
                           value={expenseForm.description}
                           onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
-                          className="bg-gray-700 border-gray-600 text-white"
+                          className="bg-white border-gray-300 text-slate-900"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-white">Date</Label>
+                        <Label className="text-slate-800">Date</Label>
                         <Input
                           type="date"
                           value={expenseForm.expense_date}
                           onChange={(e) => setExpenseForm({ ...expenseForm, expense_date: e.target.value })}
-                          className="bg-gray-700 border-gray-600 text-white"
+                          className="bg-white border-gray-300 text-slate-900"
                         />
                       </div>
                     </div>
@@ -600,24 +600,24 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
             <CardContent>
               {expenses.length === 0 ? (
                 <div className="text-center py-12">
-                  <Receipt className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-                  <p className="text-gray-400 mb-4">No expenses recorded yet</p>
-                  <p className="text-sm text-gray-500">Start recording your trip expenses to track your budget.</p>
+                  <Receipt className="w-16 h-16 mx-auto mb-4 text-slate-400" />
+                  <p className="text-slate-600 mb-4">No expenses recorded yet</p>
+                  <p className="text-sm text-slate-500">Start recording your trip expenses to track your budget.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {expenses
                     .sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime())
                     .map((expense) => (
-                    <div key={expense.id} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                    <div key={expense.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div 
                           className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: CATEGORY_COLORS[expense.category as keyof typeof CATEGORY_COLORS] || '#6B7280' }}
                         />
                         <div>
-                          <p className="text-white font-medium">{expense.description}</p>
-                          <div className="flex items-center space-x-2 text-sm text-gray-400">
+                          <p className="text-slate-900 font-medium">{expense.description}</p>
+                          <div className="flex items-center space-x-2 text-sm text-slate-600">
                             <span>{expense.category}</span>
                             <span>•</span>
                             <span>{new Date(expense.expense_date).toLocaleDateString()}</span>
@@ -625,8 +625,8 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-white font-semibold">${expense.amount.toLocaleString()}</p>
-                        <p className="text-gray-400 text-sm">{expense.currency}</p>
+                        <p className="text-slate-900 font-semibold">${expense.amount.toLocaleString()}</p>
+                        <p className="text-slate-600 text-sm">{expense.currency}</p>
                       </div>
                     </div>
                   ))}
@@ -639,29 +639,30 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
         <TabsContent value="analytics" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Bar Chart */}
-            <Card className="bg-gray-800 border-gray-700">
+            <Card className="bg-white border-gray-200 shadow-md">
               <CardHeader>
-                <CardTitle className="text-white">Budget vs Spending</CardTitle>
+                <CardTitle className="text-slate-900">Budget vs Spending</CardTitle>
               </CardHeader>
               <CardContent>
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                       <XAxis 
                         dataKey="name" 
-                        stroke="#9CA3AF"
+                        stroke="#6B7280"
                         fontSize={12}
                         angle={-45}
                         textAnchor="end"
                         height={80}
                       />
-                      <YAxis stroke="#9CA3AF" />
+                      <YAxis stroke="#6B7280" />
                       <Tooltip 
                         contentStyle={{ 
-                          backgroundColor: '#1F2937', 
-                          border: '1px solid #374151',
-                          borderRadius: '8px'
+                          backgroundColor: '#FFFFFF', 
+                          border: '1px solid #E5E7EB',
+                          borderRadius: '8px',
+                          color: '#374151'
                         }}
                       />
                       <Legend />
@@ -670,7 +671,7 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-[300px] flex items-center justify-center text-gray-400">
+                  <div className="h-[300px] flex items-center justify-center text-slate-500">
                     No budget data to display
                   </div>
                 )}
@@ -678,9 +679,9 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
             </Card>
 
             {/* Pie Chart */}
-            <Card className="bg-gray-800 border-gray-700">
+            <Card className="bg-white border-gray-200 shadow-md">
               <CardHeader>
-                <CardTitle className="text-white">Spending Distribution</CardTitle>
+                <CardTitle className="text-slate-900">Spending Distribution</CardTitle>
               </CardHeader>
               <CardContent>
                 {pieChartData.length > 0 ? (
@@ -702,16 +703,17 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
                       </Pie>
                       <Tooltip 
                         contentStyle={{ 
-                          backgroundColor: '#1F2937', 
-                          border: '1px solid #374151',
-                          borderRadius: '8px'
+                          backgroundColor: '#FFFFFF', 
+                          border: '1px solid #E5E7EB',
+                          borderRadius: '8px',
+                          color: '#374151'
                         }}
                         formatter={(value: number) => [`$${value.toLocaleString()}`, 'Spent']}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-[300px] flex items-center justify-center text-gray-400">
+                  <div className="h-[300px] flex items-center justify-center text-slate-500">
                     No expense data to display
                   </div>
                 )}
@@ -722,41 +724,41 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
 
         <TabsContent value="settings" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-gray-800 border-gray-700">
+            <Card className="bg-white border-gray-200 shadow-md">
               <CardHeader>
-                <CardTitle className="text-white">Budget Settings</CardTitle>
+                <CardTitle className="text-slate-900">Budget Settings</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-white font-semibold mb-2">Default Currency</h3>
+                    <h3 className="text-slate-800 font-semibold mb-2">Default Currency</h3>
                     <Select defaultValue="USD">
-                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white w-48">
+                      <SelectTrigger className="bg-white border-gray-300 text-slate-900 w-48">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-700 border-gray-600">
-                        <SelectItem value="USD" className="text-white hover:bg-gray-600">USD - US Dollar</SelectItem>
-                        <SelectItem value="EUR" className="text-white hover:bg-gray-600">EUR - Euro</SelectItem>
-                        <SelectItem value="GBP" className="text-white hover:bg-gray-600">GBP - British Pound</SelectItem>
-                        <SelectItem value="JPY" className="text-white hover:bg-gray-600">JPY - Japanese Yen</SelectItem>
+                      <SelectContent className="bg-white border-gray-300">
+                        <SelectItem value="USD" className="text-slate-900 hover:bg-gray-50">USD - US Dollar</SelectItem>
+                        <SelectItem value="EUR" className="text-slate-900 hover:bg-gray-50">EUR - Euro</SelectItem>
+                        <SelectItem value="GBP" className="text-slate-900 hover:bg-gray-50">GBP - British Pound</SelectItem>
+                        <SelectItem value="JPY" className="text-slate-900 hover:bg-gray-50">JPY - Japanese Yen</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
                   <div>
-                    <h3 className="text-white font-semibold mb-2">Budget Alerts</h3>
+                    <h3 className="text-slate-800 font-semibold mb-2">Budget Alerts</h3>
                     <div className="space-y-2">
                       <label className="flex items-center space-x-2">
                         <input type="checkbox" defaultChecked className="rounded" />
-                        <span className="text-gray-300">Alert when 80% of budget is spent</span>
+                        <span className="text-slate-700">Alert when 80% of budget is spent</span>
                       </label>
                       <label className="flex items-center space-x-2">
                         <input type="checkbox" defaultChecked className="rounded" />
-                        <span className="text-gray-300">Alert when budget is exceeded</span>
+                        <span className="text-slate-700">Alert when budget is exceeded</span>
                       </label>
                       <label className="flex items-center space-x-2">
                         <input type="checkbox" className="rounded" />
-                        <span className="text-gray-300">Daily spending summary</span>
+                        <span className="text-slate-700">Daily spending summary</span>
                       </label>
                     </div>
                   </div>

@@ -131,7 +131,7 @@ export default function Navbar() {
                   </>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut({ redirect: true, callbackUrl: "/" })} className="cursor-pointer text-red-600 focus:text-red-600">
+                <DropdownMenuItem onClick={() => signOut({ redirect: true, callbackUrl: "/landing" })} className="cursor-pointer text-red-600 focus:text-red-600">
                   <LogOut className="w-4 h-4 mr-2" /> Logout
                 </DropdownMenuItem>
               </>
@@ -144,9 +144,6 @@ export default function Navbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/auth/register")} className="cursor-pointer">
                   Get Started
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/landing")} className="cursor-pointer">
-                  Explore
                 </DropdownMenuItem>
               </>
             )}

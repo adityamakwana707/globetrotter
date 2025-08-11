@@ -178,13 +178,13 @@ export default function EnhancedTripDetails({
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-gray-50 text-slate-900">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           {/* Trip Status Info Banner */}
-          {tripStatusInfo && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-gray-900/80 to-gray-800/80 border border-gray-700 rounded-lg">
+                      {tripStatusInfo && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="relative">
@@ -194,23 +194,23 @@ export default function EnhancedTripDetails({
                     )}
                   </div>
                   <div>
-                    <h3 className={`text-lg font-bold ${tripStatusInfo.statusColor}`}>
+                    <h3 className={`text-lg font-bold ${tripStatusInfo.statusColor} text-emerald-700`}>
                       {tripStatusInfo.statusMessage}
                     </h3>
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-emerald-700/80 text-sm">
                       {getMotivationalMessage(tripStatusInfo.status, tripStatusInfo.daysUntilStart || tripStatusInfo.daysRemaining)}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   {tripStatusInfo.progressPercentage > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-2xl font-bold text-blue-400">
+                    <div className="space-y-2 text-right">
+                      <div className="text-2xl font-bold text-transparent bg-gradient-to-r from-emerald-500 to-green-500 bg-clip-text">
                         {tripStatusInfo.progressPercentage}%
                       </div>
                       <Progress 
                         value={tripStatusInfo.progressPercentage} 
-                        className="w-24 h-2 bg-gray-700"
+                        className="w-24 h-2 bg-gray-200 border border-gray-300"
                       />
                     </div>
                   )}
@@ -219,21 +219,21 @@ export default function EnhancedTripDetails({
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={() => router.back()}
-              className="text-gray-400 hover:text-white"
+              className="border-gray-300 text-slate-700 hover:bg-gray-50 w-full sm:w-auto"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
             
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 onClick={handleDuplicate}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                className="border-gray-300 text-slate-700 hover:bg-gray-50"
               >
                 <Copy className="w-4 h-4 mr-2" />
                 Duplicate
@@ -241,7 +241,7 @@ export default function EnhancedTripDetails({
               <Button
                 variant="outline"
                 onClick={handleEdit}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                className="border-gray-300 text-slate-700 hover:bg-gray-50"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
@@ -251,9 +251,9 @@ export default function EnhancedTripDetails({
                 onClick={handleDelete}
                 disabled={isDeleting}
                 className="bg-red-600 hover:bg-red-700"
+                title={isDeleting ? "Deleting..." : "Delete"}
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {isDeleting ? "Deleting..." : "Delete"}
+                <Trash2 className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -263,28 +263,28 @@ export default function EnhancedTripDetails({
             {/* Trip Info */}
             <div className="lg:col-span-2 space-y-4">
               <div>
-                <h1 className="text-4xl font-bold text-white mb-2">{trip.name}</h1>
+                <h1 className="text-4xl font-bold text-slate-900 mb-2">{trip.name}</h1>
                 {trip.description && (
-                  <p className="text-gray-300 text-lg">{trip.description}</p>
+                  <p className="text-slate-600 text-lg">{trip.description}</p>
                 )}
               </div>
 
               <div className="flex flex-wrap gap-4 text-sm">
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-4 h-4 text-blue-400" />
-                  <span className="text-gray-300">
+                  <span className="text-slate-700">
                     {formatDateRange(trip.start_date, trip.end_date)}
                   </span>
                 </div>
                 
                 <div className="flex items-center space-x-2">
                   <Clock className="w-4 h-4 text-green-400" />
-                  <span className="text-gray-300">{tripDuration} days</span>
+                  <span className="text-slate-700">{tripDuration} days</span>
                 </div>
                 
                 <div className="flex items-center space-x-2">
                   <MapPin className="w-4 h-4 text-red-400" />
-                  <span className="text-gray-300">{cities.length} destinations</span>
+                  <span className="text-slate-700">{cities.length} destinations</span>
                 </div>
 
                 <Badge 
@@ -322,82 +322,82 @@ export default function EnhancedTripDetails({
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-8 bg-gray-800 border-gray-700">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-gray-700">
-              <FileText className="w-4 h-4 mr-2" />
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 mb-8 bg-white border-gray-200 shadow-sm rounded-lg p-0 gap-0">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg text-xs sm:text-sm px-2 sm:px-4 py-2">
+              <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="itinerary" className="data-[state=active]:bg-gray-700">
-              <Calendar className="w-4 h-4 mr-2" />
+            <TabsTrigger value="itinerary" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg text-xs sm:text-sm px-2 sm:px-4 py-2">
+              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               Itinerary
             </TabsTrigger>
-            <TabsTrigger value="map" className="data-[state=active]:bg-gray-700">
-              <MapPin className="w-4 h-4 mr-2" />
+            <TabsTrigger value="map" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg text-xs sm:text-sm px-2 sm:px-4 py-2">
+              <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               Map
             </TabsTrigger>
-            <TabsTrigger value="budget" className="data-[state=active]:bg-gray-700">
-              <DollarSign className="w-4 h-4 mr-2" />
+            <TabsTrigger value="budget" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg text-xs sm:text-sm px-2 sm:px-4 py-2">
+              <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               Budget
             </TabsTrigger>
-            <TabsTrigger value="weather" className="data-[state=active]:bg-gray-700">
-              <Calendar className="w-4 h-4 mr-2" />
+            <TabsTrigger value="weather" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg text-xs sm:text-sm px-2 sm:px-4 py-2">
+              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               Weather
             </TabsTrigger>
-            <TabsTrigger value="sharing" className="data-[state=active]:bg-gray-700">
-              <Share2 className="w-4 h-4 mr-2" />
+            <TabsTrigger value="sharing" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none transition-all duration-200 first:rounded-l-lg last:rounded-r-lg text-xs sm:text-sm px-2 sm:px-4 py-2">
+              <Share2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               Share
             </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="mt-8 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Trip Summary */}
-              <Card className="bg-gray-800 border-gray-700">
+              <Card className="bg-white border-gray-200 shadow-md">
                 <CardHeader>
-                  <CardTitle className="text-white">Trip Summary</CardTitle>
+                  <CardTitle className="text-slate-900">Trip Summary</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-2xl font-bold text-blue-400">{cities.length}</div>
-                      <div className="text-gray-400 text-sm">Cities</div>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-2 gap-6 sm:gap-8">
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-3xl sm:text-4xl font-bold text-blue-600 mb-2">{cities.length}</div>
+                      <div className="text-slate-600 text-sm font-medium">Cities</div>
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-green-400">{activities.length}</div>
-                      <div className="text-gray-400 text-sm">Activities</div>
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-3xl sm:text-4xl font-bold text-emerald-600 mb-2">{activities.length}</div>
+                      <div className="text-slate-600 text-sm font-medium">Activities</div>
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-purple-400">{tripDuration}</div>
-                      <div className="text-gray-400 text-sm">Days</div>
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-3xl sm:text-4xl font-bold text-purple-600 mb-2">{tripDuration}</div>
+                      <div className="text-slate-600 text-sm font-medium">Days</div>
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-orange-400">
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-3xl sm:text-4xl font-bold text-amber-600 mb-2">
                         {trip.status === 'completed' ? '100%' : trip.status === 'active' ? '50%' : '0%'}
                       </div>
-                      <div className="text-gray-400 text-sm">Complete</div>
+                      <div className="text-slate-600 text-sm font-medium">Complete</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Destinations */}
-              <Card className="bg-gray-800 border-gray-700">
+              <Card className="bg-white border-gray-200 shadow-md">
                 <CardHeader>
-                  <CardTitle className="text-white">Destinations</CardTitle>
+                  <CardTitle className="text-slate-900">Destinations</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {cities.length > 0 ? (
                     <div className="space-y-3">
                       {cities.map((city, index) => (
-                        <div key={city.id} className="flex items-center justify-between p-3 bg-gray-700 rounded">
+                        <div key={city.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
                           <div className="flex items-center space-x-3">
                             <Badge variant="secondary" className="bg-blue-600 text-white">
                               {index + 1}
                             </Badge>
                             <div>
-                              <div className="text-white font-medium">{city.name}</div>
-                              <div className="text-gray-400 text-sm">{city.country}</div>
+                              <div className="text-slate-900 font-medium">{city.name}</div>
+                              <div className="text-slate-600 text-sm">{city.country}</div>
                             </div>
                           </div>
                           {city.arrival_date && (
@@ -409,7 +409,7 @@ export default function EnhancedTripDetails({
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-400 text-center py-4">No destinations added yet</p>
+                    <p className="text-slate-500 text-center py-4">No destinations added yet</p>
                   )}
                 </CardContent>
               </Card>
@@ -417,22 +417,22 @@ export default function EnhancedTripDetails({
 
             {/* Activities Preview */}
             {activities.length > 0 && (
-              <Card className="bg-gray-800 border-gray-700">
+              <Card className="bg-white border-gray-200 shadow-md">
                 <CardHeader>
-                  <CardTitle className="text-white">Recent Activities</CardTitle>
+                  <CardTitle className="text-slate-900">Recent Activities</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {activities.slice(0, 6).map((activity) => (
-                      <div key={activity.id} className="p-3 bg-gray-700 rounded">
-                        <h4 className="text-white font-medium mb-1">{activity.name}</h4>
+                      <div key={activity.id} className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <h4 className="text-slate-900 font-medium mb-1">{activity.name}</h4>
                         {activity.category && (
                           <Badge variant="secondary" className="bg-purple-600 text-white text-xs mb-2">
                             {activity.category}
                           </Badge>
                         )}
                         {activity.description && (
-                          <p className="text-gray-400 text-sm line-clamp-2">{activity.description}</p>
+                          <p className="text-slate-600 text-sm line-clamp-2">{activity.description}</p>
                         )}
                       </div>
                     ))}
@@ -573,10 +573,10 @@ export default function EnhancedTripDetails({
           </TabsContent>
 
           {/* Map Tab */}
-          <TabsContent value="map" className="space-y-6">
-            <Card className="bg-gray-800 border-gray-700">
+          <TabsContent value="map" className="mt-8 space-y-6">
+            <Card className="bg-white border-gray-200 shadow-md">
               <CardHeader>
-                <CardTitle className="text-white">Trip Route</CardTitle>
+                <CardTitle className="text-slate-900">Trip Route</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {/* Try Leaflet first, fallback to SimpleMap */}
@@ -612,7 +612,7 @@ export default function EnhancedTripDetails({
           </TabsContent>
 
           {/* Weather Tab */}
-          <TabsContent value="weather" className="space-y-6">
+          <TabsContent value="weather" className="mt-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {cities.map((city) => (
                 city.latitude && city.longitude && (
@@ -628,7 +628,7 @@ export default function EnhancedTripDetails({
           </TabsContent>
 
           {/* Sharing Tab */}
-          <TabsContent value="sharing" className="space-y-6">
+          <TabsContent value="sharing" className="mt-8 space-y-6">
             <TripSharing tripId={trip.id} isPublic={trip.is_public} />
           </TabsContent>
         </Tabs>

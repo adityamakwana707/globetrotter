@@ -18,7 +18,6 @@ import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "@/hooks/use-toast"
 import { useTripStore } from "@/lib/store"
-import { calculateTripStatus, getMotivationalMessage } from "@/lib/trip-status"
 import { 
   Upload, Calendar, MapPin, Save, ArrowLeft, Plus, Trash2, 
   DollarSign, Clock, Search, CloudSun, FileText, Paperclip,
@@ -26,13 +25,8 @@ import {
   PartyPopper, Target, Heart, Star, Zap, Trophy
 } from "lucide-react"
 import Image from "next/image"
-import ItineraryDayBuilder from "./itinerary-day-builder"
-import ActivitySearchModal from "./activity-search-modal"
-import WeatherForecastWidget from "./weather-forecast-widget"
-import BudgetCalculator from "./budget-calculator"
-import FileUploadZone from "./file-upload-zone"
-import DestinationInput from "@/components/ui/destination-input"
 import { formatDateForInput } from "@/lib/date-utils"
+import ActivitySearchModal from "@/components/trips/activity-search-modal"
 
 // Enhanced schema with itinerary validation
 const tripSchema = z.object({
@@ -51,8 +45,6 @@ const tripSchema = z.object({
     title: z.string(),
     description: z.string(),
     date: z.string(),
-    startTime: z.string().optional(),
-    endTime: z.string().optional(),
     location: z.object({
       name: z.string(),
       coordinates: z.object({
@@ -71,11 +63,6 @@ const tripSchema = z.object({
         description: z.string().optional()
       }))
     }),
-    weather: z.object({
-      temperature: z.number().optional(),
-      condition: z.string().optional(),
-      icon: z.string().optional()
-    }).optional(),
     notes: z.string().optional(),
     attachments: z.array(z.object({
       name: z.string(),
@@ -134,17 +121,7 @@ interface ItineraryDay {
       description?: string
     }>
   }
-  weather?: {
-    temperature?: number
-    condition?: string
-    icon?: string
-  }
   notes?: string
-  attachments?: Array<{
-    name: string
-    url: string
-    type: string
-  }>
   completed: boolean
   activities: Array<{
     id: number
@@ -224,9 +201,6 @@ export default function ComprehensiveTripBuilder({
   )
   const [totalEstimatedBudget, setTotalEstimatedBudget] = useState(0)
   const [formProgress, setFormProgress] = useState(0)
-  const [showCelebration, setShowCelebration] = useState(false)
-  const [motivationalMessage, setMotivationalMessage] = useState("")
-  const [tripStatusInfo, setTripStatusInfo] = useState<any>(null)
   const { addTrip } = useTripStore()
 
   // Fun emojis for different sections
@@ -248,10 +222,10 @@ export default function ComprehensiveTripBuilder({
     defaultValues: existingTrip ? {
       name: existingTrip.name,
       description: existingTrip.description,
-      destinations: [], // Will be populated from trip data
+      destinations: [],
       startDate: formatDateForInput(existingTrip.start_date),
       endDate: formatDateForInput(existingTrip.end_date),
-      totalBudget: 0, // Will be calculated from budget data
+      totalBudget: 0,
       currency: "USD",
       isPublic: existingTrip.is_public,
       itinerary: []
@@ -311,23 +285,6 @@ export default function ComprehensiveTripBuilder({
     
     setFormProgress(Math.min(progress, 100))
   }, [watchedName, selectedDestinations, watchedStartDate, watchedEndDate, itineraryDays, totalEstimatedBudget, currentTab])
-
-  // Update trip status info when dates change
-  useEffect(() => {
-    if (watchedStartDate && watchedEndDate) {
-      const statusInfo = calculateTripStatus(watchedStartDate, watchedEndDate)
-      setTripStatusInfo(statusInfo)
-      setMotivationalMessage(getMotivationalMessage(statusInfo.status, statusInfo.daysUntilStart))
-    }
-  }, [watchedStartDate, watchedEndDate])
-
-  // Show celebration when form is completed
-  useEffect(() => {
-    if (formProgress === 100 && !showCelebration) {
-      setShowCelebration(true)
-      setTimeout(() => setShowCelebration(false), 3000)
-    }
-  }, [formProgress])
 
   // Calculate trip duration and generate initial days
   const generateItineraryDays = () => {
@@ -393,6 +350,11 @@ export default function ComprehensiveTripBuilder({
     const updatedDays = [...itineraryDays, newDay]
     setItineraryDays(updatedDays)
     setValue("itinerary", updatedDays)
+    
+    // Recalculate total budget
+    const total = updatedDays.reduce((sum, day) => sum + day.budget.estimated, 0)
+    setTotalEstimatedBudget(total)
+    setValue("totalBudget", total)
   }
 
   // Update itinerary day
@@ -509,13 +471,11 @@ export default function ComprehensiveTripBuilder({
   const onSubmit = async (data: TripFormData) => {
     setIsSubmitting(true)
     try {
-      // Prepare trip data (status will be auto-calculated on backend)
       const tripData = {
         name: data.name,
         description: data.description,
         startDate: data.startDate,
         endDate: data.endDate,
-        currency: data.currency,
         isPublic: data.isPublic,
         destinations: selectedDestinations,
         totalBudget: totalEstimatedBudget,
@@ -537,15 +497,6 @@ export default function ComprehensiveTripBuilder({
 
       if (!response.ok) {
         const error = await response.json()
-        console.error('API Error:', error)
-
-        if (error.errors && Array.isArray(error.errors)) {
-          const errorMessages = error.errors.map((err: any) => 
-            `${err.path?.join('.')}: ${err.message}`
-          ).join(', ')
-          throw new Error(errorMessages)
-        }
-
         throw new Error(error.message || `Failed to ${isEditing ? 'update' : 'create'} trip`)
       }
 
@@ -589,7 +540,7 @@ export default function ComprehensiveTripBuilder({
 
       toast({
         title: `🎉 Trip ${isEditing ? 'updated' : 'created'} successfully!`,
-        description: `${statusIcon} ${statusMessage} - Status auto-detected as "${autoStatus.charAt(0).toUpperCase() + autoStatus.slice(1)}"`,
+        description: "Your adventure is ready to begin!",
         duration: 5000,
       })
 
@@ -609,546 +560,678 @@ export default function ComprehensiveTripBuilder({
   }
 
   return (
-    <div className="max-w-6xl mx-auto relative">
-      {/* Celebration Animation */}
-      {showCelebration && (
-        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-          <div className="animate-bounce text-6xl">
-            <PartyPopper className="w-16 h-16 text-yellow-400 animate-spin" />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 animate-pulse"></div>
-        </div>
-      )}
-
-      {/* Progress Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <Sparkles className="w-8 h-8 text-yellow-400 animate-pulse" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-pink-500 rounded-full animate-ping"></div>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">Trip Builder</h2>
-              <p className="text-gray-400">
-                {formProgress < 25 ? "Let's start your adventure! 🌟" :
-                 formProgress < 50 ? "Looking good! Keep going! 🚀" :
-                 formProgress < 75 ? "Almost there! You're doing great! ⭐" :
-                 formProgress < 100 ? "Final stretch! So close! 🎯" :
-                 "Perfect! Ready to launch! 🎉"}
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text">
-              {formProgress}%
-            </div>
-            <p className="text-gray-400 text-sm">Complete</p>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="relative">
-          <Progress 
-            value={formProgress} 
-            className="h-3 bg-gray-800 border border-gray-700"
-          />
-          <div className="absolute top-0 left-0 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-700 ease-out" 
-               style={{ width: `${formProgress}%` }}>
-            <div className="absolute right-0 top-0 h-3 w-6 bg-gradient-to-r from-transparent to-white/30 animate-pulse"></div>
-          </div>
-        </div>
-
-        {/* Motivational Message */}
-        {motivationalMessage && (
-          <div className="mt-4 p-3 bg-gradient-to-r from-blue-900/50 to-purple-900/50 border border-blue-700/50 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <Heart className="w-5 h-5 text-red-400 animate-pulse" />
-              <p className="text-blue-300 font-medium">{motivationalMessage}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Trip Status Preview */}
-        {tripStatusInfo && (
-          <div className="mt-4 p-3 bg-gradient-to-r from-gray-900/50 to-gray-800/50 border border-gray-700 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-2xl">{tripStatusInfo.statusIcon}</span>
-                <div>
-                  <p className={`font-medium ${tripStatusInfo.statusColor}`}>
-                    {tripStatusInfo.statusMessage}
-                  </p>
-                  <p className="text-gray-400 text-sm">
-                    Status: {tripStatusInfo.status.charAt(0).toUpperCase() + tripStatusInfo.status.slice(1)}
-                  </p>
-                </div>
+    <div className="min-h-screen bg-gray-50 py-8 sm:py-10">
+      <div className="max-w-6xl mx-auto relative">
+        {/* Progress Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <Sparkles className="w-8 h-8 text-emerald-500 animate-pulse" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full animate-ping"></div>
               </div>
-              {tripStatusInfo.progressPercentage > 0 && (
-                <Badge variant="secondary" className="bg-blue-600 text-white">
-                  {tripStatusInfo.progressPercentage}% Progress
-                </Badge>
-              )}
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Trip Builder</h2>
+                <p className="text-slate-600">
+                  {formProgress < 25 ? "Let's start your adventure! 🌟" :
+                   formProgress < 50 ? "Looking good! Keep going! 🚀" :
+                   formProgress < 75 ? "Almost there! You're doing great! ⭐" :
+                   formProgress < 100 ? "Final stretch! So close! 🎯" :
+                   "Perfect! Ready to launch! 🎉"}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-transparent bg-gradient-to-r from-emerald-500 to-green-500 bg-clip-text">
+                {formProgress}%
+              </div>
+              <p className="text-slate-600 text-sm">Complete</p>
             </div>
           </div>
-        )}
-      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8 bg-gray-800 border-gray-700">
-            <TabsTrigger value="basic" className="data-[state=active]:bg-gray-700 relative">
-              <span className="text-2xl mr-2">{stepEmojis.basic}</span>
-              Basic Details
-              {formProgress >= 25 && <CheckCircle className="w-4 h-4 ml-2 text-green-400" />}
-            </TabsTrigger>
-            <TabsTrigger value="itinerary" className="data-[state=active]:bg-gray-700 relative">
-              <span className="text-2xl mr-2">{stepEmojis.itinerary}</span>
-              Itinerary
-              {formProgress >= 55 && <CheckCircle className="w-4 h-4 ml-2 text-green-400" />}
-            </TabsTrigger>
-            <TabsTrigger value="budget" className="data-[state=active]:bg-gray-700 relative">
-              <span className="text-2xl mr-2">{stepEmojis.budget}</span>
-              Budget
-              {formProgress >= 75 && <CheckCircle className="w-4 h-4 ml-2 text-green-400" />}
-            </TabsTrigger>
-            <TabsTrigger value="review" className="data-[state=active]:bg-gray-700 relative">
-              <span className="text-2xl mr-2">{stepEmojis.review}</span>
-              Review
-              {formProgress === 100 && (
-                <div className="flex items-center ml-2">
-                  <Trophy className="w-4 h-4 text-yellow-400 animate-bounce" />
-                  <Sparkles className="w-3 h-3 text-yellow-400 animate-pulse ml-1" />
-                </div>
-              )}
-            </TabsTrigger>
-          </TabsList>
+          {/* Progress Bar */}
+          <div className="relative">
+            <Progress 
+              value={formProgress} 
+              className="h-3 bg-gray-200 border border-gray-300"
+            />
+            <div className="absolute top-0 left-0 h-3 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full transition-all duration-700 ease-out" 
+                 style={{ width: `${formProgress}%` }}>
+              <div className="absolute right-0 top-0 h-3 w-6 bg-gradient-to-r from-transparent to-white/30 animate-pulse"></div>
+            </div>
+          </div>
+        </div>
 
-          {/* Basic Trip Details */}
-          <TabsContent value="basic" className="space-y-6">
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <Calendar className="w-5 h-5 mr-2" />
-                  Basic Trip Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Trip Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-white">Trip Name *</Label>
-                  <Input
-                    id="name"
-                    {...register("name")}
-                    placeholder="e.g., Goa Beach Trip, Manali Trek"
-                    className="bg-gray-700 border-gray-600 text-white"
-                  />
-                  {errors.name && (
-                    <p className="text-red-400 text-sm">{errors.name.message}</p>
-                  )}
-                </div>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4 mb-8 bg-white border-gray-200 shadow-sm rounded-lg p-0 gap-0">
+              <TabsTrigger 
+                value="basic" 
+                className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg"
+              >
+                <span className="text-2xl mr-2">{stepEmojis.basic}</span>
+                Basic Details
+                {formProgress >= 25 && <CheckCircle className="w-4 h-4 ml-2 text-emerald-500" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="itinerary" 
+                className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg"
+              >
+                <span className="text-2xl mr-2">{stepEmojis.itinerary}</span>
+                Itinerary
+                {formProgress >= 55 && <CheckCircle className="w-4 h-4 ml-2 text-emerald-500" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="budget" 
+                className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg"
+              >
+                <span className="text-2xl mr-2">{stepEmojis.budget}</span>
+                Budget
+                {formProgress >= 75 && <CheckCircle className="w-4 h-4 ml-2 text-emerald-500" />}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="review" 
+                className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none transition-all duration-200 first:rounded-l-lg last:rounded-r-lg"
+              >
+                <span className="text-2xl mr-2">{stepEmojis.review}</span>
+                Review
+                {formProgress === 100 && (
+                  <div className="flex items-center ml-2">
+                    <Trophy className="w-4 h-4 text-emerald-500 animate-bounce" />
+                    <Sparkles className="w-3 h-3 text-emerald-500 animate-pulse ml-1" />
+                  </div>
+                )}
+              </TabsTrigger>
+            </TabsList>
 
-                {/* Description */}
-                <div className="space-y-2">
-                  <Label htmlFor="description" className="text-white">Description</Label>
-                  <Textarea
-                    id="description"
-                    {...register("description")}
-                    placeholder="Describe your trip..."
-                    rows={3}
-                    className="bg-gray-700 border-gray-600 text-white"
-                  />
-                  {errors.description && (
-                    <p className="text-red-400 text-sm">{errors.description.message}</p>
-                  )}
-                </div>
+            {/* Basic Trip Details */}
+            <TabsContent value="basic" className="space-y-6">
+              <Card className="bg-white border-gray-200 shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-slate-900 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-emerald-600" />
+                    Basic Trip Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Trip Name */}
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-slate-800">Trip Name *</Label>
+                    <Input
+                      id="name"
+                      {...register("name")}
+                      placeholder="e.g., Goa Beach Trip, Manali Trek"
+                      className="bg-white border-gray-300 text-slate-900"
+                    />
+                    {errors.name && (
+                      <p className="text-red-500 text-sm">{errors.name.message}</p>
+                    )}
+                  </div>
 
-                {/* Destinations */}
-                <div className="space-y-2">
-                  <Label className="text-white">Destinations *</Label>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {selectedDestinations.map((dest, index) => (
-                      <Badge key={index} variant="secondary" className="bg-blue-600 text-white">
-                        {dest}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = selectedDestinations.filter((_, i) => i !== index)
+                  {/* Description */}
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="text-slate-800">Description</Label>
+                    <Textarea
+                      id="description"
+                      {...register("description")}
+                      placeholder="Describe your trip..."
+                      rows={3}
+                      className="bg-white border-gray-300 text-slate-900"
+                    />
+                    {errors.description && (
+                      <p className="text-red-500 text-sm">{errors.description.message}</p>
+                    )}
+                  </div>
+
+                  {/* Destinations */}
+                  <div className="space-y-2">
+                    <Label className="text-slate-800">Destinations *</Label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {selectedDestinations.map((dest, index) => (
+                        <Badge key={index} variant="secondary" className="bg-emerald-600 text-white">
+                          {dest}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = selectedDestinations.filter((_, i) => i !== index)
+                              setSelectedDestinations(updated)
+                              setValue("destinations", updated)
+                            }}
+                            className="ml-2 text-white hover:text-red-300"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <Input
+                      placeholder="Type destination and press Enter..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const input = e.target as HTMLInputElement
+                          const destination = input.value.trim()
+                          if (destination && !selectedDestinations.includes(destination)) {
+                            const updated = [...selectedDestinations, destination]
                             setSelectedDestinations(updated)
                             setValue("destinations", updated)
-                          }}
-                          className="ml-2 text-white hover:text-red-300"
-                        >
-                          ×
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                  <DestinationInput
-                    placeholder="Search cities or type destination..."
-                    onDestinationAdd={(destination) => {
-                      if (!selectedDestinations.includes(destination)) {
-                        const updated = [...selectedDestinations, destination]
-                        setSelectedDestinations(updated)
-                        setValue("destinations", updated)
-                        
-                        toast({
-                          title: `📍 ${destination} added!`,
-                          description: "Great choice for your adventure!",
-                        })
-                      } else {
-                        toast({
-                          title: "📍 Already added",
-                          description: `${destination} is already in your destinations list.`,
-                          variant: "destructive",
-                        })
-                      }
-                    }}
-                  />
-                  
-                  <div className="mt-2 text-xs text-gray-500">
-                    💡 Tip: Type any destination and press Enter, or select from suggestions if available
-                  </div>
-                </div>
-
-                {/* Date Range */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate" className="text-white">Start Date *</Label>
-                    <Input
-                      id="startDate"
-                      type="date"
-                      {...register("startDate")}
-                      className="bg-gray-700 border-gray-600 text-white"
+                            input.value = ""
+                            
+                            toast({
+                              title: `📍 ${destination} added!`,
+                              description: "Great choice for your adventure!",
+                            })
+                          }
+                        }
+                      }}
+                      className="bg-white border-gray-300 text-slate-900"
                     />
-                    {errors.startDate && (
-                      <p className="text-red-400 text-sm">{errors.startDate.message}</p>
-                    )}
+                    
+                    <div className="mt-2 text-xs text-slate-500">
+                      💡 Tip: Type any destination and press Enter to add it
+                    </div>
                   </div>
 
+                  {/* Date Range */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="startDate" className="text-slate-800">Start Date *</Label>
+                      <Input
+                        id="startDate"
+                        type="date"
+                        {...register("startDate")}
+                        className="bg-white border-gray-300 text-slate-900"
+                      />
+                      {errors.startDate && (
+                        <p className="text-red-500 text-sm">{errors.startDate.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="endDate" className="text-slate-800">End Date *</Label>
+                      <Input
+                        id="endDate"
+                        type="date"
+                        {...register("endDate")}
+                        className="bg-white border-gray-300 text-slate-900"
+                      />
+                      {errors.endDate && (
+                        <p className="text-red-500 text-sm">{errors.endDate.message}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Cover Image Upload */}
                   <div className="space-y-2">
-                    <Label htmlFor="endDate" className="text-white">End Date *</Label>
-                    <Input
-                      id="endDate"
-                      type="date"
-                      {...register("endDate")}
-                      className="bg-gray-700 border-gray-600 text-white"
-                    />
-                    {errors.endDate && (
-                      <p className="text-red-400 text-sm">{errors.endDate.message}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Cover Image Upload */}
-                <div className="space-y-2">
-                  <Label className="text-white">Cover Image</Label>
-                  <div className="border-2 border-dashed border-gray-600 rounded-lg p-6">
-                    {coverImage ? (
-                      <div className="relative">
-                        <Image
-                          src={coverImage}
-                          alt="Trip cover"
-                          width={200}
-                          height={120}
-                          className="rounded-lg object-cover mx-auto"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => setCoverImage("")}
-                          className="absolute top-2 right-2"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="text-center">
-                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                        <div className="mt-4">
+                    <Label className="text-slate-800">Cover Image</Label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                      {coverImage ? (
+                        <div className="relative">
+                          <Image
+                            src={coverImage}
+                            alt="Trip cover"
+                            width={200}
+                            height={120}
+                            className="rounded-lg object-cover mx-auto"
+                          />
                           <Button
                             type="button"
-                            variant="outline"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isUploading}
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setCoverImage("")}
+                            className="absolute top-2 right-2"
                           >
-                            {isUploading ? "Uploading..." : "Upload Cover Image"}
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="text-center">
+                          <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                          <div className="mt-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={isUploading}
+                              className="border-gray-300 text-slate-700 hover:bg-gray-50"
+                            >
+                              {isUploading ? "Uploading..." : "Upload Cover Image"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
                   </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </div>
 
-                {/* Trip Settings */}
-                <div className="space-y-4">
+                  {/* Privacy Settings */}
                   <div className="space-y-2">
-                    <Label className="text-white">Privacy Settings</Label>
-                    <div className="flex items-center space-x-2 p-3 bg-gray-700 rounded-lg">
+                    <Label className="text-slate-800">Privacy Settings</Label>
+                    <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg ring-1 ring-gray-200">
                       <Switch
                         id="isPublic"
                         onCheckedChange={(checked) => setValue("isPublic", checked)}
                       />
-                      <Label htmlFor="isPublic" className="text-gray-300">
+                      <Label htmlFor="isPublic" className="text-slate-700">
                         Make trip public (others can view your itinerary)
                       </Label>
                     </div>
                   </div>
 
-                  {/* Status Preview - Read Only */}
-                  {tripStatusInfo && (
-                    <div className="space-y-2">
-                      <Label className="text-white">Trip Status (Auto-detected)</Label>
-                      <div className="p-3 bg-gray-700 rounded-lg border-2 border-dashed border-gray-600">
-                        <div className="flex items-center space-x-3">
-                          <span className="text-2xl">{tripStatusInfo.statusIcon}</span>
-                          <div>
-                            <p className={`font-medium ${tripStatusInfo.statusColor}`}>
-                              Status: {tripStatusInfo.status.charAt(0).toUpperCase() + tripStatusInfo.status.slice(1)}
-                            </p>
-                            <p className="text-gray-400 text-sm">
-                              {tripStatusInfo.statusMessage}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-gray-500 text-xs">
-                        ℹ️ Status is automatically determined based on your travel dates
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      generateItineraryDays()
-                      setCurrentTab("itinerary")
-                      // Fun success message
-                      toast({
-                        title: "🎉 Great start!",
-                        description: "Your trip foundation is set! Let's build that itinerary!",
-                      })
-                    }}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-6 py-3 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-lg"
-                    disabled={!watchedStartDate || !watchedEndDate || selectedDestinations.length === 0}
-                  >
-                    <Rocket className="w-4 h-4 mr-2" />
-                    Continue to Itinerary
-                    <Sparkles className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Itinerary Builder */}
-          <TabsContent value="itinerary" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <Target className="w-8 h-8 text-green-400 animate-pulse" />
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-white">Day-by-Day Itinerary</h3>
-                  <p className="text-gray-400">
-                    {itineraryDays.length === 0 
-                      ? "Let's plan your perfect days! ✨"
-                      : `${itineraryDays.length} amazing ${itineraryDays.length === 1 ? 'day' : 'days'} planned! 🗓️`
-                    }
-                  </p>
-                </div>
-              </div>
-              <Button
-                type="button"
-                onClick={() => {
-                  addItineraryDay()
-                  toast({
-                    title: "🎯 New day added!",
-                    description: "Another day of adventure awaits planning!",
-                  })
-                }}
-                className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-semibold px-4 py-2 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-lg"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Day
-                <Zap className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-
-            {itineraryDays.map((day, index) => (
-              <ItineraryDayBuilder
-                key={day.id}
-                day={day}
-                onUpdate={(updates) => updateItineraryDay(day.id, updates)}
-                onRemove={() => removeItineraryDay(day.id)}
-                activityTypes={ACTIVITY_TYPES}
-                destinations={selectedDestinations}
-              />
-            ))}
-
-            {itineraryDays.length === 0 && (
-              <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 border-2 border-dashed">
-                <CardContent className="py-12 text-center">
-                  <div className="relative">
-                    <MapPin className="mx-auto h-16 w-16 text-gray-400 mb-4 animate-bounce" />
-                    <div className="absolute -top-2 -right-2">
-                      <Star className="w-6 h-6 text-yellow-400 animate-spin" />
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Ready to Plan Your Adventure! 🗺️</h3>
-                  <p className="text-gray-300 mb-6 max-w-md mx-auto">
-                    Your dates are set! Now let's create an amazing day-by-day itinerary that'll make this trip unforgettable! ✨
-                  </p>
-                  <div className="space-y-3">
+                  <div className="flex justify-end">
                     <Button
                       type="button"
                       onClick={() => {
                         generateItineraryDays()
+                        setCurrentTab("itinerary")
                         toast({
-                          title: "🚀 Days generated!",
-                          description: "Your itinerary framework is ready for customization!",
+                          title: "🎉 Great start!",
+                          description: "Your trip foundation is set! Let's build that itinerary!",
                         })
                       }}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold px-6 py-3 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-lg"
-                      disabled={!watchedStartDate || !watchedEndDate}
+                      className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-6 py-3 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-lg"
+                      disabled={!watchedStartDate || !watchedEndDate || selectedDestinations.length === 0}
                     >
-                      <Rocket className="w-5 h-5 mr-2" />
-                      Generate My Days!
-                      <Sparkles className="w-5 h-5 ml-2" />
-                    </Button>
-                    <p className="text-gray-500 text-sm">
-                      Or go back to set your travel dates first
-                    </p>
-                    <Button
-                      type="button"
-                      onClick={() => setCurrentTab("basic")}
-                      variant="outline"
-                      size="sm"
-                      className="border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-white"
-                    >
-                      ← Back to Dates
+                      <Rocket className="w-4 h-4 mr-2" />
+                      Continue to Itinerary
+                      <Sparkles className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
                 </CardContent>
               </Card>
-            )}
+            </TabsContent>
 
-            <div className="flex justify-between">
-              <Button
-                type="button"
-                onClick={() => setCurrentTab("basic")}
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Basic Details
-              </Button>
-              <Button
-                type="button"
-                onClick={() => setCurrentTab("budget")}
-                className="bg-blue-600 hover:bg-blue-700"
-                disabled={itineraryDays.length === 0}
-              >
-                Continue to Budget
-                <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
-              </Button>
-            </div>
-          </TabsContent>
-
-          {/* Budget Overview */}
-          <TabsContent value="budget" className="space-y-6">
-            <BudgetCalculator
-              itineraryDays={itineraryDays}
-              totalBudget={totalEstimatedBudget}
-              currency={watch("currency") || "USD"}
-              onBudgetUpdate={(total) => {
-                setTotalEstimatedBudget(total)
-                setValue("totalBudget", total)
-              }}
-            />
-
-            <div className="flex justify-between">
-              <Button
-                type="button"
-                onClick={() => setCurrentTab("itinerary")}
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Itinerary
-              </Button>
-              <Button
-                type="button"
-                onClick={() => setCurrentTab("review")}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Review Trip
-                <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
-              </Button>
-            </div>
-          </TabsContent>
-
-          {/* Review & Submit */}
-          <TabsContent value="review" className="space-y-6">
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white">Review Your Trip</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-gray-400">Trip Name</Label>
-                    <p className="text-white font-medium">{watchedName || "Untitled Trip"}</p>
+            {/* Itinerary Builder */}
+            <TabsContent value="itinerary" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <Target className="w-8 h-8 text-emerald-500 animate-pulse" />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full animate-ping"></div>
                   </div>
                   <div>
-                    <Label className="text-gray-400">Duration</Label>
-                    <p className="text-white font-medium">
+                    <h3 className="text-2xl font-bold text-slate-900">Day-by-Day Itinerary</h3>
+                    <p className="text-slate-600">
+                      {itineraryDays.length === 0 
+                        ? "Let's plan your perfect days! ✨"
+                        : `${itineraryDays.length} amazing ${itineraryDays.length === 1 ? 'day' : 'days'} planned! 🗓️`
+                      }
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    addItineraryDay()
+                    toast({
+                      title: "🎯 New day added!",
+                      description: "Another day of adventure awaits planning!",
+                    })
+                  }}
+                  className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-4 py-2 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-lg"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Day
+                  <Zap className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+
+              {itineraryDays.map((day, index) => (
+                <Card key={day.id} className="bg-white border-gray-200 shadow-md">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-slate-900 flex items-center">
+                        <Calendar className="w-5 h-5 mr-2 text-emerald-600" />
+                        {day.title}
+                      </CardTitle>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                          {ACTIVITY_TYPES.find(type => type.value === day.activityType)?.icon} {day.activityType}
+                        </Badge>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeItineraryDay(day.id)}
+                          className="border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-slate-800">Date</Label>
+                        <Input
+                          type="date"
+                          value={day.date}
+                          onChange={(e) => updateItineraryDay(day.id, { date: e.target.value })}
+                          className="bg-white border-gray-300 text-slate-900"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-slate-800">Activity Type</Label>
+                        <Select
+                          value={day.activityType}
+                          onValueChange={(value: any) => updateItineraryDay(day.id, { activityType: value })}
+                        >
+                          <SelectTrigger className="bg-white border-gray-300 text-slate-900">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border-gray-200">
+                            {ACTIVITY_TYPES.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.icon} {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-slate-800">Location</Label>
+                      <Input
+                        value={day.location.name}
+                        onChange={(e) => updateItineraryDay(day.id, { 
+                          location: { ...day.location, name: e.target.value }
+                        })}
+                        placeholder="Where will you be?"
+                        className="bg-white border-gray-300 text-slate-900"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-slate-800">Description</Label>
+                      <Textarea
+                        value={day.description}
+                        onChange={(e) => updateItineraryDay(day.id, { description: e.target.value })}
+                        placeholder="What will you do on this day?"
+                        rows={3}
+                        className="bg-white border-gray-300 text-slate-900"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-slate-800">Estimated Budget</Label>
+                      <Input
+                        type="number"
+                        value={day.budget.estimated}
+                        onChange={(e) => updateItineraryDay(day.id, { 
+                          budget: { ...day.budget, estimated: parseFloat(e.target.value) || 0 }
+                        })}
+                        placeholder="0"
+                        className="bg-white border-gray-300 text-slate-900"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-slate-800">Notes</Label>
+                      <Textarea
+                        value={day.notes || ""}
+                        onChange={(e) => updateItineraryDay(day.id, { notes: e.target.value })}
+                        placeholder="Any additional notes..."
+                        rows={2}
+                        className="bg-white border-gray-300 text-slate-900"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              {itineraryDays.length === 0 && (
+                <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 border-2 border-dashed">
+                  <CardContent className="py-12 text-center">
+                    <div className="relative">
+                      <MapPin className="mx-auto h-16 w-16 text-gray-400 mb-4 animate-bounce" />
+                      <div className="absolute -top-2 -right-2">
+                        <Star className="w-6 h-6 text-emerald-500 animate-spin" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">Ready to Plan Your Adventure! 🗺️</h3>
+                    <p className="text-slate-600 mb-6 max-w-md mx-auto">
+                      Your dates are set! Now let's create an amazing day-by-day itinerary that'll make this trip unforgettable! ✨
+                    </p>
+                    <div className="space-y-3">
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          generateItineraryDays()
+                          toast({
+                            title: "🚀 Days generated!",
+                            description: "Your itinerary framework is ready for customization!",
+                          })
+                        }}
+                        className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-6 py-3 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-lg"
+                        disabled={!watchedStartDate || !watchedEndDate}
+                      >
+                        <Rocket className="w-5 h-5 mr-2" />
+                        Generate My Days!
+                        <Sparkles className="w-5 h-5 ml-2" />
+                      </Button>
+                      <p className="text-slate-500 text-sm">
+                        Or go back to set your travel dates first
+                      </p>
+                      <Button
+                        type="button"
+                        onClick={() => setCurrentTab("basic")}
+                        variant="outline"
+                        size="sm"
+                        className="border-gray-300 text-slate-700 hover:bg-gray-50"
+                      >
+                        ← Back to Dates
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="flex justify-between">
+                <Button
+                  type="button"
+                  onClick={() => setCurrentTab("basic")}
+                  variant="outline"
+                  className="border-gray-300 text-slate-700 hover:bg-gray-50"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Basic Details
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setCurrentTab("budget")}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  disabled={itineraryDays.length === 0}
+                >
+                  Continue to Budget
+                  <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+                </Button>
+              </div>
+            </TabsContent>
+
+            {/* Budget Overview */}
+            <TabsContent value="budget" className="space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="relative">
+                  <DollarSign className="w-8 h-8 text-emerald-500 animate-pulse" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full animate-ping"></div>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-900">Budget Overview</h3>
+                  <p className="text-slate-600">
+                    Plan and track your trip expenses! 💰
+                  </p>
+                </div>
+              </div>
+
+              <Card className="bg-white border-gray-200 shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-slate-900 flex items-center">
+                    <DollarSign className="w-5 h-5 mr-2 text-emerald-600" />
+                    Budget Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-emerald-700">Total Estimated</p>
+                          <p className="text-2xl font-bold text-emerald-800">${totalEstimatedBudget.toLocaleString()}</p>
+                        </div>
+                        <DollarSign className="w-8 h-8 text-emerald-600" />
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-blue-700">Days Planned</p>
+                          <p className="text-2xl font-bold text-blue-800">{itineraryDays.length}</p>
+                        </div>
+                        <Calendar className="w-8 h-8 text-blue-600" />
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-purple-700">Avg. Per Day</p>
+                          <p className="text-2xl font-bold text-purple-800">
+                            ${itineraryDays.length > 0 ? Math.round(totalEstimatedBudget / itineraryDays.length) : 0}
+                          </p>
+                        </div>
+                        <Clock className="w-8 h-8 text-purple-600" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-slate-900">Budget Breakdown by Day</h4>
+                    <div className="space-y-2">
+                      {itineraryDays.map((day) => (
+                        <div key={day.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-semibold text-emerald-700">{day.dayNumber}</span>
+                            </div>
+                            <div>
+                              <p className="font-medium text-slate-900">{day.title}</p>
+                              <p className="text-sm text-slate-600">{day.location.name}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-slate-900">${day.budget.estimated}</p>
+                            <p className="text-xs text-slate-500">{day.activityType}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-slate-900">Budget Categories</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {ACTIVITY_TYPES.map((type) => {
+                        const categoryTotal = itineraryDays
+                          .filter(day => day.activityType === type.value)
+                          .reduce((sum, day) => sum + day.budget.estimated, 0)
+                        
+                        return (
+                          <div key={type.value} className="p-3 bg-gray-50 rounded-lg text-center">
+                            <div className="text-2xl mb-1">{type.icon}</div>
+                            <p className="text-sm font-medium text-slate-900">{type.label}</p>
+                            <p className="text-lg font-bold text-emerald-600">${categoryTotal}</p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-between">
+                <Button
+                  type="button"
+                  onClick={() => setCurrentTab("itinerary")}
+                  variant="outline"
+                  className="border-gray-300 text-slate-700 hover:bg-gray-50"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Itinerary
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setCurrentTab("review")}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  Review Trip
+                  <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+                </Button>
+              </div>
+            </TabsContent>
+
+            {/* Review & Submit */}
+            <TabsContent value="review" className="space-y-6">
+              <Card className="bg-white border-gray-200 shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-slate-900">Review Your Trip</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-slate-600">Trip Name</Label>
+                    <p className="text-slate-900 font-medium">{watchedName || "Untitled Trip"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-slate-600">Duration</Label>
+                    <p className="text-slate-900 font-medium">
                       {itineraryDays.length} {itineraryDays.length === 1 ? "day" : "days"}
                     </p>
                   </div>
                   <div>
-                    <Label className="text-gray-400">Destinations</Label>
-                    <p className="text-white font-medium">
+                    <Label className="text-slate-600">Destinations</Label>
+                    <p className="text-slate-900 font-medium">
                       {selectedDestinations.join(", ") || "No destinations"}
                     </p>
                   </div>
                   <div>
-                    <Label className="text-gray-400">Total Budget</Label>
-                    <p className="text-white font-medium">
+                    <Label className="text-slate-600">Total Budget</Label>
+                    <p className="text-slate-900 font-medium">
                       ${totalEstimatedBudget.toLocaleString()} {watch("currency")}
                     </p>
                   </div>
                 </div>
 
-                <Separator className="bg-gray-700" />
+                <Separator className="bg-gray-200" />
 
                 <div>
-                  <Label className="text-gray-400">Itinerary Summary</Label>
+                  <Label className="text-slate-600">Description</Label>
+                  <p className="text-slate-900 font-medium">{watch("description") || "No description"}</p>
+                </div>
+
+                <div>
+                  <Label className="text-slate-600">Itinerary Summary</Label>
                   <div className="mt-2 space-y-2">
                     {itineraryDays.map((day) => (
-                      <div key={day.id} className="flex justify-between items-center p-2 bg-gray-700 rounded">
-                        <span className="text-white">{day.title}</span>
-                        <Badge variant="secondary" className="bg-gray-600">
+                      <div key={day.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <span className="text-slate-900">{day.title}</span>
+                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
                           ${day.budget.estimated}
                         </Badge>
                       </div>
                     ))}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
             <div className="flex justify-between">
               <Button
@@ -1217,6 +1300,7 @@ export default function ComprehensiveTripBuilder({
           }}
         />
       )}
+    </div>
     </div>
   )
 }
