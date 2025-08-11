@@ -490,7 +490,7 @@ export default function EnhancedTripDetails({
 
           {/* Budget Tab */}
           <TabsContent value="budget" className="space-y-6">
-            <BudgetManager tripId={trip.id} />
+            <BudgetManager tripId={trip.id.toString()} />
           </TabsContent>
 
           {/* Weather Tab */}

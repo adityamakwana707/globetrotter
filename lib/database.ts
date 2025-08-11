@@ -1423,3 +1423,544 @@ export async function bulkUpdateUsers(
     client.release()
   }
 }
+
+// ============================================================================
+// COMMUNITY FUNCTIONS
+// ============================================================================
+
+export interface CommunityPost {
+  id: number
+  display_id: number
+  user_id: string
+  title: string
+  content: string
+  post_type: 'experience' | 'review' | 'tip' | 'recommendation'
+  trip_id?: number
+  city_id?: number
+  activity_id?: number
+  images?: string[]
+  tags?: string[]
+  rating?: number
+  likes_count: number
+  comments_count: number
+  views_count: number
+  is_published: boolean
+  is_featured: boolean
+  is_verified: boolean
+  created_at: Date
+  updated_at: Date
+  
+  // Joined data
+  user_name?: string
+  user_email?: string
+  user_profile_image?: string
+  trip_name?: string
+  city_name?: string
+  city_country?: string
+  activity_name?: string
+  is_liked?: boolean
+}
+
+export interface CommunityPostFilters {
+  search?: string
+  post_type?: string
+  city_id?: number
+  activity_id?: number
+  user_id?: string
+  tags?: string[]
+  rating?: number
+  is_featured?: boolean
+  sort_by?: 'newest' | 'oldest' | 'most_liked' | 'most_commented' | 'highest_rated'
+  limit?: number
+  offset?: number
+}
+
+export async function createCommunityPost(postData: {
+  user_id: string
+  title: string
+  content: string
+  post_type: 'experience' | 'review' | 'tip' | 'recommendation'
+  trip_id?: number
+  city_id?: number
+  activity_id?: number
+  images?: string[]
+  tags?: string[]
+  rating?: number
+}): Promise<CommunityPost> {
+  try {
+    const result = await pool.query(
+      `INSERT INTO community_posts (
+        user_id, title, content, post_type, trip_id, city_id, activity_id, 
+        images, tags, rating
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING *`,
+      [
+        postData.user_id,
+        postData.title,
+        postData.content,
+        postData.post_type,
+        postData.trip_id,
+        postData.city_id,
+        postData.activity_id,
+        postData.images,
+        postData.tags,
+        postData.rating
+      ]
+    )
+    return result.rows[0]
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getCommunityPosts(
+  filters: CommunityPostFilters = {},
+  currentUserId?: string
+): Promise<CommunityPost[]> {
+  try {
+    let query = `
+      SELECT 
+        cp.*,
+        u.first_name || ' ' || u.last_name as user_name,
+        u.email as user_email,
+        u.profile_image as user_profile_image,
+        t.name as trip_name,
+        c.name as city_name,
+        c.country as city_country,
+        a.name as activity_name
+        ${currentUserId ? `, EXISTS(
+          SELECT 1 FROM community_post_likes cpl 
+          WHERE cpl.post_id = cp.id AND cpl.user_id = $${currentUserId ? 'currentUserId' : 'null'}
+        ) as is_liked` : ''}
+      FROM community_posts cp
+      LEFT JOIN users u ON cp.user_id = u.id
+      LEFT JOIN trips t ON cp.trip_id = t.id
+      LEFT JOIN cities c ON cp.city_id = c.id
+      LEFT JOIN activities a ON cp.activity_id = a.id
+      WHERE cp.is_published = true
+    `
+
+    const queryParams: any[] = []
+    let paramIndex = 1
+
+    if (currentUserId) {
+      queryParams.push(currentUserId)
+      query = query.replace('$currentUserId', `$${paramIndex}`)
+      paramIndex++
+    }
+
+    if (filters.search) {
+      query += ` AND (cp.title ILIKE $${paramIndex} OR cp.content ILIKE $${paramIndex} OR $${paramIndex} = ANY(cp.tags))`
+      queryParams.push(`%${filters.search}%`)
+      paramIndex++
+    }
+
+    if (filters.post_type) {
+      query += ` AND cp.post_type = $${paramIndex}`
+      queryParams.push(filters.post_type)
+      paramIndex++
+    }
+
+    if (filters.city_id) {
+      query += ` AND cp.city_id = $${paramIndex}`
+      queryParams.push(filters.city_id)
+      paramIndex++
+    }
+
+    if (filters.activity_id) {
+      query += ` AND cp.activity_id = $${paramIndex}`
+      queryParams.push(filters.activity_id)
+      paramIndex++
+    }
+
+    if (filters.user_id) {
+      query += ` AND cp.user_id = $${paramIndex}`
+      queryParams.push(filters.user_id)
+      paramIndex++
+    }
+
+    if (filters.rating) {
+      query += ` AND cp.rating >= $${paramIndex}`
+      queryParams.push(filters.rating)
+      paramIndex++
+    }
+
+    if (filters.is_featured) {
+      query += ` AND cp.is_featured = $${paramIndex}`
+      queryParams.push(filters.is_featured)
+      paramIndex++
+    }
+
+    // Sorting
+    switch (filters.sort_by) {
+      case 'oldest':
+        query += ` ORDER BY cp.created_at ASC`
+        break
+      case 'most_liked':
+        query += ` ORDER BY cp.likes_count DESC, cp.created_at DESC`
+        break
+      case 'most_commented':
+        query += ` ORDER BY cp.comments_count DESC, cp.created_at DESC`
+        break
+      case 'highest_rated':
+        query += ` ORDER BY cp.rating DESC NULLS LAST, cp.created_at DESC`
+        break
+      default: // newest
+        query += ` ORDER BY cp.created_at DESC`
+        break
+    }
+
+    // Pagination
+    if (filters.limit) {
+      query += ` LIMIT $${paramIndex}`
+      queryParams.push(filters.limit)
+      paramIndex++
+    }
+
+    if (filters.offset) {
+      query += ` OFFSET $${paramIndex}`
+      queryParams.push(filters.offset)
+      paramIndex++
+    }
+
+    const result = await pool.query(query, queryParams)
+    return result.rows
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getCommunityPostById(
+  postId: number, 
+  currentUserId?: string
+): Promise<CommunityPost | null> {
+  try {
+    // Increment view count
+    await pool.query(
+      'UPDATE community_posts SET views_count = views_count + 1 WHERE id = $1',
+      [postId]
+    )
+
+    const query = `
+      SELECT 
+        cp.*,
+        u.first_name || ' ' || u.last_name as user_name,
+        u.email as user_email,
+        u.profile_image as user_profile_image,
+        t.name as trip_name,
+        c.name as city_name,
+        c.country as city_country,
+        a.name as activity_name
+        ${currentUserId ? `, EXISTS(
+          SELECT 1 FROM community_post_likes cpl 
+          WHERE cpl.post_id = cp.id AND cpl.user_id = $2
+        ) as is_liked` : ''}
+      FROM community_posts cp
+      LEFT JOIN users u ON cp.user_id = u.id
+      LEFT JOIN trips t ON cp.trip_id = t.id
+      LEFT JOIN cities c ON cp.city_id = c.id
+      LEFT JOIN activities a ON cp.activity_id = a.id
+      WHERE cp.id = $1 AND cp.is_published = true
+    `
+
+    const params = currentUserId ? [postId, currentUserId] : [postId]
+    const result = await pool.query(query, params)
+    return result.rows[0] || null
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function toggleCommunityPostLike(
+  postId: number, 
+  userId: string
+): Promise<{ liked: boolean; newLikeCount: number }> {
+  const client = await pool.connect()
+  
+  try {
+    await client.query('BEGIN')
+
+    // Check if already liked
+    const existingLike = await client.query(
+      'SELECT id FROM community_post_likes WHERE post_id = $1 AND user_id = $2',
+      [postId, userId]
+    )
+
+    let liked: boolean
+    if (existingLike.rows.length > 0) {
+      // Remove like
+      await client.query(
+        'DELETE FROM community_post_likes WHERE post_id = $1 AND user_id = $2',
+        [postId, userId]
+      )
+      await client.query(
+        'UPDATE community_posts SET likes_count = likes_count - 1 WHERE id = $1',
+        [postId]
+      )
+      liked = false
+    } else {
+      // Add like
+      await client.query(
+        'INSERT INTO community_post_likes (post_id, user_id) VALUES ($1, $2)',
+        [postId, userId]
+      )
+      await client.query(
+        'UPDATE community_posts SET likes_count = likes_count + 1 WHERE id = $1',
+        [postId]
+      )
+      liked = true
+    }
+
+    // Get new like count
+    const result = await client.query(
+      'SELECT likes_count FROM community_posts WHERE id = $1',
+      [postId]
+    )
+
+    await client.query('COMMIT')
+    return { liked, newLikeCount: result.rows[0].likes_count }
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error("Database error:", error)
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+export async function deleteCommunityPost(postId: number, userId: string): Promise<boolean> {
+  try {
+    const result = await pool.query(
+      'DELETE FROM community_posts WHERE id = $1 AND user_id = $2',
+      [postId, userId]
+    )
+    return result.rowCount > 0
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+// ============================================================================
+// COMMUNITY COMMENTS FUNCTIONS
+// ============================================================================
+
+export interface CommunityComment {
+  id: number
+  post_id: number
+  user_id: string
+  content: string
+  parent_comment_id?: number
+  likes_count: number
+  is_deleted: boolean
+  created_at: Date
+  updated_at: Date
+  
+  // Joined data
+  user_name?: string
+  user_email?: string
+  user_profile_image?: string
+  is_liked?: boolean
+  replies?: CommunityComment[]
+}
+
+export async function createCommunityComment(commentData: {
+  post_id: number
+  user_id: string
+  content: string
+  parent_comment_id?: number
+}): Promise<CommunityComment> {
+  const client = await pool.connect()
+  
+  try {
+    await client.query('BEGIN')
+
+    // Create the comment
+    const result = await client.query(
+      `INSERT INTO community_post_comments (
+        post_id, user_id, content, parent_comment_id
+      ) VALUES ($1, $2, $3, $4)
+      RETURNING *`,
+      [
+        commentData.post_id,
+        commentData.user_id,
+        commentData.content,
+        commentData.parent_comment_id
+      ]
+    )
+
+    // Update comment count on the post
+    await client.query(
+      'UPDATE community_posts SET comments_count = comments_count + 1 WHERE id = $1',
+      [commentData.post_id]
+    )
+
+    await client.query('COMMIT')
+    return result.rows[0]
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error("Database error:", error)
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+export async function getCommunityComments(
+  postId: number,
+  currentUserId?: string
+): Promise<CommunityComment[]> {
+  try {
+    const query = `
+      SELECT 
+        cc.*,
+        u.first_name || ' ' || u.last_name as user_name,
+        u.email as user_email,
+        u.profile_image as user_profile_image
+        ${currentUserId ? `, EXISTS(
+          SELECT 1 FROM community_comment_likes ccl 
+          WHERE ccl.comment_id = cc.id AND ccl.user_id = $2
+        ) as is_liked` : ''}
+      FROM community_post_comments cc
+      LEFT JOIN users u ON cc.user_id = u.id
+      WHERE cc.post_id = $1 AND cc.is_deleted = false
+      ORDER BY cc.created_at ASC
+    `
+
+    const params = currentUserId ? [postId, currentUserId] : [postId]
+    const result = await pool.query(query, params)
+    
+    // Organize comments into threaded structure
+    const comments = result.rows
+    const topLevelComments: CommunityComment[] = []
+    const commentMap = new Map<number, CommunityComment>()
+
+    // First pass: create map and identify top-level comments
+    comments.forEach(comment => {
+      comment.replies = []
+      commentMap.set(comment.id, comment)
+      
+      if (!comment.parent_comment_id) {
+        topLevelComments.push(comment)
+      }
+    })
+
+    // Second pass: organize replies
+    comments.forEach(comment => {
+      if (comment.parent_comment_id) {
+        const parent = commentMap.get(comment.parent_comment_id)
+        if (parent) {
+          parent.replies!.push(comment)
+        }
+      }
+    })
+
+    return topLevelComments
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function toggleCommunityCommentLike(
+  commentId: number, 
+  userId: string
+): Promise<{ liked: boolean; newLikeCount: number }> {
+  const client = await pool.connect()
+  
+  try {
+    await client.query('BEGIN')
+
+    // Check if already liked
+    const existingLike = await client.query(
+      'SELECT id FROM community_comment_likes WHERE comment_id = $1 AND user_id = $2',
+      [commentId, userId]
+    )
+
+    let liked: boolean
+    if (existingLike.rows.length > 0) {
+      // Remove like
+      await client.query(
+        'DELETE FROM community_comment_likes WHERE comment_id = $1 AND user_id = $2',
+        [commentId, userId]
+      )
+      await client.query(
+        'UPDATE community_post_comments SET likes_count = likes_count - 1 WHERE id = $1',
+        [commentId]
+      )
+      liked = false
+    } else {
+      // Add like
+      await client.query(
+        'INSERT INTO community_comment_likes (comment_id, user_id) VALUES ($1, $2)',
+        [commentId, userId]
+      )
+      await client.query(
+        'UPDATE community_post_comments SET likes_count = likes_count + 1 WHERE id = $1',
+        [commentId]
+      )
+      liked = true
+    }
+
+    // Get new like count
+    const result = await client.query(
+      'SELECT likes_count FROM community_post_comments WHERE id = $1',
+      [commentId]
+    )
+
+    await client.query('COMMIT')
+    return { liked, newLikeCount: result.rows[0].likes_count }
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error("Database error:", error)
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+export async function deleteCommunityComment(commentId: number, userId: string): Promise<boolean> {
+  const client = await pool.connect()
+  
+  try {
+    await client.query('BEGIN')
+
+    // Get the comment to check post_id
+    const commentResult = await client.query(
+      'SELECT post_id FROM community_post_comments WHERE id = $1 AND user_id = $2',
+      [commentId, userId]
+    )
+
+    if (commentResult.rows.length === 0) {
+      return false
+    }
+
+    const postId = commentResult.rows[0].post_id
+
+    // Delete the comment
+    const deleteResult = await client.query(
+      'DELETE FROM community_post_comments WHERE id = $1 AND user_id = $2',
+      [commentId, userId]
+    )
+
+    if ((deleteResult.rowCount ?? 0) > 0) {
+      // Update comment count on the post
+      await client.query(
+        'UPDATE community_posts SET comments_count = comments_count - 1 WHERE id = $1',
+        [postId]
+      )
+    }
+
+    await client.query('COMMIT')
+    return (deleteResult.rowCount ?? 0) > 0
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error("Database error:", error)
+    throw error
+  } finally {
+    client.release()
+  }
+}
