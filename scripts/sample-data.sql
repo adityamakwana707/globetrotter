@@ -31,3 +31,24 @@ INSERT INTO activities (name, description, category, price_range, rating, durati
 ('Central Park', 'Large public park in Manhattan', 'Nature', 'Free', 4.7, 3, (SELECT id FROM cities WHERE name = 'New York'), 40.7829, -73.9654),
 ('Broadway Show', 'World-class theater performances', 'Entertainment', '$100-300', 4.8, 3, (SELECT id FROM cities WHERE name = 'New York'), 40.7590, -73.9845),
 ('9/11 Memorial', 'Memorial honoring victims of September 11 attacks', 'Memorial', '$25-30', 4.6, 2, (SELECT id FROM cities WHERE name = 'New York'), 40.7115, -74.0134);
+
+-- Sample activities for London
+INSERT INTO activities (name, description, category, price_range, rating, duration_hours, city_id, latitude, longitude) VALUES
+('Tower of London', 'Historic castle and home of Crown Jewels', 'Historical', '£25-30', 4.4, 3, (SELECT id FROM cities WHERE name = 'London'), 51.5081, -0.0759),
+('British Museum', 'World-famous museum of art and artifacts', 'Museum', 'Free', 4.5, 4, (SELECT id FROM cities WHERE name = 'London'), 51.5194, -0.1270),
+('London Eye', 'Giant observation wheel on South Bank', 'Sightseeing', '£25-35', 4.2, 1, (SELECT id FROM cities WHERE name = 'London'), 51.5033, -0.1196),
+('Westminster Abbey', 'Gothic abbey church', 'Religious', '£20-25', 4.4, 2, (SELECT id FROM cities WHERE name = 'London'), 51.4994, -0.1273);
+
+-- Sample activities for Bali
+INSERT INTO activities (name, description, category, price_range, rating, duration_hours, city_id, latitude, longitude) VALUES
+('Tanah Lot Temple', 'Rock formation and Hindu temple', 'Religious', 'Rp50000', 4.3, 2, (SELECT id FROM cities WHERE name = 'Bali'), -8.6212, 115.0868),
+('Ubud Monkey Forest', 'Nature reserve and Hindu temple complex', 'Nature', 'Rp80000', 4.1, 2, (SELECT id FROM cities WHERE name = 'Bali'), -8.5069, 115.2581),
+('Kuta Beach', 'Popular beach for surfing and sunbathing', 'Beach', 'Free', 4.0, 4, (SELECT id FROM cities WHERE name = 'Bali'), -8.7183, 115.1686),
+('Mount Batur Sunrise Trek', 'Volcano hiking experience', 'Adventure', 'Rp500000', 4.4, 8, (SELECT id FROM cities WHERE name = 'Bali'), -8.2421, 115.3725);
+
+-- Sample activities for Rome
+INSERT INTO activities (name, description, category, price_range, rating, duration_hours, city_id, latitude, longitude) VALUES
+('Colosseum', 'Ancient Roman amphitheater', 'Historical', '€16-20', 4.5, 2, (SELECT id FROM cities WHERE name = 'Rome'), 41.8902, 12.4922),
+('Vatican Museums', 'Papal museums with Sistine Chapel', 'Museum', '€17-25', 4.6, 4, (SELECT id FROM cities WHERE name = 'Rome'), 41.9065, 12.4536),
+('Trevi Fountain', 'Famous baroque fountain', 'Sightseeing', 'Free', 4.3, 1, (SELECT id FROM cities WHERE name = 'Rome'), 41.9009, 12.4833),
+('Roman Forum', 'Ancient Roman public square', 'Historical', '€16-20', 4.4, 3, (SELECT id FROM cities WHERE name = 'Rome'), 41.8925, 12.4853);
