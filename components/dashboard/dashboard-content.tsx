@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Plus, TrendingUp, Users, LogOut, Shield } from "lucide-react"
+import { Calendar, MapPin, Plus, TrendingUp, Users, LogOut, Shield , Pencil} from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
@@ -102,43 +102,11 @@ export default function DashboardContent({ user }: { user: UserType }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-gray-50 text-slate-900">
       {/* Header */}
-      <header className="border-b border-gray-800 bg-gray-800/50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-xl font-bold">GT</span>
-            </div>
-            <span className="text-2xl font-bold">GlobeTrotter</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-300">Welcome, {user.name || user.email}</span>
-            {isAdmin && (
-              <Button 
-                onClick={() => router.push("/admin")} 
-                variant="outline"
-                className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
-              >
-                <Shield className="w-4 h-4 mr-2" />
-                Admin
-              </Button>
-            )}
-            <Button onClick={() => router.push("/trips/create")} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              New Trip
-            </Button>
-            <Button 
-              onClick={handleLogout} 
-              variant="outline" 
-              className="border-gray-600 text-gray-300 hover:bg-red-600 hover:text-white hover:border-red-600"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
+      <div className="h-[4vh]">
+
+      </div>
 
       <div className="container mx-auto px-4 py-8">
         {/* Profile header card */}
@@ -151,7 +119,7 @@ export default function DashboardContent({ user }: { user: UserType }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
               <div className="flex justify-center md:justify-start">
                 <div className="h-28 w-28 rounded-full bg-gray-100 grid place-items-center text-slate-500 border border-gray-200">
-                  <User className="h-12 w-12" />
+                  <Users className="h-12 w-12" />
                 </div>
               </div>
               <div className="md:col-span-2 space-y-2">
