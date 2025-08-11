@@ -27,6 +27,9 @@ CREATE TABLE IF NOT EXISTS trips (
     status VARCHAR(20) DEFAULT 'planning' CHECK (status IN ('planning', 'active', 'completed')),
     cover_image TEXT,
     is_public BOOLEAN DEFAULT FALSE,
+    share_token VARCHAR(64) UNIQUE,
+    allow_copy BOOLEAN DEFAULT FALSE,
+    share_expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

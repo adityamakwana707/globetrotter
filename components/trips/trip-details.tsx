@@ -23,6 +23,9 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import ItineraryBuilder from "./itinerary-builder"
+import BudgetManager from "@/components/budget/budget-manager"
+import WeatherWidget from "@/components/weather/weather-widget"
+import TripSharing from "./trip-sharing"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -308,12 +311,18 @@ export default function TripDetails({ trip }: TripDetailsProps) {
 
         {/* Tabs for different sections */}
         <Tabs defaultValue="itinerary" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-800 border-gray-700">
+          <TabsList className="grid w-full grid-cols-5 bg-gray-800 border-gray-700">
             <TabsTrigger value="itinerary" className="data-[state=active]:bg-gray-700">
               Itinerary
             </TabsTrigger>
             <TabsTrigger value="budget" className="data-[state=active]:bg-gray-700">
               Budget
+            </TabsTrigger>
+            <TabsTrigger value="weather" className="data-[state=active]:bg-gray-700">
+              Weather
+            </TabsTrigger>
+            <TabsTrigger value="sharing" className="data-[state=active]:bg-gray-700">
+              Sharing
             </TabsTrigger>
             <TabsTrigger value="notes" className="data-[state=active]:bg-gray-700">
               Notes
@@ -325,21 +334,19 @@ export default function TripDetails({ trip }: TripDetailsProps) {
           </TabsContent>
 
           <TabsContent value="budget" className="mt-6">
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Budget Management
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <DollarSign className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-                  <p className="text-gray-400 mb-4">Budget management coming soon!</p>
-                  <p className="text-sm text-gray-500">Track expenses, set budgets, and manage costs for your trip.</p>
-                </div>
-              </CardContent>
-            </Card>
+            <BudgetManager tripId={trip.id} />
+          </TabsContent>
+
+          <TabsContent value="weather" className="mt-6">
+            <WeatherWidget
+              latitude={40.7128} // Default to NYC, would get from trip cities
+              longitude={-74.0060}
+              locationName="New York" // Would get from trip destination
+            />
+          </TabsContent>
+
+          <TabsContent value="sharing" className="mt-6">
+            <TripSharing tripId={trip.id} tripName={trip.name} />
           </TabsContent>
 
           <TabsContent value="notes" className="mt-6">
