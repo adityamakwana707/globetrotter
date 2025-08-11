@@ -4,9 +4,12 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Plus, TrendingUp, Users } from "lucide-react"
+import { Calendar, MapPin, Plus, TrendingUp, Users, LogOut } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { signOut } from "next-auth/react"
+import { useTripStore } from "@/lib/store"
+import { toast } from "@/hooks/use-toast"
 
 interface User {
   id: string
@@ -34,6 +37,7 @@ export default function DashboardContent({ user }: { user: User }) {
   })
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const { trips, setTrips, clearStore } = useTripStore()
 
   useEffect(() => {
     fetchDashboardData()
@@ -47,8 +51,9 @@ export default function DashboardContent({ user }: { user: User }) {
       ])
 
       if (tripsResponse.ok) {
-        const trips = await tripsResponse.json()
-        setRecentTrips(trips)
+        const tripsData = await tripsResponse.json()
+        setRecentTrips(tripsData)
+        setTrips(tripsData) // Update Zustand store
       }
 
       if (statsResponse.ok) {
@@ -57,8 +62,34 @@ export default function DashboardContent({ user }: { user: User }) {
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard data. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      clearStore() // Clear Zustand store
+      await signOut({ 
+        redirect: true,
+        callbackUrl: "/" 
+      })
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account.",
+      })
+    } catch (error) {
+      console.error("Logout error:", error)
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -104,6 +135,14 @@ export default function DashboardContent({ user }: { user: User }) {
             <Button onClick={() => router.push("/trips/create")} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
               New Trip
+            </Button>
+            <Button 
+              onClick={handleLogout} 
+              variant="outline" 
+              className="border-gray-600 text-gray-300 hover:bg-red-600 hover:text-white hover:border-red-600"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
             </Button>
           </div>
         </div>
@@ -190,6 +229,7 @@ export default function DashboardContent({ user }: { user: User }) {
                       <div
                         key={trip.id}
                         className="flex items-center space-x-4 p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
+                        onClick={() => router.push(`/trips/${trip.id}`)}
                       >
                         <div className="w-16 h-16 bg-gray-600 rounded-lg flex-shrink-0">
                           {trip.cover_image ? (

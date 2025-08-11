@@ -4,6 +4,7 @@ import { Poppins } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/components/providers/auth-provider"
 import { Toaster } from "@/components/ui/toaster"
+import ErrorBoundary from "@/components/error-boundary"
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] })
 
@@ -23,10 +24,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${poppins.className} min-h-screen bg-gray-50 text-slate-900`}>
+      <ErrorBoundary>
         <AuthProvider>
           {children}
           <Toaster />
         </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )
