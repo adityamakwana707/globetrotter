@@ -53,6 +53,27 @@ interface ItineraryDay {
     type: string
   }>
   completed: boolean
+  activities: Array<{
+    id?: number
+    name: string
+    description?: string
+    category?: string
+    price_range?: string
+    rating?: number
+    duration_hours?: number
+    city_id?: number
+    image_url?: string
+    startTime?: string
+    endTime?: string
+    orderIndex?: number
+    notes?: string
+    estimatedCost?: number
+    coordinates?: { lat: number; lon: number }
+    openingHours?: { typical: string; note?: string }
+    wikipediaUrl?: string
+    enriched?: boolean
+    enrichedAt?: string
+  }>
 }
 
 interface ActivityType {
@@ -460,6 +481,93 @@ export default function ItineraryDayBuilder({
                     locationName={day.location.name}
                   />
                 )}
+              </div>
+            )}
+
+            {/* Added Activities */}
+            {day.activities && day.activities.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-gray-400">Added Activities ({day.activities.length})</Label>
+                <div className="space-y-2">
+                  {day.activities.map((activity, index) => (
+                    <div key={index} className="p-3 bg-gray-700 rounded-lg border border-gray-600">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h4 className="text-white font-medium text-sm">{activity.name}</h4>
+                            {activity.enriched && (
+                              <Badge variant="outline" className="text-xs border-green-500 text-green-400">
+                                Enriched
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center space-x-4 text-xs text-gray-400 mb-2">
+                            {activity.startTime && (
+                              <span>🕐 {activity.startTime.slice(0, 5)}</span>
+                            )}
+                            {activity.duration_hours && (
+                              <span>⏱️ {activity.duration_hours}h</span>
+                            )}
+                            {activity.category && (
+                              <span>📍 {activity.category}</span>
+                            )}
+                            {activity.price_range && (
+                              <span>💰 {activity.price_range}</span>
+                            )}
+                            {activity.rating && (
+                              <span>⭐ {activity.rating}</span>
+                            )}
+                          </div>
+                          
+                          {activity.description && (
+                            <p className="text-gray-300 text-xs mb-2">{activity.description}</p>
+                          )}
+                          
+                          {activity.openingHours && (
+                            <p className="text-gray-400 text-xs">
+                              🏢 {activity.openingHours.typical} {activity.openingHours.note && `(${activity.openingHours.note})`}
+                            </p>
+                          )}
+                          
+                          {activity.coordinates && (
+                            <p className="text-gray-400 text-xs">
+                              📍 {activity.coordinates.lat.toFixed(4)}, {activity.coordinates.lon.toFixed(4)}
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="text-right">
+                          {(activity.estimatedCost || 0) > 0 && (
+                            <div className="text-green-400 font-medium text-sm">
+                              ${activity.estimatedCost}
+                            </div>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updatedActivities = day.activities.filter((_, i) => i !== index)
+                              const updatedBudget = {
+                                ...day.budget,
+                                estimated: day.budget.estimated - (activity.estimatedCost || 0)
+                              }
+                              onUpdate({ activities: updatedActivities, budget: updatedBudget })
+                            }}
+                            className="text-red-400 hover:text-red-300 text-xs"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="text-xs text-gray-500 mt-2">
+                  Total estimated cost: ${day.activities.reduce((sum: number, act: any) => sum + (act.estimatedCost || 0), 0)}
+                </div>
               </div>
             )}
 

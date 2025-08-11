@@ -20,6 +20,7 @@ import Image from "next/image"
 import ItineraryTimeline from "./itinerary-timeline"
 import BudgetManager from "@/components/budget/budget-manager"
 import WeatherWidget from "@/components/weather/weather-widget"
+import WeatherDebug from "@/components/weather/weather-debug"
 import TripSharing from "./trip-sharing"
 import LeafletMap from "@/components/maps/leaflet-map"
 import SimpleMap from "@/components/maps/simple-map"
@@ -573,35 +574,112 @@ export default function EnhancedTripDetails({
           </TabsContent>
 
           {/* Map Tab */}
-          <TabsContent value="map" className="mt-8 space-y-6">
-            <Card className="bg-white border-gray-200 shadow-md">
-              <CardHeader>
-                <CardTitle className="text-slate-900">Trip Route</CardTitle>
+          <TabsContent value="map" className="space-y-6">
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-white">Trip Route & Destinations</CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="secondary" className="bg-blue-600">
+                    {cities.filter(city => city.latitude && city.longitude).length} Pinned
+                  </Badge>
+                  <Badge variant="secondary" className="bg-purple-600">
+                    {cities.length} Total
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
-                {/* Try Leaflet first, fallback to SimpleMap */}
-                <div className="relative">
-                  <LeafletMap
-                    locations={cities.map(city => ({
-                      lat: city.latitude || 0,
-                      lng: city.longitude || 0,
-                      title: city.name,
-                      description: city.country
-                    }))}
-                    showRoute={true}
-                    height="384px"
-                    className="rounded-b-lg"
-                  />
-                  
-                  {/* Fallback message */}
-                  <div className="absolute bottom-2 right-2 z-20">
-                    <div className="bg-green-600/90 backdrop-blur-sm rounded-lg px-2 py-1 shadow-lg">
-                      <span className="text-xs text-white font-medium">
-                        Free OpenStreetMap
-                      </span>
+                {cities.filter(city => city.latitude && city.longitude).length > 0 ? (
+                  <div className="relative">
+                    <LeafletMap
+                      locations={cities
+                        .filter(city => city.latitude && city.longitude)
+                        .map((city, index) => ({
+                          lat: city.latitude!,
+                          lng: city.longitude!,
+                          title: city.name,
+                          description: `${city.country} • Stop ${index + 1}${city.arrival_date ? ` • Arriving ${new Date(city.arrival_date).toLocaleDateString()}` : ''}`
+                        }))}
+                      showRoute={cities.length > 1}
+                      height="500px"
+                      className="rounded-b-lg"
+                      zoom={cities.length === 1 ? 12 : 6}
+                    />
+                    
+                    {/* Map Legend */}
+                    <div className="absolute top-2 left-2 z-20 space-y-2">
+                      <div className="bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+                        <h4 className="text-sm font-semibold text-gray-800 mb-2">Legend</h4>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <span className="text-gray-700">Destination</span>
+                          </div>
+                          {cities.length > 1 && (
+                            <div className="flex items-center space-x-2">
+                              <div className="w-3 h-1 bg-blue-500 rounded"></div>
+                              <span className="text-gray-700">Route</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Map Info */}
+                    <div className="absolute bottom-2 right-2 z-20 space-y-2">
+                      <div className="bg-green-600/90 backdrop-blur-sm rounded-lg px-2 py-1 shadow-lg">
+                        <span className="text-xs text-white font-medium">
+                          Free OpenStreetMap
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-12 text-center">
+                    <MapPin className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-white mb-2">
+                      No Map Data Available
+                    </h3>
+                    <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                      Your destinations need geographic coordinates to be displayed on the map. 
+                      Add locations with coordinates to see them pinpointed here.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={handleEdit}
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Add Destination Coordinates
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Destinations List */}
+                {cities.length > 0 && (
+                  <div className="p-4 bg-gray-900 border-t border-gray-700">
+                    <h4 className="text-white font-medium mb-3">All Destinations</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {cities.map((city, index) => (
+                        <div key={city.id} className="flex items-center space-x-2 p-2 bg-gray-800 rounded text-sm">
+                          <Badge variant="secondary" className="text-xs">
+                            {index + 1}
+                          </Badge>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white font-medium truncate">{city.name}</div>
+                            <div className="text-gray-400 text-xs truncate">{city.country}</div>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            {city.latitude && city.longitude ? (
+                              <div className="w-2 h-2 bg-green-500 rounded-full" title="Has coordinates"></div>
+                            ) : (
+                              <div className="w-2 h-2 bg-gray-500 rounded-full" title="Missing coordinates"></div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -612,19 +690,56 @@ export default function EnhancedTripDetails({
           </TabsContent>
 
           {/* Weather Tab */}
-          <TabsContent value="weather" className="mt-8 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {cities.map((city) => (
-                city.latitude && city.longitude && (
-                  <WeatherWidget
-                    key={city.id}
-                    latitude={city.latitude}
-                    longitude={city.longitude}
-                    locationName={city.name}
-                  />
-                )
-              ))}
-            </div>
+          <TabsContent value="weather" className="space-y-6">
+            {cities.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cities.filter(city => city.latitude && city.longitude).map((city) => (
+                  <div key={city.id} className="space-y-4">
+                    <WeatherWidget
+                      latitude={city.latitude!}
+                      longitude={city.longitude!}
+                      locationName={city.name}
+                      className="h-full"
+                    />
+                    <WeatherDebug
+                      latitude={city.latitude!}
+                      longitude={city.longitude!}
+                      locationName={city.name}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Card className="bg-gray-800 border-gray-700">
+                <CardContent className="p-8 text-center">
+                  <div className="text-gray-400 mb-4">
+                    <Calendar className="w-12 h-12 mx-auto mb-2" />
+                    <h3 className="text-lg font-medium text-white mb-2">No Weather Data</h3>
+                    <p>Add destinations with coordinates to view weather information.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {cities.length > 0 && cities.filter(city => city.latitude && city.longitude).length === 0 && (
+              <Card className="bg-gray-800 border-gray-700">
+                <CardContent className="p-8 text-center">
+                  <div className="text-gray-400 mb-4">
+                    <Calendar className="w-12 h-12 mx-auto mb-2" />
+                    <h3 className="text-lg font-medium text-white mb-2">Missing Location Data</h3>
+                    <p>Your destinations need geographic coordinates to display weather information.</p>
+                    <Button
+                      variant="outline"
+                      onClick={handleEdit}
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700 mt-4"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Add Coordinates
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Sharing Tab */}
