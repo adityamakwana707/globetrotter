@@ -36,12 +36,14 @@ interface ActivitySearchModalProps {
   isOpen: boolean
   onClose: () => void
   onSelectDestination: (destination: string) => void
+  onSelectActivity: (activity: Activity) => void
 }
 
 export default function ActivitySearchModal({
   isOpen,
   onClose,
-  onSelectDestination
+  onSelectDestination,
+  onSelectActivity
 }: ActivitySearchModalProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchType, setSearchType] = useState<"cities" | "activities">("cities")
@@ -263,8 +265,7 @@ export default function ActivitySearchModal({
                         <Button
                           type="button"
                           onClick={() => {
-                            // For activities, we could add them directly to the itinerary
-                            // For now, just close the modal
+                            onSelectActivity(activity)
                             onClose()
                           }}
                           className="bg-green-600 hover:bg-green-700"

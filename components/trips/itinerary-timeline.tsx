@@ -55,6 +55,7 @@ interface ItineraryTimelineProps {
   trip: Trip
   cities: City[]
   activities: Activity[]
+  itinerary?: any[]
 }
 
 interface DaySchedule {
@@ -69,12 +70,26 @@ interface DaySchedule {
 export default function ItineraryTimeline({
   trip,
   cities,
-  activities
+  activities,
+  itinerary = []
 }: ItineraryTimelineProps) {
   const [viewMode, setViewMode] = useState<"timeline" | "calendar">("timeline")
 
   // Generate day-by-day schedule
   const generateDaySchedule = (): DaySchedule[] => {
+    // If we have stored itinerary, use it
+    if (itinerary && itinerary.length > 0) {
+      return itinerary.map((day: any) => ({
+        date: new Date(day.date),
+        dayNumber: day.dayNumber,
+        city: cities.find(c => c.name === day.location?.name),
+        activities: day.activities || [],
+        isToday: new Date(day.date).toDateString() === new Date().toDateString(),
+        isPast: new Date(day.date) < new Date()
+      }))
+    }
+
+    // Fallback to generating from basic trip data
     const startDate = new Date(trip.start_date)
     const endDate = new Date(trip.end_date)
     const today = new Date()

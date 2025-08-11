@@ -14,7 +14,7 @@ import {
   Calendar, MapPin, Users, Share2, Edit, Trash2, 
   DollarSign, Clock, Camera, FileText, CheckCircle,
   ArrowLeft, Copy, ExternalLink, Download, Sparkles,
-  TrendingUp, Heart, Star
+  TrendingUp, Heart, Star, CircleIcon
 } from "lucide-react"
 import Image from "next/image"
 import ItineraryTimeline from "./itinerary-timeline"
@@ -76,12 +76,20 @@ interface EnhancedTripDetailsProps {
   trip: Trip
   cities: City[]
   activities: Activity[]
+  budgets?: any[]
+  expenses?: any[]
+  destinations?: string[]
+  itinerary?: any[]
 }
 
 export default function EnhancedTripDetails({
   trip,
   cities,
-  activities
+  activities,
+  budgets = [],
+  expenses = [],
+  destinations = [],
+  itinerary = []
 }: EnhancedTripDetailsProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
@@ -445,13 +453,123 @@ export default function EnhancedTripDetails({
             )}
           </TabsContent>
 
-          {/* Itinerary Tab */}
+                    {/* Itinerary Tab */}
           <TabsContent value="itinerary" className="space-y-6">
-            <ItineraryTimeline
-              trip={trip}
-              cities={cities}
-              activities={activities}
-            />
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-white">Trip Itinerary</CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="secondary" className="bg-blue-600">
+                    {activities.length} Activities
+                  </Badge>
+                  <Badge variant="secondary" className="bg-purple-600">
+                    {cities.length} Cities
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {itinerary && itinerary.length > 0 ? (
+                  <ItineraryTimeline 
+                    trip={trip} 
+                    cities={cities} 
+                    activities={activities} 
+                    itinerary={itinerary}
+                  />
+                ) : (
+                  <div className="text-center py-12">
+                    <Calendar className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-white mb-2">
+                      No Itinerary Yet
+                    </h3>
+                    <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                      Your trip itinerary will appear here once you start adding activities 
+                      and organizing your schedule.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={handleEdit}
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Plan Itinerary
+                    </Button>
+                  </div>
+                )}
+
+                {/* Daily Summary Cards */}
+                {itinerary && itinerary.length > 0 && (
+                  <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {itinerary.map((day: any, index: number) => (
+                      <Card key={index} className="bg-gray-700 border-gray-600">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-400">Day {index + 1}</p>
+                              <h4 className="text-white font-medium">
+                                {formatDate(day.date)}
+                              </h4>
+                            </div>
+                            <Badge 
+                              variant="secondary"
+                              className={
+                                new Date(day.date) < new Date() 
+                                  ? "bg-gray-600" 
+                                  : new Date(day.date).toDateString() === new Date().toDateString()
+                                  ? "bg-green-600"
+                                  : "bg-blue-600"
+                              }
+                            >
+                              {new Date(day.date) < new Date() 
+                                ? "Past" 
+                                : new Date(day.date).toDateString() === new Date().toDateString()
+                                ? "Today"
+                                : "Upcoming"}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {day.city && (
+                            <div className="flex items-center text-sm">
+                              <MapPin className="w-4 h-4 text-gray-400 mr-2" />
+                              <span className="text-gray-300">{day.city.name}</span>
+                            </div>
+                          )}
+                          {day.activities && day.activities.length > 0 ? (
+                            <div className="space-y-2">
+                              {day.activities.map((activity: Activity, actIndex: number) => (
+                                <div 
+                                  key={actIndex}
+                                  className="flex items-start p-2 rounded bg-gray-800"
+                                >
+                                  <div className="mr-3 mt-1">
+                                    <CircleIcon className="w-2 h-2 text-blue-400" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm text-white">{activity.name}</p>
+                                    {activity.scheduled_time && (
+                                      <p className="text-xs text-gray-400">
+                                        {new Date(`2000-01-01T${activity.scheduled_time}`)
+                                          .toLocaleTimeString('en-US', {
+                                            hour: 'numeric',
+                                            minute: '2-digit',
+                                            hour12: true
+                                          })}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-400">No activities planned</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Map Tab */}
@@ -500,11 +618,9 @@ export default function EnhancedTripDetails({
                 city.latitude && city.longitude && (
                   <WeatherWidget
                     key={city.id}
-                    location={{
-                      lat: city.latitude,
-                      lng: city.longitude,
-                      name: city.name
-                    }}
+                    latitude={city.latitude}
+                    longitude={city.longitude}
+                    locationName={city.name}
                   />
                 )
               ))}

@@ -627,6 +627,353 @@ export async function getTripActivities(tripId: number): Promise<any[]> {
   }
 }
 
+export async function getTripBudgets(tripId: number): Promise<any[]> {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM budgets WHERE trip_id = $1 ORDER BY category`,
+      [tripId]
+    )
+    return result.rows
+  } catch (error) {
+    console.error("Database error in getTripBudgets:", error)
+    throw error
+  }
+}
+
+export async function getTripExpenses(tripId: number): Promise<any[]> {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM expenses WHERE trip_id = $1 ORDER BY expense_date DESC`,
+      [tripId]
+    )
+    return result.rows
+  } catch (error) {
+    console.error("Database error in getTripExpenses:", error)
+    throw error
+  }
+}
+
+// Comprehensive function to get all trip details with related data
+export async function getComprehensiveTripDetails(tripId: number, userId: string): Promise<{
+  trip: Trip | null,
+  cities: any[],
+  activities: any[],
+  budgets: any[],
+  expenses: any[],
+  destinations: string[],
+  itinerary: any[]
+}> {
+  try {
+    // Fetch basic trip info
+    const trip = await getTripById(tripId, userId)
+    
+    if (!trip) {
+      return {
+        trip: null,
+        cities: [],
+        activities: [],
+        budgets: [],
+        expenses: [],
+        destinations: [],
+        itinerary: []
+      }
+    }
+
+    // Fetch all related data in parallel for better performance
+    const [cities, activities, budgets, expenses, itinerary] = await Promise.all([
+      getTripCities(tripId),
+      getTripActivities(tripId),
+      getTripBudgets(tripId),
+      getTripExpenses(tripId),
+      getTripItinerary(tripId)
+    ])
+
+    // Extract destinations from cities
+    const destinations = cities.map(city => city.name)
+
+    return {
+      trip,
+      cities,
+      activities,
+      budgets,
+      expenses,
+      destinations,
+      itinerary
+    }
+  } catch (error) {
+    console.error("Database error in getComprehensiveTripDetails:", error)
+    throw error
+  }
+}
+
+// Store daily itinerary efficiently using existing tables
+export async function storeTripItinerary(tripId: number, itineraryDays: any[]) {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    // Ensure table for day headers exists (idempotent)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS itinerary_days (
+        id SERIAL PRIMARY KEY,
+        trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+        day_number INTEGER NOT NULL,
+        date DATE NOT NULL,
+        title TEXT,
+        description TEXT,
+        location_name TEXT,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_itinerary_days_trip_date ON itinerary_days(trip_id, date);
+
+      CREATE TABLE IF NOT EXISTS itinerary_entries (
+        id SERIAL PRIMARY KEY,
+        trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+        date DATE NOT NULL,
+        scheduled_time TIME,
+        title TEXT NOT NULL,
+        notes TEXT,
+        order_index INTEGER,
+        estimated_cost DECIMAL(10,2),
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_itinerary_entries_trip_date ON itinerary_entries(trip_id, date);
+    `)
+
+    // Clear previous entries
+    await client.query('DELETE FROM itinerary_days WHERE trip_id = $1', [tripId])
+    await client.query('DELETE FROM trip_activities WHERE trip_id = $1', [tripId])
+
+    let totalActivitiesStored = 0
+    for (const day of itineraryDays) {
+      // Insert day header
+      await client.query(
+        `INSERT INTO itinerary_days (trip_id, day_number, date, title, description, location_name)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          tripId,
+          typeof day.dayNumber === 'number' ? day.dayNumber : 1,
+          day.date,
+          day.title || null,
+          day.description || null,
+          day?.location?.name || null,
+        ]
+      )
+
+      if (day.activities && Array.isArray(day.activities) && day.activities.length > 0) {
+        for (const activity of day.activities) {
+          if (activity?.id && typeof activity.id === 'number' && activity.id > 0) {
+            let estimatedCost = 0
+            if (typeof activity.estimatedCost === 'number') estimatedCost = activity.estimatedCost
+            else if (activity.price_range) estimatedCost = String(activity.price_range).length * 25
+
+            await client.query(
+              `INSERT INTO trip_activities (
+                trip_id, activity_id, scheduled_date, scheduled_time,
+                order_index, notes, estimated_cost, trip_city_id
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+              [
+                tripId,
+                activity.id,
+                day.date,
+                activity.startTime || '09:00:00',
+                activity.orderIndex || 1,
+                activity.notes || '',
+                estimatedCost,
+                null,
+              ]
+            )
+            totalActivitiesStored++
+          } else if (activity && (activity.name || activity.title)) {
+            // Store free-form entry not in catalog
+            let estimatedCost = 0
+            if (typeof activity.estimatedCost === 'number') estimatedCost = activity.estimatedCost
+            else if (activity.price_range) estimatedCost = String(activity.price_range).length * 25
+            await client.query(
+              `INSERT INTO itinerary_entries (trip_id, date, scheduled_time, title, notes, order_index, estimated_cost)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+              [
+                tripId,
+                day.date,
+                activity.startTime || null,
+                activity.name || activity.title,
+                activity.notes || null,
+                activity.orderIndex || 1,
+                estimatedCost || 0,
+              ]
+            )
+          }
+        }
+      } else {
+        // No catalog activities; persist a single entry if day has meaningful content
+        const hasMeaning = (day.title && day.title.trim() !== '') || (day.description && day.description.trim() !== '') || (day.notes && day.notes.trim() !== '') || (day.budget && day.budget.estimated)
+        if (hasMeaning) {
+          await client.query(
+            `INSERT INTO itinerary_entries (trip_id, date, scheduled_time, title, notes, order_index, estimated_cost)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [
+              tripId,
+              day.date,
+              day.startTime || null,
+              day.title || 'Itinerary Item',
+              day.description || day.notes || null,
+              day.dayNumber || 1,
+              (day.budget && typeof day.budget.estimated === 'number') ? day.budget.estimated : 0,
+            ]
+          )
+        }
+      }
+    }
+
+    await client.query('COMMIT')
+    console.log(`Stored itinerary: ${itineraryDays.length} days, ${totalActivitiesStored} activities`)
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error('Error storing itinerary:', error)
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+// Fetch comprehensive itinerary using existing tables
+export async function getTripItinerary(tripId: number): Promise<any[]> {
+  try {
+    // Ensure supporting tables exist (in case script hasn't been run for this env/DB)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS itinerary_days (
+        id SERIAL PRIMARY KEY,
+        trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+        day_number INTEGER NOT NULL,
+        date DATE NOT NULL,
+        title TEXT,
+        description TEXT,
+        location_name TEXT,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_itinerary_days_trip_date ON itinerary_days(trip_id, date);
+
+      CREATE TABLE IF NOT EXISTS itinerary_entries (
+        id SERIAL PRIMARY KEY,
+        trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+        date DATE NOT NULL,
+        scheduled_time TIME,
+        title TEXT NOT NULL,
+        notes TEXT,
+        order_index INTEGER,
+        estimated_cost DECIMAL(10,2),
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_itinerary_entries_trip_date ON itinerary_entries(trip_id, date);
+    `)
+
+    const dayRows = await pool.query(`
+      SELECT id, trip_id, day_number, date, title, description, location_name
+      FROM itinerary_days
+      WHERE trip_id = $1
+      ORDER BY date, day_number
+    `, [tripId]).catch(() => ({ rows: [] as any[] }))
+
+    const activitiesResult = await pool.query(`
+      SELECT 
+        ta.*, 
+        a.name, 
+        a.description, 
+        a.category, 
+        a.price_range,
+        tc.city_id,
+        c.name as city_name,
+        c.country,
+        c.latitude,
+        c.longitude
+      FROM trip_activities ta
+      LEFT JOIN activities a ON ta.activity_id = a.id
+      LEFT JOIN trip_cities tc ON ta.trip_city_id = tc.id
+      LEFT JOIN cities c ON tc.city_id = c.id
+      WHERE ta.trip_id = $1 
+        AND ta.activity_id IS NOT NULL
+      ORDER BY ta.scheduled_date, ta.order_index
+    `, [tripId])
+
+    const customEntriesResult = await pool.query(`
+      SELECT id, trip_id, date as scheduled_date, scheduled_time, title as name, notes as description,
+             NULL::text as category, NULL::text as price_range, NULL::int as city_id, NULL::text as city_name,
+             NULL::text as country, NULL::float as latitude, NULL::float as longitude,
+             order_index, estimated_cost
+      FROM itinerary_entries
+      WHERE trip_id = $1
+      ORDER BY date, order_index
+    `, [tripId])
+
+    const activitiesByDate = new Map<string, any[]>()
+    for (const a of activitiesResult.rows) {
+      const key = String(a.scheduled_date)
+      if (!activitiesByDate.has(key)) activitiesByDate.set(key, [])
+      activitiesByDate.get(key)!.push(a)
+    }
+    for (const e of customEntriesResult.rows) {
+      const key = String(e.scheduled_date)
+      if (!activitiesByDate.has(key)) activitiesByDate.set(key, [])
+      activitiesByDate.get(key)!.push(e)
+    }
+
+    if (dayRows.rows.length > 0) {
+      return dayRows.rows.map((d, idx) => {
+        const dayActivities = activitiesByDate.get(String(d.date)) || []
+        const estimated = dayActivities.reduce((s, x) => s + (x.estimated_cost ? parseFloat(x.estimated_cost) : 0), 0)
+        const first = dayActivities[0]
+        return {
+          id: `day-${d.date}`,
+          dayNumber: d.day_number || idx + 1,
+          title: d.title || `Day ${d.day_number || idx + 1}`,
+          description: d.description || `Activities for ${new Date(d.date).toLocaleDateString()}`,
+          date: d.date,
+          startTime: '09:00:00',
+          location: {
+            name: d.location_name || first?.city_name || 'Unknown',
+            coordinates: first?.latitude && first?.longitude ? { lat: first.latitude, lng: first.longitude } : undefined,
+          },
+          activityType: 'sightseeing',
+          budget: { estimated, breakdown: [] },
+          activities: dayActivities,
+          completed: false,
+        }
+      })
+    }
+
+    // Fallback: build from activities and custom entries only
+    const daysMap = new Map<string, any>()
+    const merged = [...activitiesResult.rows, ...customEntriesResult.rows]
+    for (const activity of merged) {
+      const dateKey = activity.scheduled_date
+      if (!daysMap.has(dateKey)) {
+        daysMap.set(dateKey, {
+          id: `day-${dateKey}`,
+          dayNumber: daysMap.size + 1,
+          title: `Day ${daysMap.size + 1}`,
+          description: `Activities for ${new Date(dateKey).toLocaleDateString()}`,
+          date: dateKey,
+          startTime: '09:00:00',
+          location: {
+            name: activity.city_name || 'Unknown',
+            coordinates: activity.latitude && activity.longitude ? { lat: activity.latitude, lng: activity.longitude } : undefined
+          },
+          activityType: 'sightseeing',
+          budget: { estimated: 0, breakdown: [] },
+          activities: [],
+          completed: false,
+        })
+      }
+      const day = daysMap.get(dateKey)!
+      day.activities.push(activity)
+      if (activity.estimated_cost) day.budget.estimated += parseFloat(activity.estimated_cost)
+    }
+    return Array.from(daysMap.values()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  } catch (error) {
+    console.error("Database error in getTripItinerary:", error)
+    return []
+  }
+}
+
 export async function addTripCity(tripData: {
   tripId: number
   cityId: number

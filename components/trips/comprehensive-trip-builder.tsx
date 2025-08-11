@@ -82,7 +82,23 @@ const tripSchema = z.object({
       url: z.string(),
       type: z.string()
     })).optional(),
-    completed: z.boolean().default(false)
+    completed: z.boolean().default(false),
+    activities: z.array(z.object({
+      id: z.number(),
+      name: z.string(),
+      description: z.string().optional(),
+      category: z.string().optional(),
+      price_range: z.string().optional(),
+      rating: z.number().optional(),
+      duration_hours: z.number().optional(),
+      city_id: z.number(),
+      image_url: z.string().optional(),
+      startTime: z.string().optional(),
+      endTime: z.string().optional(),
+      orderIndex: z.number().optional(),
+      notes: z.string().optional(),
+      estimatedCost: z.number().optional()
+    })).default([])
   })).optional()
 }).refine((data) => {
   const start = new Date(data.startDate)
@@ -130,6 +146,22 @@ interface ItineraryDay {
     type: string
   }>
   completed: boolean
+  activities: Array<{
+    id: number
+    name: string
+    description?: string
+    category?: string
+    price_range?: string
+    rating?: number
+    duration_hours?: number
+    city_id: number
+    image_url?: string
+    startTime?: string
+    endTime?: string
+    orderIndex?: number
+    notes?: string
+    estimatedCost?: number
+  }>
 }
 
 const ACTIVITY_TYPES = [
@@ -162,18 +194,34 @@ interface Trip {
 
 interface ComprehensiveTripBuilderProps {
   existingTrip?: Trip
+  existingCities?: any[]
+  existingActivities?: any[]
+  existingBudgets?: any[]
+  existingDestinations?: string[]
+  existingItinerary?: any[]
 }
 
-export default function ComprehensiveTripBuilder({ existingTrip }: ComprehensiveTripBuilderProps) {
+export default function ComprehensiveTripBuilder({ 
+  existingTrip, 
+  existingCities = [], 
+  existingActivities = [], 
+  existingBudgets = [], 
+  existingDestinations = [], 
+  existingItinerary = [] 
+}: ComprehensiveTripBuilderProps) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [coverImage, setCoverImage] = useState<string>(existingTrip?.cover_image || "")
   const [currentTab, setCurrentTab] = useState("basic")
-  const [itineraryDays, setItineraryDays] = useState<ItineraryDay[]>([])
+  const [itineraryDays, setItineraryDays] = useState<ItineraryDay[]>(
+    existingItinerary.length > 0 ? existingItinerary : []
+  )
   const [showActivitySearch, setShowActivitySearch] = useState(false)
-  const [selectedDestinations, setSelectedDestinations] = useState<string[]>([])
+  const [selectedDestinations, setSelectedDestinations] = useState<string[]>(
+    existingDestinations.length > 0 ? existingDestinations : []
+  )
   const [totalEstimatedBudget, setTotalEstimatedBudget] = useState(0)
   const [formProgress, setFormProgress] = useState(0)
   const [showCelebration, setShowCelebration] = useState(false)
@@ -223,6 +271,24 @@ export default function ComprehensiveTripBuilder({ existingTrip }: Comprehensive
   const watchedStartDate = watch("startDate")
   const watchedEndDate = watch("endDate")
   const watchedName = watch("name")
+
+  // Load existing trip data when editing
+  useEffect(() => {
+    if (existingTrip && existingBudgets.length > 0) {
+      // Calculate total budget from existing budgets
+      const totalBudget = existingBudgets.reduce((sum, budget) => sum + (budget.planned_amount || 0), 0)
+      setTotalEstimatedBudget(totalBudget)
+      setValue("totalBudget", totalBudget)
+      console.log('Loaded existing trip data:', {
+        name: existingTrip.name,
+        destinations: existingDestinations.length,
+        cities: existingCities.length,
+        activities: existingActivities.length,
+        budgets: existingBudgets.length,
+        totalBudget
+      })
+    }
+  }, [existingTrip, existingBudgets, existingDestinations, existingCities, existingActivities, setValue])
 
   // Calculate form completion percentage
   useEffect(() => {
@@ -293,7 +359,8 @@ export default function ComprehensiveTripBuilder({ existingTrip }: Comprehensive
         },
         notes: "",
         attachments: [],
-        completed: false
+        completed: false,
+        activities: []
       })
     }
 
@@ -319,7 +386,8 @@ export default function ComprehensiveTripBuilder({ existingTrip }: Comprehensive
       },
       notes: "",
       attachments: [],
-      completed: false
+      completed: false,
+      activities: []
     }
 
     const updatedDays = [...itineraryDays, newDay]
@@ -345,6 +413,49 @@ export default function ComprehensiveTripBuilder({ existingTrip }: Comprehensive
   const removeItineraryDay = (dayId: string) => {
     const updatedDays = itineraryDays.filter(day => day.id !== dayId)
       .map((day, index) => ({ ...day, dayNumber: index + 1 }))
+    
+    setItineraryDays(updatedDays)
+    setValue("itinerary", updatedDays)
+    
+    // Recalculate total budget
+    const total = updatedDays.reduce((sum, day) => sum + day.budget.estimated, 0)
+    setTotalEstimatedBudget(total)
+    setValue("totalBudget", total)
+  }
+
+  // Add activity to a specific day
+  const addActivityToDay = (dayId: string, activity: any) => {
+    const updatedDays = itineraryDays.map(day => {
+      if (day.id === dayId) {
+        // Calculate estimated cost from price_range if available
+        let estimatedCost = 0
+        if (activity.price_range) {
+          // Convert price_range string to estimated cost
+          // Assuming price_range is like "$", "$$", "$$$", "$$$$"
+          const priceLevel = activity.price_range.length
+          estimatedCost = priceLevel * 25 // $25 per level as a reasonable estimate
+        }
+        
+        const newActivity = {
+          ...activity,
+          startTime: '09:00:00',
+          endTime: '10:00:00',
+          orderIndex: day.activities.length + 1,
+          notes: '',
+          estimatedCost: estimatedCost
+        }
+        
+        return {
+          ...day,
+          activities: [...day.activities, newActivity],
+          budget: {
+            ...day.budget,
+            estimated: day.budget.estimated + estimatedCost
+          }
+        }
+      }
+      return day
+    })
     
     setItineraryDays(updatedDays)
     setValue("itinerary", updatedDays)
@@ -413,7 +524,7 @@ export default function ComprehensiveTripBuilder({ existingTrip }: Comprehensive
       }
 
       const isEditing = !!existingTrip
-      const url = isEditing ? `/api/trips/${existingTrip.display_id}` : '/api/trips'
+      const url = isEditing ? `/api/trips/${existingTrip.id}` : '/api/trips'
       const method = isEditing ? 'PUT' : 'POST'
 
       const response = await fetch(url, {
@@ -446,11 +557,14 @@ export default function ComprehensiveTripBuilder({ existingTrip }: Comprehensive
           id: result.display_id.toString(),
           name: result.name,
           description: result.description,
-          startDate: result.start_date,
-          endDate: result.end_date,
+          start_date: result.start_date,
+          end_date: result.end_date,
           status: result.status,
-          coverImage: result.cover_image,
-          isPublic: result.is_public
+          cover_image: result.cover_image,
+          is_public: result.is_public,
+          user_id: result.user_id,
+          created_at: result.created_at,
+          updated_at: result.updated_at
         })
       }
 
@@ -480,7 +594,7 @@ export default function ComprehensiveTripBuilder({ existingTrip }: Comprehensive
       })
 
       // Redirect to trip details
-      router.push(`/trips/${result.display_id || existingTrip?.display_id}`)
+      router.push(`/trips/${result.display_id || result.id || existingTrip?.id}`)
     } catch (error) {
       console.error('Error creating trip:', error)
       const isEditing = !!existingTrip
@@ -1079,6 +1193,25 @@ export default function ComprehensiveTripBuilder({ existingTrip }: Comprehensive
               const updated = [...selectedDestinations, destination]
               setSelectedDestinations(updated)
               setValue("destinations", updated)
+            }
+            setShowActivitySearch(false)
+          }}
+          onSelectActivity={(activity) => {
+            // For now, add to the first day that has no activities
+            // In a real app, you'd want to let the user choose which day
+            const firstEmptyDay = itineraryDays.find(day => day.activities.length === 0)
+            if (firstEmptyDay) {
+              addActivityToDay(firstEmptyDay.id, activity)
+              toast({
+                title: "Activity added!",
+                description: `${activity.name} has been added to ${firstEmptyDay.title}`,
+              })
+            } else {
+              toast({
+                title: "No empty days",
+                description: "All days already have activities. Add a new day first.",
+                variant: "destructive",
+              })
             }
             setShowActivitySearch(false)
           }}

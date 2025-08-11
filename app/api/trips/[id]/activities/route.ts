@@ -5,8 +5,8 @@ import { getTripActivities, addTripActivity } from "@/lib/database"
 import { z } from "zod"
 
 const addTripActivitySchema = z.object({
-  activityId: z.string().uuid("Invalid activity ID"),
-  tripCityId: z.string().uuid("Invalid trip city ID").optional(),
+  activityId: z.number().int().positive("Invalid activity ID"),
+  tripCityId: z.number().int().positive("Invalid trip city ID").optional(),
   scheduledDate: z.string().refine((date) => !isNaN(Date.parse(date)), "Invalid scheduled date").optional(),
   scheduledTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format").optional(),
   orderIndex: z.number().int().min(0, "Order index must be non-negative").optional(),
@@ -25,7 +25,7 @@ export async function GET(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const activities = await getTripActivities(params.id)
+    const activities = await getTripActivities(parseInt(params.id))
 
     return NextResponse.json(activities)
   } catch (error) {
@@ -60,7 +60,7 @@ export async function POST(
     }
 
     const tripActivityData = {
-      tripId: params.id,
+      tripId: parseInt(params.id),
       ...validationResult.data
     }
 
