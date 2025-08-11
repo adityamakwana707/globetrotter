@@ -14,7 +14,7 @@ const resetPasswordSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { token, password } = resetPasswordSchema.parse(body)
+    const { token, password, confirmPassword } = resetPasswordSchema.parse(body)
 
     // Reset the password
     const success = await resetUserPassword(token, password)
@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error("Validation error:", error.errors)
       return NextResponse.json(
         { message: error.errors[0].message },
         { status: 400 }

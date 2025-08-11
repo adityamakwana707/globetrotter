@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { isUserAdmin } from "@/lib/database"
 
-import { getTripById, getTripCities, getTripActivities } from "@/lib/database"
+import { getTripById, getTripCities, getTripActivities, getTripByDisplayId } from "@/lib/database"
 import EnhancedTripDetails from "@/components/trips/enhanced-trip-details"
 
 interface TripPageProps {
@@ -31,17 +31,17 @@ export default async function TripPage({ params }: TripPageProps) {
   let activities = []
   
   try {
-    // Parse the ID as number since we're using SERIAL IDs now
-    const tripId = parseInt(params.id)
-    if (isNaN(tripId)) {
+    // Parse the ID as number since we're using display_id for URLs
+    const tripDisplayId = parseInt(params.id)
+    if (isNaN(tripDisplayId)) {
       redirect("/dashboard")
     }
 
-    trip = await getTripById(tripId, session.user.id)
+    trip = await getTripByDisplayId(tripDisplayId, session.user.id)
     if (trip) {
-      // Fetch related data
-      cities = await getTripCities(tripId)
-      activities = await getTripActivities(tripId)
+      // Fetch related data using the actual trip ID (UUID)
+      cities = await getTripCities(Number(trip.id))
+      activities = await getTripActivities(Number(trip.id))
     }
   } catch (error) {
     console.error("Error fetching trip:", error)
@@ -53,7 +53,7 @@ export default async function TripPage({ params }: TripPageProps) {
 
   return (
     <EnhancedTripDetails 
-      trip={trip} 
+      trip={{ ...trip, id: Number(trip.id) }} 
       cities={cities}
       activities={activities}
     />

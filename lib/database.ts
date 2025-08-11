@@ -66,7 +66,7 @@ export interface User {
 }
 
 export interface Trip {
-  id: number // Auto-increment for performance
+  id: string // UUID for internal operations
   display_id: number // Auto-increment for public URLs
   user_id: string // UUID for auth
   name: string
@@ -273,7 +273,7 @@ export async function createTrip(tripData: {
   }
 }
 
-export async function updateTrip(tripId: number, userId: string, tripData: Partial<{
+export async function updateTrip(tripId: string, userId: string, tripData: Partial<{
   name: string
   description: string
   startDate: string
@@ -343,7 +343,7 @@ export async function updateTrip(tripId: number, userId: string, tripData: Parti
   }
 }
 
-export async function deleteTrip(tripId: number, userId: string): Promise<boolean> {
+export async function deleteTrip(tripId: string, userId: string): Promise<boolean> {
   try {
     const result = await pool.query(
       "DELETE FROM trips WHERE id = $1 AND user_id = $2",
@@ -356,7 +356,7 @@ export async function deleteTrip(tripId: number, userId: string): Promise<boolea
   }
 }
 
-export async function getTripById(tripId: number, userId: string): Promise<Trip | null> {
+export async function getTripById(tripId: string, userId: string): Promise<Trip | null> {
   try {
     const result = await pool.query(
       "SELECT * FROM trips WHERE id = $1 AND user_id = $2",
@@ -432,14 +432,14 @@ export async function updateTripById(tripId: number, userId: string, tripData: P
   isPublic: boolean
 }>): Promise<Trip> {
   try {
-    return await updateTrip(tripId, userId, tripData)
+    return await updateTrip(String(tripId), userId, tripData)
   } catch (error) {
     console.error("Database error in updateTripById:", error)
     throw error
   }
 }
 
-export async function deleteTripById(tripId: number, userId: string): Promise<boolean> {
+export async function deleteTripById(tripId: string, userId: string): Promise<boolean> {
   try {
     return await deleteTrip(tripId, userId)
   } catch (error) {
@@ -448,7 +448,7 @@ export async function deleteTripById(tripId: number, userId: string): Promise<bo
   }
 }
 
-export async function duplicateTrip(tripId: number, userId: string, newName: string): Promise<Trip> {
+export async function duplicateTrip(tripId: string, userId: string, newName: string): Promise<Trip> {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
@@ -1036,7 +1036,185 @@ export async function cleanupExpiredPasswordResets(): Promise<void> {
   await pool.query(
     'DELETE FROM password_resets WHERE expires_at < CURRENT_TIMESTAMP OR used = TRUE'
   )
-}// ============================================================================
+}
+
+// ============================================================================
+// UNVERIFIED USER MANAGEMENT FUNCTIONS
+// ============================================================================
+
+export async function createUnverifiedUser(userData: {
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+  phoneNumber?: string
+  city?: string
+  country?: string
+}): Promise<string> {
+  const client = await pool.connect()
+  
+  try {
+    // Generate a temporary user ID
+    const tempUserId = crypto.randomUUID()
+    
+    // Insert into unverified_users table
+    await client.query(
+      `INSERT INTO unverified_users (
+        id, email, password, first_name, last_name, phone_number, city, country, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)`,
+      [
+        tempUserId,
+        userData.email,
+        userData.password,
+        userData.firstName,
+        userData.lastName,
+        userData.phoneNumber || null,
+        userData.city || null,
+        userData.country || null,
+      ]
+    )
+    
+    return tempUserId
+  } finally {
+    client.release()
+  }
+}
+
+export async function getUnverifiedUserById(userId: string): Promise<any | null> {
+  const result = await pool.query(
+    'SELECT * FROM unverified_users WHERE id = $1',
+    [userId]
+  )
+  
+  return result.rows[0] || null
+}
+
+export async function getUnverifiedUserByEmail(email: string): Promise<any | null> {
+  const result = await pool.query(
+    'SELECT * FROM unverified_users WHERE email = $1',
+    [email]
+  )
+  
+  return result.rows[0] || null
+}
+
+export async function moveUnverifiedUserToVerified(userId: string): Promise<User> {
+  const client = await pool.connect()
+  
+  try {
+    await client.query('BEGIN')
+    
+    // Get unverified user data
+    const unverifiedUser = await getUnverifiedUserById(userId)
+    if (!unverifiedUser) {
+      throw new Error('Unverified user not found')
+    }
+    
+    // Create verified user
+    const verifiedUser = await createUser({
+      email: unverifiedUser.email,
+      password: unverifiedUser.password, // Already hashed
+      firstName: unverifiedUser.first_name,
+      lastName: unverifiedUser.last_name,
+      phoneNumber: unverifiedUser.phone_number,
+      city: unverifiedUser.city,
+      country: unverifiedUser.country,
+    })
+    
+    // Delete from unverified_users
+    await client.query('DELETE FROM unverified_users WHERE id = $1', [userId])
+    
+    await client.query('COMMIT')
+    return verifiedUser
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+export async function cleanupExpiredUnverifiedUsers(): Promise<void> {
+  // Delete unverified users older than 24 hours
+  await pool.query(
+    'DELETE FROM unverified_users WHERE created_at < CURRENT_TIMESTAMP - INTERVAL \'24 hours\''
+  )
+}
+
+// ============================================================================
+// EMAIL VERIFICATION OTP FUNCTIONS
+// ============================================================================
+
+export async function createEmailVerificationOTP(userId: string, email: string): Promise<string> {
+  const client = await pool.connect()
+  
+  try {
+    // Generate a 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
+    
+    // Set expiration to 10 minutes from now
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000)
+    
+    // Delete any existing OTP for this user/email
+    await client.query(
+      "DELETE FROM email_verification_otps WHERE user_id = $1 AND email = $2",
+      [userId, email]
+    )
+    
+    // Insert new OTP
+    await client.query(
+      "INSERT INTO email_verification_otps (user_id, email, otp_code, expires_at) VALUES ($1, $2, $3, $4)",
+      [userId, email, otpCode, expiresAt]
+    )
+    
+    return otpCode
+  } finally {
+    client.release()
+  }
+}
+
+export async function verifyEmailVerificationOTP(userId: string, email: string, otpCode: string): Promise<{ success: boolean; user?: User }> {
+  const client = await pool.connect()
+  
+  try {
+    const result = await client.query(
+      `SELECT * FROM email_verification_otps 
+       WHERE user_id = $1 AND email = $2 AND otp_code = $3 AND expires_at > NOW() AND used_at IS NULL`,
+      [userId, email, otpCode]
+    )
+    
+    if (result.rows.length === 0) {
+      return { success: false }
+    }
+    
+    // Mark OTP as used
+    await client.query(
+      "UPDATE email_verification_otps SET used_at = NOW() WHERE user_id = $1 AND email = $2",
+      [userId, email]
+    )
+    
+    // Move unverified user to verified users table
+    const verifiedUser = await moveUnverifiedUserToVerified(userId)
+    
+    return { success: true, user: verifiedUser }
+  } finally {
+    client.release()
+  }
+}
+
+export async function cleanupExpiredEmailVerificationOTPs(): Promise<void> {
+  const client = await pool.connect()
+  
+  try {
+    await client.query(
+      "DELETE FROM email_verification_otps WHERE expires_at < NOW()"
+    )
+  } finally {
+    client.release()
+  }
+}
+
+// ============================================================================
 // CONTENT MANAGEMENT FUNCTIONS (ADMIN)
 // ============================================================================
 

@@ -99,7 +99,7 @@ export default function ResetPasswordPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ token, password }),
+        body: JSON.stringify({ token, password, confirmPassword }),
       })
 
       const data = await response.json()
