@@ -1,10 +1,16 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { MapPin, Calendar, Users, TrendingUp, Search, Filter, Layers, ArrowUpDown, Plus, Heart, Star, ArrowRight } from "lucide-react"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
+import { useSession } from "next-auth/react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function LandingPage() {
+  const { data: session } = useSession()
+
   const regions = [
     { name: "Europe", image: "/european-landmarks.png" },
     { name: "Asia", image: "/serene-asian-temples.png" },
@@ -37,14 +43,27 @@ export default function LandingPage() {
             <span className="text-2xl font-semibold tracking-tight">GlobeTrotter</span>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/auth/login">
-              <Button variant="ghost" className="text-slate-700 hover:text-emerald-600">
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/auth/register">
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">Get Started</Button>
-            </Link>
+            {session?.user ? (
+              <Link href="/dashboard" className="inline-flex items-center">
+                <Avatar className="h-9 w-9 border border-gray-200">
+                  <AvatarImage src={(session.user as any)?.image || ""} alt={(session.user as any)?.name || "User"} />
+                  <AvatarFallback>
+                    {((session.user?.name || session.user?.email || "U").charAt(0) || "U").toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+            ) : (
+              <>
+                <Link href="/auth/login">
+                  <Button variant="ghost" className="text-slate-700 hover:text-emerald-600">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/auth/register">
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">Get Started</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -57,19 +76,19 @@ export default function LandingPage() {
               <CarouselContent>
                 {heroSlides.map((slide, idx) => (
                   <CarouselItem key={idx}>
-                    <div className="relative h-[380px] sm:h-[420px] md:h-[500px]">
+                    <div className="relative h-[320px] sm:h-[420px] md:h-[500px]">
                       <img src={slide.image} alt={slide.title} className="absolute inset-0 w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10">
+                      <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-10">
                         <div className="max-w-xl">
-                          <h1 className="text-3xl sm:text-5xl font-extrabold text-white drop-shadow">{slide.title}</h1>
+                          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white drop-shadow">{slide.title}</h1>
                           <p className="text-white/90 mt-2 flex items-center gap-2">
                             <span className="inline-flex items-center gap-1"><MapPin className="w-4 h-4" /> {slide.subtitle}</span>
                           </p>
-                          <div className="mt-4 flex gap-3">
-                            <Button className="bg-white text-slate-900 hover:bg-gray-100">See more</Button>
+                          <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                            <Button className="bg-white text-slate-900 hover:bg-gray-100 w-full sm:w-auto">See more</Button>
                             <Link href="/auth/register">
-                              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white  px-5">
+                              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-5 w-full sm:w-auto">
                                 Start planning <ArrowRight className="ml-2 h-4 w-4" />
                               </Button>
                             </Link>
@@ -80,8 +99,8 @@ export default function LandingPage() {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur border-gray-200" />
-              <CarouselNext className="right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur border-gray-200" />
+              <CarouselPrevious className="left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur border-gray-200 h-9 w-9 sm:h-10 sm:w-10" />
+              <CarouselNext className="right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur border-gray-200 h-9 w-9 sm:h-10 sm:w-10" />
             </Carousel>
           </div>
         </div>
@@ -98,14 +117,14 @@ export default function LandingPage() {
                 className="bg-transparent outline-none flex-1 placeholder:text-slate-400 text-sm text-slate-800"
               />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" className="border-gray-300 bg-white">
+            <div className="grid grid-cols-3 gap-2 md:flex md:gap-2">
+              <Button variant="outline" className="border-gray-300 bg-white w-full md:w-auto">
                 <Layers className="w-4 h-4 mr-2" /> Group by
               </Button>
-              <Button variant="outline" className="border-gray-300 bg-white">
+              <Button variant="outline" className="border-gray-300 bg-white w-full md:w-auto">
                 <Filter className="w-4 h-4 mr-2" /> Filter
               </Button>
-              <Button variant="outline" className="border-gray-300 bg-white">
+              <Button variant="outline" className="border-gray-300 bg-white w-full md:w-auto">
                 <ArrowUpDown className="w-4 h-4 mr-2" /> Sort by
               </Button>
             </div>
@@ -117,26 +136,26 @@ export default function LandingPage() {
       <section className="py-10 px-4">
         <div className="container mx-auto">
           <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-2xl sm:text-3xl font-semibold">Top Regional Selections</h2>
+            <h2 className="text-xl sm:text-3xl font-semibold">Top Regional Selections</h2>
             <div className="h-px flex-1 bg-gray-200" />
           </div>
           <div className="relative">
             <Carousel opts={{ align: "start", dragFree: true }}>
               <CarouselContent>
                 {regions.map((region) => (
-                  <CarouselItem key={region.name} className="basis-3/4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                  <CarouselItem key={region.name} className="basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
                     <Card className="bg-white border-0 shadow-none">
                       <CardContent className="p-0">
-                        <div className="relative rounded-[28px] overflow-hidden ring-1 ring-gray-200 shadow-md">
-                          <img src={region.image || "/placeholder.svg"} alt={region.name} className="w-full h-64 sm:h-72 object-cover" />
-                          <button className="absolute top-3 right-3 w-10 h-10 grid place-items-center rounded-full bg-white/90 shadow-md">
+                        <div className="relative rounded-[24px] sm:rounded-[28px] overflow-hidden ring-1 ring-gray-200 shadow-md">
+                          <img src={region.image || "/placeholder.svg"} alt={region.name} className="w-full h-56 sm:h-72 object-cover" />
+                          <button className="absolute top-3 right-3 w-8 h-8 sm:w-10 sm:h-10 grid place-items-center rounded-full bg-white/90 shadow-md">
                             <Heart className="w-4 h-4 text-slate-700" />
                           </button>
-                          <div className="absolute inset-x-0 bottom-0 p-4">
+                          <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
                             <div className="rounded-xl bg-black/45 text-white backdrop-blur px-3 py-2">
                               <div className="flex items-center justify-between">
-                                <p className="text-base font-medium">{region.name}</p>
-                                <span className="inline-flex items-center gap-1 text-sm opacity-90">
+                                <p className="text-sm sm:text-base font-medium">{region.name}</p>
+                                <span className="inline-flex items-center gap-1 text-xs sm:text-sm opacity-90">
                                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" /> 4.8
                                 </span>
                               </div>
@@ -148,8 +167,8 @@ export default function LandingPage() {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="-left-6 md:-left-12 bg-white border-gray-200" />
-              <CarouselNext className="-right-6 md:-right-12 bg-white border-gray-200" />
+              <CarouselPrevious className="left-2 sm:-left-6 md:-left-12 bg-white border-gray-200 h-8 w-8" />
+              <CarouselNext className="right-2 sm:-right-6 md:-right-12 bg-white border-gray-200 h-8 w-8" />
             </Carousel>
           </div>
         </div>
@@ -186,7 +205,7 @@ export default function LandingPage() {
       </section>
 
       {/* Floating CTA */}
-      <Link href="/auth/register" className="fixed right-5 bottom-5">
+      <Link href="/auth/register" className="fixed right-4 bottom-6 sm:right-5 sm:bottom-6">
         <Button size="lg" className="shadow-lg bg-emerald-600 hover:bg-emerald-700">
           <Plus className="w-4 h-4 mr-2" /> Plan a trip
         </Button>
