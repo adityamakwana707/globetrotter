@@ -15,12 +15,12 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists (either verified or unverified)
     const existingUser = await getUserByEmail(email)
-    const existingUnverifiedUser = await getUnverifiedUserByEmail(email)
-    
+        const existingUnverifiedUser = await getUnverifiedUserByEmail(email)
+      
     if (existingUser || existingUnverifiedUser) {
-      return NextResponse.json({ message: "User already exists" }, { status: 409 }
+      return NextResponse.json({ message: "User already exists" }, { status: 409 })
     }
-
+ 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 

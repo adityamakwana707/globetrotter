@@ -43,7 +43,8 @@ import {
 import {
   CSS
 } from '@dnd-kit/utilities'
-
+import ItineraryDayBuilder from "@/components/trips/itinerary-day-builder"
+import ActivitySearchModal from "@/components/trips/activity-search-modal"
 // Enhanced schema with itinerary validation
 const tripSchema = z.object({
   name: z.string().min(1, "Trip name is required").max(255, "Trip name too long"),
@@ -137,6 +138,11 @@ interface ItineraryDay {
       description?: string
     }>
   }
+  attachments?: Array<{
+    name: string
+    url: string
+    type: string
+  }>
   notes?: string
   completed: boolean
   activities: Array<{
@@ -1405,7 +1411,7 @@ export default function ComprehensiveTripBuilder({
               <ItineraryDayBuilder
                 key={day.id}
                 day={day}
-                onUpdate={(updates) => updateItineraryDay(day.id, updates)}
+                onUpdate={(updates: Partial<ItineraryDay>) => updateItineraryDay(day.id, updates)}
                 onRemove={() => removeItineraryDay(day.id)}
                 activityTypes={ACTIVITY_TYPES}
                 destinations={selectedDestinations}
@@ -1466,6 +1472,7 @@ export default function ComprehensiveTripBuilder({
                 </CardContent>
               </Card>
 
+            )}
             <div className="flex justify-between">
               <Button
                 type="button"
@@ -1580,7 +1587,7 @@ export default function ComprehensiveTripBuilder({
         <ActivitySearchModal
           isOpen={showActivitySearch}
           onClose={() => setShowActivitySearch(false)}
-          onSelectDestination={(destination) => {
+          onSelectDestination={(destination: string) => {
             if (!selectedDestinations.includes(destination)) {
               const updated = [...selectedDestinations, destination]
               setSelectedDestinations(updated)
@@ -1588,7 +1595,7 @@ export default function ComprehensiveTripBuilder({
             }
             setShowActivitySearch(false)
           }}
-          onSelectActivity={(activity) => {
+          onSelectActivity={(activity: any) => {
             // For now, add to the first day that has no activities
             // In a real app, you'd want to let the user choose which day
             const firstEmptyDay = itineraryDays.find(day => day.activities.length === 0)
@@ -1633,5 +1640,6 @@ export default function ComprehensiveTripBuilder({
         </DialogContent>
       </Dialog>
       </div>
+    </div>
   )
 }
