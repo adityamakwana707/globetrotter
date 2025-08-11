@@ -133,14 +133,6 @@ export default function TripsListing() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={() => router.push('/dashboard')}
-              className="border-gray-300 text-slate-700 hover:bg-slate-50 w-full sm:w-auto"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Profile
-            </Button>
             <div>
               <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">My Trips</h1>
               <p className="text-slate-600">Manage all your travel plans</p>
