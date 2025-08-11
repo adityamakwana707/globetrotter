@@ -52,8 +52,8 @@ export default function LandingPage() {
                           </p>
                           <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
                             <Button className="bg-white text-slate-900 hover:bg-gray-100 w-full sm:w-auto">See more</Button>
-                            <Link href="/auth/register">
-                              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-5 w-full sm:w-auto">
+                            <Link href="/trips/create">
+                              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white  px-5 w-full sm:w-auto">
                                 Start planning <ArrowRight className="ml-2 h-4 w-4" />
                               </Button>
                             </Link>
@@ -109,7 +109,7 @@ export default function LandingPage() {
               <CarouselContent>
                 {regions.map((region) => (
                   <CarouselItem key={region.name} className="basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
-                    <Card className="bg-white border-0 shadow-none">
+                    <Card className="bg-gray-50 border-0 shadow-none">
                       <CardContent className="p-0">
                         <div className="relative rounded-[24px] sm:rounded-[28px] overflow-hidden ring-1 ring-gray-200 shadow-md">
                           <img src={region.image || "/placeholder.svg"} alt={region.name} className="w-full h-56 sm:h-72 object-cover" />
@@ -148,7 +148,7 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {previousTrips.map((trip, idx) => (
-              <Card key={idx} className="bg-white border-0 shadow-none">
+              <Card key={idx} className="bg-gray-50 border-0 shadow-none">
                 <CardContent className="p-0">
                   <div className="relative rounded-[28px] overflow-hidden ring-1 ring-gray-200 shadow-md">
                     <img src={trip.image || "/placeholder.svg"} alt={trip.name} className="w-full h-96 object-cover" />
@@ -170,11 +170,7 @@ export default function LandingPage() {
       </section>
 
       {/* Floating CTA */}
-      <Link href="/auth/register" className="fixed right-4 bottom-6 sm:right-5 sm:bottom-6">
-        <Button size="lg" className="shadow-lg bg-emerald-600 hover:bg-emerald-700">
-          <Plus className="w-4 h-4 mr-2" /> Plan a trip
-        </Button>
-      </Link>
+     
 
       {/* Footer */}
       <footer className="border-top border-gray-200 bg-white py-10 px-4">

@@ -97,7 +97,7 @@ export default function TripsListing() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-600"
+        return "bg-emerald-600"
       case "completed":
         return "bg-blue-600"
       default:
@@ -123,34 +123,34 @@ export default function TripsListing() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-4">
             <Button
               variant="outline"
               onClick={() => router.push('/dashboard')}
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              className="border-gray-300 text-slate-700 hover:bg-slate-50"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Dashboard
+              Back to Profile
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-white">My Trips</h1>
-              <p className="text-gray-400">Manage all your travel plans</p>
+              <h1 className="text-3xl font-bold text-slate-900">My Trips</h1>
+              <p className="text-slate-600">Manage all your travel plans</p>
             </div>
           </div>
           <Button
             onClick={() => router.push('/trips/create')}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-emerald-600 hover:bg-emerald-700"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Trip
@@ -158,30 +158,30 @@ export default function TripsListing() {
         </div>
 
         {/* Filters */}
-        <Card className="bg-gray-800 border-gray-700 mb-8">
+        <Card className="bg-white border-gray-200 mb-8 rounded-2xl shadow-sm">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                   <Input
                     placeholder="Search trips..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-gray-700 border-gray-600 text-white pl-10"
+                    className="bg-white border-gray-300 text-slate-900 pl-10"
                   />
                 </div>
               </div>
               <div className="w-full md:w-48">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                  <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-700 border-gray-600">
-                    <SelectItem value="all" className="text-white hover:bg-gray-600">All Status</SelectItem>
-                    <SelectItem value="planning" className="text-white hover:bg-gray-600">Planning</SelectItem>
-                    <SelectItem value="active" className="text-white hover:bg-gray-600">Active</SelectItem>
-                    <SelectItem value="completed" className="text-white hover:bg-gray-600">Completed</SelectItem>
+                  <SelectContent className="bg-white border-gray-200">
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="planning">Planning</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -191,14 +191,14 @@ export default function TripsListing() {
 
         {/* Trips Grid */}
         {filteredTrips.length === 0 ? (
-          <Card className="bg-gray-800 border-gray-700">
+          <Card className="bg-white border-gray-200 rounded-2xl shadow-sm">
             <CardContent className="py-12">
               <div className="text-center">
-                <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-                <h3 className="text-xl font-semibold text-white mb-2">
+                <MapPin className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                <h3 className="text-xl font-semibold text-slate-900 mb-2">
                   {searchQuery || statusFilter !== "all" ? "No trips found" : "No trips yet"}
                 </h3>
-                <p className="text-gray-400 mb-6">
+                <p className="text-slate-600 mb-6">
                   {searchQuery || statusFilter !== "all" 
                     ? "Try adjusting your search or filter criteria." 
                     : "Start planning your first adventure!"}
@@ -206,7 +206,7 @@ export default function TripsListing() {
                 {!searchQuery && statusFilter === "all" && (
                   <Button 
                     onClick={() => router.push('/trips/create')}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-emerald-600 hover:bg-emerald-700"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Create Your First Trip
@@ -218,10 +218,10 @@ export default function TripsListing() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTrips.map((trip) => (
-              <Card key={trip.id} className="bg-gray-800 border-gray-700 hover:border-gray-600 transition-colors">
+              <Card key={trip.id} className="bg-white border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all">
                 <CardContent className="p-0">
                   {/* Cover Image */}
-                  <div className="relative h-48 bg-gray-700 rounded-t-lg overflow-hidden">
+                  <div className="relative h-48 bg-gray-100 rounded-t-2xl overflow-hidden">
                     {trip.cover_image ? (
                       <Image
                         src={trip.cover_image}
@@ -231,7 +231,7 @@ export default function TripsListing() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <MapPin className="w-12 h-12 text-gray-500" />
+                        <MapPin className="w-12 h-12 text-slate-300" />
                       </div>
                     )}
                     <div className="absolute top-4 right-4">
@@ -243,21 +243,21 @@ export default function TripsListing() {
 
                   {/* Content */}
                   <div className="p-6">
-                    <h3 className="text-xl font-semibold text-white mb-2 truncate">
+                    <h3 className="text-xl font-semibold text-slate-900 mb-2 truncate">
                       {trip.name}
                     </h3>
-                    <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+                    <p className="text-slate-600 text-sm mb-4 line-clamp-2">
                       {trip.description || "No description"}
                     </p>
 
                     <div className="space-y-2 mb-4">
-                      <div className="flex items-center text-gray-300 text-sm">
+                      <div className="flex items-center text-slate-600 text-sm">
                         <Calendar className="w-4 h-4 mr-2" />
                         <span>
                           {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
                         </span>
                       </div>
-                      <div className="flex items-center text-gray-300 text-sm">
+                      <div className="flex items-center text-slate-600 text-sm">
                         <MapPin className="w-4 h-4 mr-2" />
                         <span>{calculateDuration(trip.start_date, trip.end_date)} days</span>
                       </div>
@@ -267,7 +267,7 @@ export default function TripsListing() {
                     <div className="flex justify-between items-center">
                       <Button
                         onClick={() => router.push(`/trips/${trip.id}`)}
-                        className="bg-blue-600 hover:bg-blue-700 flex-1 mr-2"
+                        className="bg-emerald-600 hover:bg-emerald-700 flex-1 mr-2"
                       >
                         View Trip
                       </Button>
@@ -276,7 +276,7 @@ export default function TripsListing() {
                           onClick={() => router.push(`/trips/${trip.id}/edit`)}
                           size="sm"
                           variant="outline"
-                          className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                          className="border-gray-300 text-slate-900 hover:bg-gray-50"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
