@@ -23,6 +23,18 @@
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Email verification OTPs table
+    CREATE TABLE IF NOT EXISTS email_verification_otps (
+        id SERIAL PRIMARY KEY,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        email VARCHAR(255) NOT NULL,
+        otp_code VARCHAR(6) NOT NULL,
+        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        used_at TIMESTAMP WITH TIME ZONE,
+        UNIQUE(user_id, email)
+    );
+
     -- Trips table (Auto-increment for performance, UUID for auth)
     CREATE TABLE IF NOT EXISTS trips (
         id SERIAL PRIMARY KEY,
@@ -172,6 +184,8 @@
     CREATE INDEX IF NOT EXISTS idx_shared_trips_token ON shared_trips(share_token);
     CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(session_token);
+    CREATE INDEX IF NOT EXISTS idx_email_verification_otps_user_email ON email_verification_otps(user_id, email);
+    CREATE INDEX IF NOT EXISTS idx_email_verification_otps_expires ON email_verification_otps(expires_at);
 
     -- Composite indexes for common query patterns
     CREATE INDEX IF NOT EXISTS idx_trips_user_status ON trips(user_id, status);

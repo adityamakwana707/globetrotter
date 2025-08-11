@@ -42,7 +42,7 @@ export default function LoginPage() {
           title: "Welcome back!",
           description: "Successfully logged in",
         })
-        router.push("/")
+        router.push("/landing")
       }
     } catch (error) {
       toast({

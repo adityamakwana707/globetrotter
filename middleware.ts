@@ -51,14 +51,32 @@ export default withAuth(
           if (req.nextUrl.pathname.startsWith('/api/auth/')) {
             return true
           }
+          // Allow public search endpoints
+          if (req.nextUrl.pathname === '/api/cities' || 
+              req.nextUrl.pathname.startsWith('/api/cities/') ||
+              req.nextUrl.pathname === '/api/activities' ||
+              req.nextUrl.pathname.startsWith('/api/activities/')) {
+            return true
+          }
+          // Allow reading community posts for everyone
+          if (req.nextUrl.pathname === '/api/community/posts' && req.method === 'GET') {
+            return true
+          }
+          // Allow reading individual community posts for everyone
+          if (req.nextUrl.pathname.startsWith('/api/community/posts/') && 
+              req.nextUrl.pathname.match(/^\/api\/community\/posts\/\d+$/) && 
+              req.method === 'GET') {
+            return true
+          }
           // Require authentication for other API routes
           return !!token
         }
         
-        // Protect dashboard, trip, and admin pages
+        // Protect dashboard, trip, admin, and community pages
         if (req.nextUrl.pathname.startsWith('/dashboard') || 
             req.nextUrl.pathname.startsWith('/trips/') ||
-            req.nextUrl.pathname.startsWith('/admin')) {
+            req.nextUrl.pathname.startsWith('/admin') ||
+            req.nextUrl.pathname.startsWith('/community/create')) {
           return !!token
         }
         
@@ -70,10 +88,16 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/api/:path*',
+    '/api/auth/:path*',
+    '/api/dashboard/:path*',
+    '/api/trips/:path*',
+    '/api/admin/:path*',
+    '/api/upload/:path*',
+    '/api/test-db/:path*',
     '/dashboard/:path*',
     '/trips/:path*',
     '/admin/:path*',
+    '/community/create/:path*',
     '/landing'
   ]
 }
