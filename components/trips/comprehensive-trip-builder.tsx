@@ -55,7 +55,8 @@ import {
 const tripSchema = z.object({
   name: z.string().min(1, "Trip name is required").max(255, "Trip name too long"),
   description: z.string().max(1000, "Description too long"),
-  destinations: z.array(z.string()).min(1, "At least one destination is required"),
+  // Allow zero destinations to enable submitting at ~75% completion
+  destinations: z.array(z.string()).optional().default([]),
   startDate: z.string().refine((date) => !isNaN(Date.parse(date)), "Invalid start date"),
   endDate: z.string().refine((date) => !isNaN(Date.parse(date)), "Invalid end date"),
   totalBudget: z.number().min(0, "Budget must be positive").optional(),
@@ -425,7 +426,11 @@ export default function ComprehensiveTripBuilder({
   }
 
   // Update itinerary day
-  const updateItineraryDay = (dayId: string, updates: Partial<ItineraryDay>) => {
+  // Relax the update type to accept activities coming from child components with optional ids
+  const updateItineraryDay = (
+    dayId: string,
+    updates: Partial<Omit<ItineraryDay, 'activities'>> & { activities?: Array<any> }
+  ) => {
     const updatedDays = itineraryDays.map(day => 
       day.id === dayId ? { ...day, ...updates } : day
     )
@@ -1207,20 +1212,20 @@ export default function ComprehensiveTripBuilder({
                 </div>
 
                 <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      generateItineraryDays()
-                      setCurrentTab("itinerary")
-                      // Fun success message
-                      toast({
-                        title: "🎉 Great start!",
-                        description: "Your trip foundation is set! Let's build that itinerary!",
-                      })
-                    }}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-6 py-3 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-lg"
-                    disabled={!watchedStartDate || !watchedEndDate || selectedDestinations.length === 0}
-                  >
+              <Button
+                type="button"
+                onClick={() => {
+                  generateItineraryDays()
+                  setCurrentTab("itinerary")
+                  toast({
+                    title: "🎉 Great start!",
+                    description: "Your trip foundation is set! Let's build that itinerary!",
+                  })
+                }}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-6 py-3 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-lg"
+                // Allow proceeding without destinations to keep flow moving
+                disabled={!watchedStartDate || !watchedEndDate}
+              >
                     <Rocket className="w-4 h-4 mr-2" />
                     Continue to Itinerary
                     <Sparkles className="w-4 h-4 ml-2" />
@@ -1391,7 +1396,8 @@ export default function ComprehensiveTripBuilder({
                 type="button"
                 onClick={() => setCurrentTab("budget")}
                 className="bg-blue-600 hover:bg-blue-700"
-                disabled={itineraryDays.length === 0}
+                // Allow moving to budget without itinerary days to support 75% completion flow
+                disabled={false}
               >
                 Continue to Budget
                 <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
@@ -1494,7 +1500,8 @@ export default function ComprehensiveTripBuilder({
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || itineraryDays.length === 0}
+                // Allow submitting even without itinerary days; backend will accept and store later edits
+                disabled={isSubmitting}
                 className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-8 py-4 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-xl text-lg"
               >
                 {isSubmitting ? (
