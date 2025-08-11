@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { cleanupExpiredPasswordResets } from "@/lib/database"
+import { cleanupExpiredPasswordResets, cleanupExpiredEmailVerificationOTPs, cleanupExpiredUnverifiedUsers } from "@/lib/database"
 
 // This endpoint can be called by a cron job to clean up expired tokens
 // In production, protect this endpoint with a secret key
@@ -16,10 +16,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Clean up expired password reset tokens
     await cleanupExpiredPasswordResets()
     
+    // Clean up expired email verification OTPs
+    await cleanupExpiredEmailVerificationOTPs()
+    
+    // Clean up expired unverified users (older than 24 hours)
+    await cleanupExpiredUnverifiedUsers()
+
     return NextResponse.json({
-      message: "Expired password reset tokens cleaned up successfully"
+      message: "Cleanup completed successfully"
     })
   } catch (error) {
     console.error("Cleanup error:", error)

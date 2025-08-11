@@ -2,6 +2,9 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { isUserAdmin, getComprehensiveTripDetails } from "@/lib/database"
+
+
+import { getTripById, getTripCities, getTripActivities, getTripByDisplayId } from "@/lib/database"
 import EnhancedTripDetails from "@/components/trips/enhanced-trip-details"
 
 interface TripPageProps {
@@ -43,9 +46,9 @@ export default async function TripPage({ params }: TripPageProps) {
   }
   
   try {
-    // Parse the ID as number since we're using SERIAL IDs now
-    const tripId = parseInt(params.id)
-    if (isNaN(tripId)) {
+    // Parse the ID as number since we're using display_id for URLs
+    const tripDisplayId = parseInt(params.id)
+    if (isNaN(tripDisplayId)) {
       redirect("/dashboard")
     }
 
