@@ -13,7 +13,7 @@ import {
   Camera,
   Navigation
 } from "lucide-react"
-import InteractiveMap from "@/components/maps/interactive-map"
+import LeafletMap from "@/components/maps/leaflet-map"
 import {
   PieChart,
   Pie,

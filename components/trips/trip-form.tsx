@@ -22,7 +22,7 @@ const tripSchema = z.object({
   description: z.string().max(1000, "Description too long"),
   startDate: z.string().refine((date) => !isNaN(Date.parse(date)), "Invalid start date"),
   endDate: z.string().refine((date) => !isNaN(Date.parse(date)), "Invalid end date"),
-  status: z.enum(["planning", "active", "completed"]),
+  status: z.enum(["planning", "active", "completed"]).optional(),
   isPublic: z.boolean()
 }).refine((data) => {
   const start = new Date(data.startDate)
@@ -36,7 +36,8 @@ const tripSchema = z.object({
 type TripFormData = z.infer<typeof tripSchema>
 
 interface Trip {
-  id: string
+  id: number
+  display_id: number
   name: string
   description: string
   start_date: string
@@ -71,7 +72,6 @@ export default function TripForm({ trip }: TripFormProps) {
       description: trip?.description || "",
       startDate: trip?.start_date ? new Date(trip.start_date).toISOString().split('T')[0] : "",
       endDate: trip?.end_date ? new Date(trip.end_date).toISOString().split('T')[0] : "",
-      status: trip?.status || "planning",
       isPublic: trip?.is_public || false
     }
   })
@@ -117,9 +117,13 @@ export default function TripForm({ trip }: TripFormProps) {
   const onSubmit = async (data: TripFormData) => {
     setIsSubmitting(true)
     try {
-      // Clean up the data before sending
+      // Clean up the data before sending (status will be auto-calculated)
       const tripData = {
-        ...data,
+        name: data.name,
+        description: data.description,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        isPublic: data.isPublic,
         ...(coverImage && coverImage.trim() !== "" && { coverImage })
       }
 
@@ -315,22 +319,42 @@ export default function TripForm({ trip }: TripFormProps) {
             </div>
           </div>
 
-          {/* Status */}
+          {/* Status Preview - Auto-detected */}
           <div className="space-y-2">
-            <Label className="text-white">Status</Label>
-            <Select
-              value={watch("status")}
-              onValueChange={(value: "planning" | "active" | "completed") => setValue("status", value)}
-            >
-              <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-700 border-gray-600">
-                <SelectItem value="planning" className="text-white hover:bg-gray-600">Planning</SelectItem>
-                <SelectItem value="active" className="text-white hover:bg-gray-600">Active</SelectItem>
-                <SelectItem value="completed" className="text-white hover:bg-gray-600">Completed</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label className="text-white">Trip Status (Auto-detected)</Label>
+            <div className="p-3 bg-gray-700 rounded-lg border-2 border-dashed border-gray-600">
+              <div className="flex items-center space-x-2">
+                <span className="text-lg">
+                  {(() => {
+                    const now = new Date()
+                    const startDate = new Date(watch("startDate"))
+                    const endDate = new Date(watch("endDate"))
+                    
+                    if (!watch("startDate") || !watch("endDate")) return "📅"
+                    if (now >= startDate && now <= endDate) return "🌍"
+                    if (now > endDate) return "🏆"
+                    return "📋"
+                  })()}
+                </span>
+                <div>
+                  <p className="text-white font-medium">
+                    Status: {(() => {
+                      const now = new Date()
+                      const startDate = new Date(watch("startDate"))
+                      const endDate = new Date(watch("endDate"))
+                      
+                      if (!watch("startDate") || !watch("endDate")) return "Set dates to see status"
+                      if (now >= startDate && now <= endDate) return "Active"
+                      if (now > endDate) return "Completed"
+                      return "Planning"
+                    })()}
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    Automatically determined based on travel dates
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Public/Private */}

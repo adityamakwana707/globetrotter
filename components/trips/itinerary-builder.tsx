@@ -28,8 +28,8 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import LocationAutocomplete from "@/components/maps/location-autocomplete"
-import InteractiveMap from "@/components/maps/interactive-map"
+import LocationSearch from "@/components/maps/location-search"
+import LeafletMap from "@/components/maps/leaflet-map"
 import TravelTimeCalculator from "./travel-time-calculator"
 import DragDropItinerary from "./drag-drop-itinerary"
 

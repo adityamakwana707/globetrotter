@@ -1,107 +1,99 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import { toast } from "@/hooks/use-toast"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Share2,
-  Copy,
-  Globe,
-  Lock,
-  ExternalLink,
-  Users,
-  Calendar,
-  Link as LinkIcon,
-  Facebook,
-  Twitter,
-  Mail
+import { 
+  Share2, Copy, ExternalLink, Users, Globe, 
+  Lock, QrCode, Mail, MessageCircle, Facebook,
+  Twitter, Linkedin, Eye, EyeOff
 } from "lucide-react"
 
 interface TripSharingProps {
-  tripId: string
-  tripName: string
-}
-
-interface ShareSettings {
-  id: string
-  name: string
+  tripId: number
   isPublic: boolean
-  shareToken: string | null
-  allowCopy: boolean
-  shareExpiresAt: string | null
-  shareUrl: string | null
-  ownerName: string
 }
 
-export default function TripSharing({ tripId, tripName }: TripSharingProps) {
-  const [shareSettings, setShareSettings] = useState<ShareSettings | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+export default function TripSharing({ tripId, isPublic }: TripSharingProps) {
+  const [isPublicState, setIsPublicState] = useState(isPublic)
+  const [shareToken, setShareToken] = useState<string | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
-  const [showShareDialog, setShowShareDialog] = useState(false)
 
-  useEffect(() => {
-    fetchShareSettings()
-  }, [tripId])
-
-  const fetchShareSettings = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch(`/api/trips/${tripId}/share`)
-      if (response.ok) {
-        const data = await response.json()
-        setShareSettings(data)
-      } else {
-        console.error('Failed to fetch share settings')
-      }
-    } catch (error) {
-      console.error('Error fetching share settings:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const updateShareSettings = async (updates: Partial<ShareSettings>) => {
-    setIsUpdating(true)
+  const generateShareLink = async () => {
+    setIsGenerating(true)
     try {
       const response = await fetch(`/api/trips/${tripId}/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updates)
+        body: JSON.stringify({
+          isPublic: true,
+          allowCopy: true
+        })
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        setShareSettings(prev => prev ? { ...prev, ...data } : null)
-        
-        toast({
-          title: "Settings Updated",
-          description: "Trip sharing settings have been updated successfully.",
-        })
-      } else {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to update settings')
+      if (!response.ok) {
+        throw new Error('Failed to generate share link')
       }
-    } catch (error) {
-      console.error('Error updating share settings:', error)
+
+      const result = await response.json()
+      setShareToken(result.shareToken)
+      setIsPublicState(true)
+
       toast({
-        title: "Update Failed",
-        description: "Failed to update sharing settings. Please try again.",
+        title: "Share link generated",
+        description: "Your trip is now publicly accessible.",
+      })
+    } catch (error) {
+      console.error('Error generating share link:', error)
+      toast({
+        title: "Error",
+        description: "Failed to generate share link. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const updatePublicStatus = async (makePublic: boolean) => {
+    setIsUpdating(true)
+    try {
+      const response = await fetch(`/api/trips/${tripId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isPublic: makePublic
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update trip visibility')
+      }
+
+      setIsPublicState(makePublic)
+
+      toast({
+        title: makePublic ? "Trip made public" : "Trip made private",
+        description: makePublic 
+          ? "Your trip is now visible to everyone." 
+          : "Your trip is now private and only visible to you.",
+      })
+    } catch (error) {
+      console.error('Error updating trip visibility:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update trip visibility. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -109,276 +101,309 @@ export default function TripSharing({ tripId, tripName }: TripSharingProps) {
     }
   }
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() => {
       toast({
         title: "Copied!",
-        description: "Share link has been copied to clipboard.",
+        description: `${label} copied to clipboard.`,
       })
-    } catch (error) {
+    }).catch(() => {
       toast({
-        title: "Copy Failed",
-        description: "Failed to copy link to clipboard.",
+        title: "Error",
+        description: "Failed to copy to clipboard.",
         variant: "destructive",
       })
-    }
+    })
   }
 
-  const shareToSocial = (platform: string, url: string, title: string) => {
-    const encodedUrl = encodeURIComponent(url)
-    const encodedTitle = encodeURIComponent(`Check out my trip: ${title}`)
-    
-    let shareUrl = ''
-    
+  const shareUrl = shareToken 
+    ? `${window.location.origin}/trips/public/${shareToken}`
+    : `${window.location.origin}/trips/${tripId}`
+
+  const shareOnSocialMedia = (platform: string) => {
+    const text = `Check out my amazing trip itinerary!`
+    const url = encodeURIComponent(shareUrl)
+    const encodedText = encodeURIComponent(text)
+
+    let shareLink = ''
     switch (platform) {
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`
-        break
       case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`
+        shareLink = `https://twitter.com/intent/tweet?text=${encodedText}&url=${url}`
         break
-      case 'email':
-        shareUrl = `mailto:?subject=${encodedTitle}&body=Check out this travel itinerary: ${encodedUrl}`
+      case 'facebook':
+        shareLink = `https://www.facebook.com/sharer/sharer.php?u=${url}`
+        break
+      case 'linkedin':
+        shareLink = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`
+        break
+      case 'whatsapp':
+        shareLink = `https://wa.me/?text=${encodedText}%20${url}`
         break
     }
-    
-    if (shareUrl) {
-      window.open(shareUrl, '_blank', 'width=600,height=400')
+
+    if (shareLink) {
+      window.open(shareLink, '_blank', 'width=600,height=400')
     }
-  }
-
-  if (isLoading) {
-    return (
-      <Card className="bg-gray-800 border-gray-700">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
-            <span className="ml-2 text-gray-400">Loading sharing settings...</span>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (!shareSettings) {
-    return (
-      <Card className="bg-gray-800 border-gray-700">
-        <CardContent className="p-6">
-          <p className="text-gray-400 text-center">Failed to load sharing settings</p>
-        </CardContent>
-      </Card>
-    )
   }
 
   return (
     <div className="space-y-6">
-      {/* Sharing Controls */}
+      {/* Privacy Settings */}
       <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Share2 className="w-5 h-5" />
-            Trip Sharing
+          <CardTitle className="text-white flex items-center">
+            <Globe className="w-5 h-5 mr-2" />
+            Privacy Settings
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Public/Private Toggle */}
-          <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
-            <div className="flex items-center space-x-3">
-              {shareSettings.isPublic ? (
-                <Globe className="w-5 h-5 text-green-400" />
-              ) : (
-                <Lock className="w-5 h-5 text-gray-400" />
-              )}
-              <div>
-                <h3 className="text-white font-semibold">
-                  {shareSettings.isPublic ? 'Public Trip' : 'Private Trip'}
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  {shareSettings.isPublic 
-                    ? 'Anyone with the link can view this trip'
-                    : 'Only you can view this trip'
-                  }
-                </p>
-              </div>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="text-white font-medium">Make trip public</Label>
+              <p className="text-gray-400 text-sm">
+                Allow anyone with the link to view your trip itinerary
+              </p>
             </div>
-            <Switch
-              checked={shareSettings.isPublic}
-              onCheckedChange={(checked) => updateShareSettings({ isPublic: checked })}
-              disabled={isUpdating}
-            />
-          </div>
-
-          {/* Copy Permission */}
-          {shareSettings.isPublic && (
-            <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Copy className="w-5 h-5 text-blue-400" />
-                <div>
-                  <h3 className="text-white font-semibold">Allow Copying</h3>
-                  <p className="text-gray-400 text-sm">
-                    Let others copy this trip to their account
-                  </p>
-                </div>
-              </div>
+            <div className="flex items-center space-x-2">
               <Switch
-                checked={shareSettings.allowCopy}
-                onCheckedChange={(checked) => updateShareSettings({ allowCopy: checked })}
+                id="public-trip"
+                checked={isPublicState}
+                onCheckedChange={updatePublicStatus}
                 disabled={isUpdating}
               />
+              {isPublicState ? (
+                <Eye className="w-4 h-4 text-green-400" />
+              ) : (
+                <EyeOff className="w-4 h-4 text-gray-400" />
+              )}
             </div>
-          )}
+          </div>
 
-          {/* Share Link */}
-          {shareSettings.isPublic && shareSettings.shareUrl && (
-            <div className="space-y-3">
-              <Label className="text-white">Share Link</Label>
-              <div className="flex space-x-2">
-                <Input
-                  value={shareSettings.shareUrl}
-                  readOnly
-                  className="bg-gray-700 border-gray-600 text-white"
-                />
-                <Button
-                  onClick={() => copyToClipboard(shareSettings.shareUrl!)}
-                  variant="outline"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                >
-                  <Copy className="w-4 h-4" />
-                </Button>
-                <Button
-                  onClick={() => window.open(shareSettings.shareUrl!, '_blank')}
-                  variant="outline"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </Button>
+          {isPublicState && (
+            <div className="p-4 bg-green-900/20 border border-green-700 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                <Globe className="w-4 h-4 text-green-400" />
+                <span className="text-green-400 font-medium">Public Trip</span>
               </div>
+              <p className="text-gray-300 text-sm">
+                Your trip is publicly visible. Anyone with the link can view your itinerary.
+              </p>
             </div>
           )}
 
-          {/* Share Actions */}
-          {shareSettings.isPublic && shareSettings.shareUrl && (
-            <div className="flex flex-wrap gap-2">
-              <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-                <DialogTrigger asChild>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share Trip
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-gray-800 border-gray-700">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Share Your Trip</DialogTitle>
-                    <DialogDescription className="text-gray-400">
-                      Share "{tripName}" with your friends and family
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 gap-3">
-                      <Button
-                        onClick={() => shareToSocial('facebook', shareSettings.shareUrl!, tripName)}
-                        className="bg-blue-600 hover:bg-blue-700 justify-start"
-                      >
-                        <Facebook className="w-4 h-4 mr-2" />
-                        Share on Facebook
-                      </Button>
-                      <Button
-                        onClick={() => shareToSocial('twitter', shareSettings.shareUrl!, tripName)}
-                        className="bg-sky-600 hover:bg-sky-700 justify-start"
-                      >
-                        <Twitter className="w-4 h-4 mr-2" />
-                        Share on Twitter
-                      </Button>
-                      <Button
-                        onClick={() => shareToSocial('email', shareSettings.shareUrl!, tripName)}
-                        className="bg-gray-600 hover:bg-gray-700 justify-start"
-                      >
-                        <Mail className="w-4 h-4 mr-2" />
-                        Share via Email
-                      </Button>
-                    </div>
-                    
-                    <div className="pt-4 border-t border-gray-700">
-                      <Label className="text-white text-sm">Or copy link:</Label>
-                      <div className="flex space-x-2 mt-2">
-                        <Input
-                          value={shareSettings.shareUrl}
-                          readOnly
-                          className="bg-gray-700 border-gray-600 text-white text-sm"
-                        />
-                        <Button
-                          onClick={() => copyToClipboard(shareSettings.shareUrl!)}
-                          size="sm"
-                          variant="outline"
-                          className="border-gray-600 text-gray-300"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button 
-                      onClick={() => setShowShareDialog(false)}
-                      variant="outline" 
-                      className="border-gray-600 text-gray-300"
-                    >
-                      Close
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+          {!isPublicState && (
+            <div className="p-4 bg-gray-900/50 border border-gray-600 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                <Lock className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-400 font-medium">Private Trip</span>
+              </div>
+              <p className="text-gray-300 text-sm">
+                Your trip is private. Only you can view the itinerary.
+              </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Sharing Statistics */}
-      {shareSettings.isPublic && (
+      {/* Share Link */}
+      {isPublicState && (
         <Card className="bg-gray-800 border-gray-700">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Sharing Activity
+            <CardTitle className="text-white flex items-center">
+              <Share2 className="w-5 h-5 mr-2" />
+              Share Your Trip
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-gray-700 rounded-lg">
-                <LinkIcon className="w-8 h-8 mx-auto mb-2 text-blue-400" />
-                <p className="text-2xl font-bold text-white">-</p>
-                <p className="text-gray-400 text-sm">Link Clicks</p>
+          <CardContent className="space-y-4">
+            {/* Generate Share Link */}
+            {!shareToken && (
+              <div className="text-center py-6">
+                <Share2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">Generate Share Link</h3>
+                <p className="text-gray-400 mb-4">
+                  Create a unique link to share your trip with others
+                </p>
+                <Button
+                  onClick={generateShareLink}
+                  disabled={isGenerating}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isGenerating ? "Generating..." : "Generate Share Link"}
+                </Button>
               </div>
-              <div className="text-center p-4 bg-gray-700 rounded-lg">
-                <Copy className="w-8 h-8 mx-auto mb-2 text-green-400" />
-                <p className="text-2xl font-bold text-white">-</p>
-                <p className="text-gray-400 text-sm">Times Copied</p>
+            )}
+
+            {/* Share Link Display */}
+            {shareToken && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-white">Share Link</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      value={shareUrl}
+                      readOnly
+                      className="bg-gray-700 border-gray-600 text-white"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => copyToClipboard(shareUrl, "Share link")}
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => window.open(shareUrl, '_blank')}
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <Separator className="bg-gray-700" />
+
+                {/* Social Media Sharing */}
+                <div className="space-y-3">
+                  <Label className="text-white">Share on Social Media</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => shareOnSocialMedia('twitter')}
+                      className="border-gray-600 text-gray-300 hover:bg-blue-600 hover:border-blue-600"
+                    >
+                      <Twitter className="w-4 h-4 mr-2" />
+                      Twitter
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => shareOnSocialMedia('facebook')}
+                      className="border-gray-600 text-gray-300 hover:bg-blue-700 hover:border-blue-700"
+                    >
+                      <Facebook className="w-4 h-4 mr-2" />
+                      Facebook
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => shareOnSocialMedia('linkedin')}
+                      className="border-gray-600 text-gray-300 hover:bg-blue-800 hover:border-blue-800"
+                    >
+                      <Linkedin className="w-4 h-4 mr-2" />
+                      LinkedIn
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => shareOnSocialMedia('whatsapp')}
+                      className="border-gray-600 text-gray-300 hover:bg-green-600 hover:border-green-600"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      WhatsApp
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Direct Sharing Options */}
+                <div className="space-y-3">
+                  <Label className="text-white">Direct Sharing</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const subject = "Check out my trip itinerary!"
+                        const body = `Hi! I wanted to share my trip itinerary with you: ${shareUrl}`
+                        window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+                      }}
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      Email
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        // In a real app, you'd implement QR code generation
+                        toast({
+                          title: "QR Code",
+                          description: "QR code feature coming soon!",
+                        })
+                      }}
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    >
+                      <QrCode className="w-4 h-4 mr-2" />
+                      QR Code
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="text-center p-4 bg-gray-700 rounded-lg">
-                <Calendar className="w-8 h-8 mx-auto mb-2 text-purple-400" />
-                <p className="text-2xl font-bold text-white">-</p>
-                <p className="text-gray-400 text-sm">Days Shared</p>
-              </div>
-            </div>
-            <p className="text-gray-400 text-sm text-center mt-4">
-              Analytics coming soon - track how your shared trips are performing!
-            </p>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* Privacy Notice */}
+      {/* Sharing Stats */}
+      {isPublicState && (
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center">
+              <Users className="w-5 h-5 mr-2" />
+              Sharing Statistics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-400">0</div>
+                <div className="text-gray-400 text-sm">Views</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-400">0</div>
+                <div className="text-gray-400 text-sm">Shares</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-400">0</div>
+                <div className="text-gray-400 text-sm">Copies</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-400">0</div>
+                <div className="text-gray-400 text-sm">Likes</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sharing Tips */}
       <Card className="bg-gray-800 border-gray-700">
-        <CardContent className="p-4">
-          <div className="flex items-start space-x-3">
-            <Lock className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-gray-400">
-              <p className="font-semibold text-gray-300 mb-1">Privacy Notice</p>
-              <p>
-                When you make your trip public, anyone with the link can view your itinerary, 
-                including cities, activities, and budget information. Personal information 
-                like your email address is never shared.
+        <CardHeader>
+          <CardTitle className="text-white">Sharing Tips</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
+              <h4 className="text-blue-400 font-medium mb-1">Travel Inspiration</h4>
+              <p className="text-gray-300 text-sm">
+                Share your itinerary to inspire others and get travel tips
+              </p>
+            </div>
+            
+            <div className="p-3 bg-green-900/30 border border-green-700 rounded-lg">
+              <h4 className="text-green-400 font-medium mb-1">Travel Buddies</h4>
+              <p className="text-gray-300 text-sm">
+                Let friends follow your journey and join activities
+              </p>
+            </div>
+            
+            <div className="p-3 bg-purple-900/30 border border-purple-700 rounded-lg">
+              <h4 className="text-purple-400 font-medium mb-1">Safety First</h4>
+              <p className="text-gray-300 text-sm">
+                Share with family so they know your travel plans
+              </p>
+            </div>
+            
+            <div className="p-3 bg-orange-900/30 border border-orange-700 rounded-lg">
+              <h4 className="text-orange-400 font-medium mb-1">Get Feedback</h4>
+              <p className="text-gray-300 text-sm">
+                Ask locals and experienced travelers for recommendations
               </p>
             </div>
           </div>
