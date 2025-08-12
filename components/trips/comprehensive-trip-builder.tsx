@@ -639,8 +639,8 @@ export default function ComprehensiveTripBuilder({
   const SuggestionCard = React.memo(({ suggestion, index }: { suggestion: any, index: number }) => {
     return (
       <div
-        className={`p-3 bg-gray-800 rounded border ${
-          suggestion.enriched ? 'border-green-500 bg-gray-800/80' : 'border-gray-700'
+        className={`p-3 bg-gray-50 rounded border ${
+          suggestion.enriched ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200'
         }`}
       >
         <div className="flex items-center justify-between">
@@ -663,7 +663,7 @@ export default function ComprehensiveTripBuilder({
               type="button"
               size="sm"
               variant="outline"
-              className="text-xs bg-gray-700 border-gray-600 hover:bg-gray-600"
+              className="text-xs border-gray-600 hover:bg-gray-600"
               onClick={(e) => {
                 e.stopPropagation()
                 handleEnrichPlace(suggestion)
@@ -886,8 +886,8 @@ export default function ComprehensiveTripBuilder({
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-8 bg-white border-gray-200 shadow-sm rounded-lg p-0 gap-0">
+        <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full ">
+            <TabsList className="grid w-full  grid-cols-2 sm:grid-cols-4 mb-[100px] bg-white border-gray-200 shadow-sm rounded-lg p-0 gap-0">
               <TabsTrigger 
                 value="basic" 
                 className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg"
@@ -1354,11 +1354,11 @@ export default function ComprehensiveTripBuilder({
                 </div>
               </div>
             {/* AI Suggestions Drawer */}
-            <Card className="bg-gray-900 border-gray-700">
+            <Card className="bg-white border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-white">AI Suggestions</CardTitle>
+                <CardTitle className="text-slate-900">AI Suggestions</CardTitle>
                 <div className="flex gap-2">
-                  <Button type="button" variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700" onClick={fetchAISuggestions} disabled={isLoadingAI}>
+                  <Button type="button" variant="outline" className="border-gray-300 text-slate-700 hover:bg-gray-50" onClick={fetchAISuggestions} disabled={isLoadingAI}>
                     {isLoadingAI ? 'Loading…' : 'Get Suggestions'}
                   </Button>
                 </div>
@@ -1366,9 +1366,9 @@ export default function ComprehensiveTripBuilder({
               <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="text-white font-medium mb-2">Untimed suggestions</h4>
+                    <h4 className="text-slate-900 font-medium mb-2">Untimed suggestions</h4>
                     {aiSuggestions.length === 0 ? (
-                      <p className="text-gray-400 text-sm">Click Get Suggestions.</p>
+                      <p className="text-slate-600 text-sm">Click Get Suggestions.</p>
                     ) : (
                       <div className="grid grid-cols-1 gap-3">
                         {aiSuggestions.map((s, i) => (
@@ -1378,16 +1378,16 @@ export default function ComprehensiveTripBuilder({
                     )}
                   </div>
                   <div>
-                    <h4 className="text-white font-medium mb-2">Timed day plan</h4>
+                    <h4 className="text-slate-900 font-medium mb-2">Timed day plan</h4>
                     {aiSchedule.length === 0 ? (
-                      <p className="text-gray-400 text-sm">Will appear if the model returns schedule.</p>
+                      <p className="text-slate-600 text-sm">Will appear if the model returns schedule.</p>
                     ) : (
                       <div className="space-y-2">
                         {aiSchedule.map((s, i) => (
-                          <div key={`sched-${i}`} className="p-3 bg-gray-800 rounded border border-gray-700 flex items-center justify-between">
+                          <div key={`sched-${i}`} className="p-3 bg-gray-50 rounded border border-gray-200 flex items-center justify-between">
                             <div>
-                              <p className="text-white text-sm">Day {s.dayNumber} • {s.startTime?.slice(0,5) || '09:00'} • {s.name}</p>
-                              <p className="text-xs text-gray-400">{s.category || 'general'} {s.price_range ? `• ${s.price_range}` : ''}</p>
+                              <p className="text-slate-900 text-sm">Day {s.dayNumber} • {s.startTime?.slice(0,5) || '09:00'} • {s.name}</p>
+                              <p className="text-xs text-slate-600">{s.category || 'general'} {s.price_range ? `• ${s.price_range}` : ''}</p>
                             </div>
                             <div className="flex gap-2">
                               <Button type="button" size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => {
@@ -1418,11 +1418,11 @@ export default function ComprehensiveTripBuilder({
               />
             ))}
 
-            {itineraryDays.length === 0 && (
-              <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 border-2 border-dashed">
+                          {itineraryDays.length === 0 && (
+                <Card className="bg-white border-gray-200 border-2 border-dashed">
                 <CardContent className="py-12 text-center">
                   <div className="relative">
-                    <MapPin className="mx-auto h-16 w-16 text-gray-400 mb-4 animate-bounce" />
+                    <MapPin className="mx-auto h-16 w-16 text-slate-400 mb-4 animate-bounce" />
                     <div className="absolute -top-2 -right-2">
                       <Star className="w-6 h-6 text-yellow-400 animate-spin" />
                     </div>
@@ -1618,9 +1618,9 @@ export default function ComprehensiveTripBuilder({
       )}
       {/* Time selection dialog for dropped/added suggestion */}
       <Dialog open={timeDialog.open} onOpenChange={(open) => setTimeDialog(prev => ({ ...prev, open }))}>
-        <DialogContent className="bg-gray-900 border-gray-700">
+        <DialogContent className="bg-white border-gray-200">
           <DialogHeader>
-            <DialogTitle className="text-white">Select a start time</DialogTitle>
+            <DialogTitle className="text-slate-900">Select a start time</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-gray-300 text-sm">{timeDialog.suggestion?.name}</p>

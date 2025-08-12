@@ -172,15 +172,15 @@ export default function ItineraryDayBuilder({
   }
 
   return (
-    <Card className="bg-gray-800 border-gray-700">
+    <Card className="bg-white border-gray-200">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
-              <GripVertical className="w-5 h-5 text-gray-400 cursor-move" />
+              <GripVertical className="w-5 h-5 text-slate-400 cursor-move" />
               <Badge 
                 variant="secondary" 
-                className={`${selectedActivityType?.color || 'bg-gray-600'} text-white`}
+                className={`${selectedActivityType?.color || 'bg-emerald-600'} text-white`}
               >
                 {selectedActivityType?.icon} Day {day.dayNumber}
               </Badge>
@@ -189,7 +189,7 @@ export default function ItineraryDayBuilder({
               <Input
                 value={day.title}
                 onChange={(e) => onUpdate({ title: e.target.value })}
-                className="bg-transparent border-none text-lg font-semibold text-white p-0 h-auto focus-visible:ring-0"
+                className="bg-transparent border-none text-lg font-semibold text-slate-900 p-0 h-auto focus-visible:ring-0"
                 placeholder="Day title..."
               />
             </div>
@@ -203,7 +203,7 @@ export default function ItineraryDayBuilder({
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-gray-400 hover:text-white"
+              className="text-slate-500 hover:text-slate-700"
             >
               {isExpanded ? "Collapse" : "Expand"}
             </Button>
@@ -212,7 +212,7 @@ export default function ItineraryDayBuilder({
               variant="ghost"
               size="sm"
               onClick={() => onUpdate({ completed: !day.completed })}
-              className="text-gray-400 hover:text-white"
+              className="text-slate-500 hover:text-slate-700"
             >
               {day.completed ? (
                 <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -225,7 +225,7 @@ export default function ItineraryDayBuilder({
               variant="ghost"
               size="sm"
               onClick={onRemove}
-              className="text-gray-400 hover:text-red-400"
+              className="text-slate-500 hover:text-red-500"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -237,25 +237,25 @@ export default function ItineraryDayBuilder({
         {/* Basic Info - Always Visible */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label className="text-gray-400">Date</Label>
+            <Label className="text-slate-600">Date</Label>
             <Input
               type="date"
               value={day.date}
-              onChange={(e) => onUpdate({ date: e.target.value })}
-              className="bg-gray-700 border-gray-600 text-white"
+                onChange={(e) => onUpdate({ date: e.target.value })}
+                className="bg-white border-gray-300 text-slate-900"
             />
           </div>
           
           <div className="space-y-2">
-            <Label className="text-gray-400">Activity Type</Label>
+            <Label className="text-slate-600">Activity Type</Label>
             <Select 
               value={day.activityType} 
               onValueChange={(value) => onUpdate({ activityType: value as any })}
             >
-              <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+              <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-gray-700 border-gray-600">
+              <SelectContent className="bg-white border-gray-200">
                 {activityTypes.map((type) => (
                   <SelectItem key={type.value} value={type.value}>
                     <span className="flex items-center">
@@ -372,9 +372,9 @@ export default function ItineraryDayBuilder({
 
             {/* Budget Breakdown */}
             {showBudgetBreakdown && (
-              <div className="space-y-4 p-4 bg-gray-900 rounded-lg">
+              <div className="space-y-4 p-4 bg-white border border-gray-200 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-white font-medium">Budget Breakdown</h4>
+                  <h4 className="text-slate-900 font-medium">Budget Breakdown</h4>
                   <Badge variant="secondary" className="bg-green-600 text-white">
                     Total: ${day.budget.estimated.toLocaleString()}
                   </Badge>
@@ -383,15 +383,15 @@ export default function ItineraryDayBuilder({
                 {/* Existing Budget Items */}
                 <div className="space-y-2">
                   {budgetItems.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-gray-800 rounded">
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
                       <div className="flex-1">
-                        <span className="text-white font-medium">{item.category}</span>
+                        <span className="text-slate-900 font-medium">{item.category}</span>
                         {item.description && (
-                          <p className="text-gray-400 text-sm">{item.description}</p>
+                          <p className="text-slate-600 text-sm">{item.description}</p>
                         )}
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="text-white">${item.amount}</span>
+                        <span className="text-slate-900">${item.amount}</span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -412,10 +412,10 @@ export default function ItineraryDayBuilder({
                     value={newBudgetItem.category}
                     onValueChange={(value) => setNewBudgetItem({...newBudgetItem, category: value})}
                   >
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
+                    <SelectContent className="bg-white border-gray-200">
                       {BUDGET_CATEGORIES.map((category) => (
                         <SelectItem key={category} value={category}>
                           {category}
@@ -432,7 +432,7 @@ export default function ItineraryDayBuilder({
                       ...newBudgetItem, 
                       amount: parseFloat(e.target.value) || 0
                     })}
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="bg-white border-gray-300 text-slate-900"
                   />
 
                   <Button
@@ -451,7 +451,7 @@ export default function ItineraryDayBuilder({
                     ...newBudgetItem, 
                     description: e.target.value
                   })}
-                  className="bg-gray-700 border-gray-600 text-white"
+                  className="bg-white border-gray-300 text-slate-900"
                 />
               </div>
             )}
