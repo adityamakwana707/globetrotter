@@ -6,6 +6,7 @@ import "./globals.css"
 import { AuthProvider } from "@/components/providers/auth-provider"
 import { Toaster } from "@/components/ui/toaster"
 import Navbar from "@/components/navbar"
+import GlobalChatbot from "@/components/chat/global-chatbot"
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] })
 
@@ -16,6 +17,8 @@ export const metadata: Metadata = {
   keywords: "travel, planning, itinerary, vacation, trip, destinations",
   generator: 'v0.dev'
 }
+
+export const dynamic = 'force-dynamic'
 
 export default function RootLayout({
   children,
@@ -31,6 +34,7 @@ export default function RootLayout({
             {children}
           </main>
           <Toaster />
+          <GlobalChatbot />
         </AuthProvider>
       </body>
     </html>

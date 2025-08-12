@@ -186,6 +186,18 @@
     CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);
     CREATE INDEX IF NOT EXISTS idx_password_resets_expires ON password_resets(expires_at);
 
+    -- Scrapbook tables
+    CREATE TABLE IF NOT EXISTS scrapbook_entries (
+        id SERIAL PRIMARY KEY,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        images TEXT[] DEFAULT ARRAY[]::TEXT[],
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_scrapbook_entries_user_created ON scrapbook_entries(user_id, created_at DESC);
+
     -- Composite indexes for common query patterns
     CREATE INDEX IF NOT EXISTS idx_trips_user_status ON trips(user_id, status);
     CREATE INDEX IF NOT EXISTS idx_trips_dates ON trips(start_date, end_date);

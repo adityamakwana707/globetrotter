@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { pool } from "@/lib/enhanced-database"
+import { pool } from "@/lib/database"
 import { z } from "zod"
 
 // Enhanced validation schema with better error messages
