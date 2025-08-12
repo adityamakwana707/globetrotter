@@ -6,6 +6,8 @@ import { getActivities, getCities } from "@/lib/database"
 
 export const runtime = 'nodejs'
 const MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"
+const NOVITA_MODEL = "meta-llama/llama-3-8b-instruct"
+const NOVITA_BASE_URL = process.env.NOVITA_BASE_URL || "https://api.novita.ai/v3/openai/chat/completions"
 
 const ChatMessageSchema = z.object({
   role: z.enum(["user", "assistant", "system"]),
@@ -67,11 +69,8 @@ async function llmClarify(hf: HfInference, missing: 'both'|'destination'|'budget
   const system = "You are a friendly, concise travel assistant. Ask ONE short, polite question to get missing info."
   const user = `Conversation so far:\n${context.history}\nMissing: ${missing === 'both' ? 'destination and budget' : missing}. ${context.guessDestination ? `Guessed destination: ${context.guessDestination}. `: ''}Answer with ONE short question only, no extra text.`
   try {
-    const chat = await hf.chatCompletion({ model: MODEL, messages: [ { role: 'system', content: system }, { role: 'user', content: user } ], temperature: 0.2, max_tokens: 60 } as any)
-    const choice = (chat as any)?.choices?.[0]
-    const content = choice?.message?.content
-    if (typeof content === 'string') return content.trim()
-    if (Array.isArray(content) && content[0]?.text) return content[0].text.trim()
+    const content = await chatCompletionUnified(hf, [ { role: 'system', content: system }, { role: 'user', content: user } ], 0.2, 60)
+    if (content) return content
   } catch {}
   if (missing === 'both') return "Could you share the destination city and your total budget (e.g., ‘Paris, 400 USD’)?"
   if (missing === 'destination') return "Which city would you like to visit?"
@@ -82,13 +81,20 @@ async function llmGreet(hf: HfInference, history: string) {
   const system = "You are a warm, concise travel assistant. Greet briefly and give 2 example prompts to get started."
   const user = `User said hello / small talk. Conversation:\n${history}\nRespond with: a short greeting + two bullet examples (like 'Paris, 400 USD for 3 days' and 'Rome plan in attached PDF with 600 EUR'), max 2 lines.`
   try {
-    const chat = await hf.chatCompletion({ model: MODEL, messages: [ { role: 'system', content: system }, { role: 'user', content: user } ], temperature: 0.5, max_tokens: 80 } as any)
-    const choice = (chat as any)?.choices?.[0]
-    const content = choice?.message?.content
-    if (typeof content === 'string') return content.trim()
-    if (Array.isArray(content) && content[0]?.text) return content[0].text.trim()
+    const content = await chatCompletionUnified(hf, [ { role: 'system', content: system }, { role: 'user', content: user } ], 0.5, 80)
+    if (content) return content
   } catch {}
   return "Hi! Share a city and budget (e.g., 'Paris, 400 USD') or attach a PDF plan, and I’ll craft the best trip within it."
+}
+
+// Unified chat completion with Novita default, HF fallback
+async function chatCompletionUnified(hf: HfInference, messages: Array<{ role: 'system'|'user'|'assistant'; content: string }>, temperature: number, max_tokens: number): Promise<string> {
+  const chat = await hf.chatCompletion({ model: MODEL, messages, temperature, max_tokens } as any)
+  const choice = (chat as any)?.choices?.[0]
+  const content = choice?.message?.content
+  if (typeof content === 'string') return content
+  if (Array.isArray(content) && content[0]?.text) return content[0].text
+  return ''
 }
 
 // Tool-calling planning loop with the LLM
@@ -131,11 +137,7 @@ async function llmPlanWithTools(hf: HfInference, ctx: {
   }
 
   for (let i = 0; i < 3; i++) {
-    const chat = await hf.chatCompletion({ model: MODEL, messages, temperature: 0.3, max_tokens: 700 } as any)
-    const choice = (chat as any)?.choices?.[0]
-    let content: any = choice?.message?.content
-    if (Array.isArray(content) && content[0]?.text) content = content[0].text
-    if (typeof content !== 'string') content = ''
+    const content = await chatCompletionUnified(hf, messages, 0.3, 700)
     const raw = content.trim().replace(/^```json/i, '').replace(/```$/i, '').trim()
     try {
       const parsed = JSON.parse(raw)
@@ -149,7 +151,6 @@ async function llmPlanWithTools(hf: HfInference, ctx: {
       }
       if (parsed.final_answer) return parsed
     } catch {}
-    // If parse fails, break to fallback
     break
   }
   return null
@@ -160,10 +161,10 @@ export async function POST(request: NextRequest) {
     const contentType = request.headers.get('content-type') || ''
 
     const hfToken = process.env.HF_TOKEN || process.env.NEXT_PUBLIC_HF_TOKEN
-    if (!hfToken) {
-      return NextResponse.json({ message: "HF_TOKEN not set" }, { status: 500 })
+    if (!hfToken && !process.env.NOVITA_API_KEY) {
+      return NextResponse.json({ message: "HF_TOKEN or NOVITA_API_KEY not set" }, { status: 500 })
     }
-    const hf = new HfInference(hfToken)
+    const hf = new HfInference(hfToken || '')
 
     let messages: Array<z.infer<typeof ChatMessageSchema>> = []
     let currency = 'USD'
@@ -197,9 +198,12 @@ export async function POST(request: NextRequest) {
       try {
         const imgRes = await fetch(imageUrl)
         const blob = await imgRes.blob()
-        const cap = await hf.imageToText({ model: "nlpconnect/vit-gpt2-image-captioning", data: blob } as any)
-        const text = (cap as any)?.generated_text || (Array.isArray(cap) ? cap?.[0]?.generated_text : null)
-        if (text) imageHints = text
+        // Keep HF for vision; Novita path focuses on chat
+        if (hfToken) {
+          const cap = await (new HfInference(hfToken)).imageToText({ model: "nlpconnect/vit-gpt2-image-captioning", data: blob } as any)
+          const text = (cap as any)?.generated_text || (Array.isArray(cap) ? cap?.[0]?.generated_text : null)
+          if (text) imageHints = text
+        }
       } catch {}
     }
 
@@ -226,21 +230,8 @@ export async function POST(request: NextRequest) {
 
     let extracted: any = null
     try {
-      const chat = await hf.chatCompletion({
-        model: MODEL,
-        messages: [
-          { role: "system", content: extractSystem },
-          { role: "user", content: extractUser },
-        ],
-        temperature: 0,
-        max_tokens: 200,
-      } as any)
-      let raw = ""
-      const choice = (chat as any)?.choices?.[0]
-      const content = choice?.message?.content
-      if (typeof content === "string") raw = content
-      else if (Array.isArray(content) && content[0]?.text) raw = content[0].text
-      raw = raw.trim().replace(/^```json/i, "").replace(/```$/i, "").trim()
+      const content = await chatCompletionUnified(hf, [ { role: 'system', content: extractSystem }, { role: 'user', content: extractUser } ], 0, 200)
+      const raw = content.trim().replace(/^```json/i, '').replace(/```$/i, '').trim()
       extracted = JSON.parse(raw)
     } catch {}
 
@@ -279,7 +270,7 @@ export async function POST(request: NextRequest) {
         if (city?.name) userResolvedDestination = city.name
       } catch {}
     }
-    // Fallback: scan ONLY last user message for capitalized city-like phrase
+    // Last message capitalized city-like fallback
     if (!userResolvedDestination) {
       const capsRx = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g
       let mm: RegExpExecArray | null
@@ -314,20 +305,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Non-travel/small-talk passthrough
     if (!destination && !budget && !isTravelIntent) {
-      let responseText = ""
-      try {
-        const chat = await hf.chatCompletion({ model: MODEL, messages, temperature: 0.7, max_tokens: 120 } as any)
-        const choice = (chat as any)?.choices?.[0]
-        const content = choice?.message?.content
-        if (typeof content === "string") responseText = content
-        else if (Array.isArray(content) && content[0]?.text) responseText = content[0].text
-      } catch {}
-      return NextResponse.json({ assistant: responseText || "Tell me a city and budget when you’re ready, and I’ll plan the trip." })
+      const content = await chatCompletionUnified(hf, messages as any, 0.7, 120)
+      return NextResponse.json({ assistant: content || "Tell me a city and budget when you’re ready, and I’ll plan the trip." })
     }
 
-    // Greeting/small talk branch
     if (!destination && !budget && isGreeting) {
       const assistant = await llmGreet(hf, userHistory)
       return NextResponse.json({ assistant })
@@ -344,7 +326,6 @@ export async function POST(request: NextRequest) {
         ? Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000*60*60*24)) + 1)
         : 3
 
-      // NEW: let the model call tools to fetch flights/hotels/activities and then finalize
       const toolPlan = await llmPlanWithTools(hf, {
         destination,
         budget: budget || 0,
@@ -359,7 +340,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ assistant: toolPlan.final_answer, plan: toolPlan.plan || null, budget_breakdown: toolPlan.budget_breakdown || null })
       }
 
-      // Fallback planner if tool-calling fails
       const [flightOptions, hotelEst, activities] = await Promise.all([
         origin ? searchFlightsKiwi({ origin, destination, dateFrom: startDate || undefined, dateTo: endDate || undefined, nightsInDstFrom: days - 1, nightsInDstTo: days - 1, currency: curr, adults: 1, maxPrice: budget ? Math.round(budget * 0.6) : undefined }).catch(() => []) : Promise.resolve([]),
         estimateHotelCosts({ destination, nights: Math.max(1, days - 1), currency: curr }).catch(() => ({ provider: "Heuristic", nightlyEstimate: 80, totalEstimate: 80 * Math.max(1, days - 1), currency: curr, basis: "fallback" })),
@@ -371,23 +351,16 @@ export async function POST(request: NextRequest) {
 
       const system = providedPlan
         ? "You are a helpful travel assistant. Refine the user's proposed scheme to fit the budget and constraints."
-        : "You are a helpful travel assistant. Keep responses concise and practical."
+      : "You are a helpful travel assistant. Keep responses concise and practical."
       const user = providedPlan
         ? `Refine the provided scheme to fit constraints. Destination: ${destination}${origin ? ` | Origin: ${origin}` : ''}\n${budget ? `Budget: ${budget} ${curr}\n` : ''}Interests: ${interests.join(", ") || "general"}${imageHints ? ` | Image: ${imageHints}` : ''}\nFlight baseline: ${flightCost} ${curr}. Hotel baseline: ${hotelCost} ${curr}.\nProvided scheme (user):\n${providedPlan}\nReturn a short friendly response first, then a JSON block named PLAN with itinerary and budget_breakdown.`
         : `Create a ${days}-day trip for ${destination}${origin ? ` from ${origin}` : ''}.${budget ? `\nBudget: ${budget} ${curr}.` : ''} Interests: ${interests.join(", ") || "general"}.${imageHints ? ` Image hints: ${imageHints}.` : ''}${pdfText ? `\nConsider PDF notes: ${pdfText.slice(0, 2000)}` : ''}\nFlight baseline: ${flightCost} ${curr}. Hotel baseline: ${hotelCost} ${curr}. Recommend activities and approximate costs within constraints. Return a short friendly response first, then a JSON block named PLAN with itinerary and budget_breakdown.`
 
-      let assistantText = ""
+      const assistantText = await chatCompletionUnified(hf, [ { role: 'system', content: system }, { role: 'user', content: user } ], 0.6, 800)
       try {
-        const chat = await hf.chatCompletion({ model: MODEL, messages: [ { role: "system", content: system }, { role: "user", content: user } ], temperature: 0.6, max_tokens: 800 } as any)
-        const choice = (chat as any)?.choices?.[0]
-        const content = choice?.message?.content
-        if (typeof content === "string") assistantText = content
-        else if (Array.isArray(content) && content[0]?.text) assistantText = content[0].text
+        const m = assistantText.match(/PLAN\s*```json\s*([\s\S]*?)```/i) || assistantText.match(/PLAN\s*:\s*({[\s\S]*})/i)
+        if (m) plan = JSON.parse(m[1])
       } catch {}
-      const match = assistantText.match(/PLAN\s*```json\s*([\s\S]*?)```/i) || assistantText.match(/PLAN\s*:\s*({[\s\S]*})/i)
-      if (match) {
-        try { plan = JSON.parse(match[1]) } catch {}
-      }
 
       return NextResponse.json({
         assistant: assistantText || `Here is a plan for ${destination}.`,
@@ -409,14 +382,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ assistant })
     }
 
-    let responseText = ""
-    try {
-      const chat = await hf.chatCompletion({ model: MODEL, messages, temperature: 0.7, max_tokens: 400 } as any)
-      const choice = (chat as any)?.choices?.[0]
-      const content = choice?.message?.content
-      if (typeof content === "string") responseText = content
-      else if (Array.isArray(content) && content[0]?.text) responseText = content[0].text
-    } catch {}
+    const responseText = await chatCompletionUnified(hf, messages as any, 0.7, 400)
     return NextResponse.json({ assistant: responseText || "Could you share the destination and total budget?" })
   } catch (err) {
     console.error("/api/chat error:", err)
