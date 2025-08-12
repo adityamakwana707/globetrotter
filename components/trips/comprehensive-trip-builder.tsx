@@ -74,6 +74,10 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 
+
+
+import ItineraryDayBuilder from "@/components/trips/itinerary-day-builder"
+import ActivitySearchModal from "@/components/trips/activity-search-modal"
 // Enhanced schema with itinerary validation
 const tripSchema = z
   .object({
@@ -201,13 +205,18 @@ interface ItineraryDay {
     estimated: number;
     actual?: number;
     breakdown: Array<{
-      category: string;
-      amount: number;
-      description?: string;
-    }>;
-  };
-  notes?: string;
-  completed: boolean;
+      category: string
+      amount: number
+      description?: string
+    }>
+  }
+  attachments?: Array<{
+    name: string
+    url: string
+    type: string
+  }>
+  notes?: string
+  completed: boolean
   activities: Array<{
     id: number;
     name: string;
@@ -1369,12 +1378,12 @@ export default function ComprehensiveTripBuilder({
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 sm:py-10">
-      <div className="max-w-6xl mx-auto relative">
-        {/* Progress Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="relative">
+    <div className="max-w-6xl mx-auto relative">
+      {/* Progress Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="relative">
                 <Sparkles className="w-8 h-8 text-emerald-500 animate-pulse" />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full animate-ping"></div>
               </div>
@@ -1415,6 +1424,7 @@ export default function ComprehensiveTripBuilder({
             >
               <div className="absolute right-0 top-0 h-3 w-6 bg-gradient-to-r from-transparent to-white/30 animate-pulse"></div>
             </div>
+              <p className="text-slate-600 text-sm">Complete</p>
           </div>
         </div>
 
@@ -1459,21 +1469,21 @@ export default function ComprehensiveTripBuilder({
                 value="review"
                 className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg"
               >
-                <span className="text-2xl mr-2">{stepEmojis.review}</span>
-                Review
-                {formProgress === 100 && (
-                  <div className="flex items-center ml-2">
+              <span className="text-2xl mr-2">{stepEmojis.review}</span>
+              Review
+              {formProgress === 100 && (
+                <div className="flex items-center ml-2">
                     <Trophy className="w-4 h-4 text-emerald-500 animate-bounce" />
                     <Sparkles className="w-3 h-3 text-emerald-500 animate-pulse ml-1" />
-                  </div>
-                )}
-              </TabsTrigger>
-            </TabsList>
+                </div>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Basic Trip Details */}
-            <TabsContent value="basic" className="space-y-6">
+          {/* Basic Trip Details */}
+          <TabsContent value="basic" className="space-y-6">
               <Card className="bg-white border-gray-200 shadow-md">
-                <CardHeader>
+              <CardHeader>
                   <CardTitle className="text-slate-900 flex items-center">
                     <Calendar className="w-5 h-5 mr-2 text-emerald-600" />
                     Basic Trip Information
@@ -1591,8 +1601,8 @@ export default function ComprehensiveTripBuilder({
 
                     <div className="mt-2 text-xs text-slate-500">
                       💡 Tip: Type any destination and press Enter to add it
-                    </div>
                   </div>
+                </div>
 
                   {/* Date Range */}
                   <div className="grid grid-cols-2 gap-4">
@@ -1633,25 +1643,67 @@ export default function ComprehensiveTripBuilder({
 
                   {/* Cover Image Upload */}
                   <div className="space-y-2">
+                      <Label htmlFor="startDate" className="text-slate-800">Start Date *</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      {...register("startDate")}
+                        className="bg-white border-gray-300 text-slate-900"
+                    />
+                    {errors.startDate && (
+                        <p className="text-red-500 text-sm">{errors.startDate.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                      <Label htmlFor="endDate" className="text-slate-800">End Date *</Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      {...register("endDate")}
+                        className="bg-white border-gray-300 text-slate-900"
+                    />
+                    {errors.endDate && (
+                        <p className="text-red-500 text-sm">{errors.endDate.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Cover Image Upload */}
+                <div className="space-y-2">
                     <Label className="text-slate-800">Cover Image</Label>
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-                      {coverImage ? (
-                        <div className="relative">
-                          <Image
-                            src={coverImage}
-                            alt="Trip cover"
-                            width={200}
-                            height={120}
-                            className="rounded-lg object-cover mx-auto"
-                          />
+                    {coverImage ? (
+                      <div className="relative">
+                        <Image
+                          src={coverImage}
+                          alt="Trip cover"
+                          width={200}
+                          height={120}
+                          className="rounded-lg object-cover mx-auto"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setCoverImage("")}
+                          className="absolute top-2 right-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                        <div className="mt-4">
                           <Button
                             type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => setCoverImage("")}
-                            className="absolute top-2 right-2"
+                            variant="outline"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                              className="border-gray-300 text-slate-700 hover:bg-gray-50"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            {isUploading ? "Uploading..." : "Upload Cover Image"}
                           </Button>
                         </div>
                       ) : (
@@ -1681,6 +1733,14 @@ export default function ComprehensiveTripBuilder({
                       className="hidden"
                     />
                   </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </div>
 
                   {/* Privacy Settings */}
                   <div className="space-y-2">
@@ -1696,7 +1756,7 @@ export default function ComprehensiveTripBuilder({
                         Make trip public (others can view your itinerary)
                       </Label>
                     </div>
-                  </div>
+                </div>
 
                   <div className="flex justify-end">
                     <Button
@@ -1726,11 +1786,11 @@ export default function ComprehensiveTripBuilder({
               </Card>
             </TabsContent>
 
-            {/* Itinerary Builder */}
-            <TabsContent value="itinerary" className="space-y-6">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-3">
-                  <div className="relative">
+          {/* Itinerary Builder */}
+          <TabsContent value="itinerary" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <div className="relative">
                     <Target className="w-8 h-8 text-emerald-500 animate-pulse" />
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full animate-ping"></div>
                   </div>
@@ -1763,6 +1823,22 @@ export default function ComprehensiveTripBuilder({
                   <Zap className="w-4 h-4 ml-2" />
                 </Button>
               </div>
+              <Button
+                type="button"
+                onClick={() => {
+                  addItineraryDay()
+                  toast({
+                    title: "🎯 New day added!",
+                    description: "Another day of adventure awaits planning!",
+                  })
+                }}
+                  className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-4 py-2 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-lg"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Day
+                <Zap className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
 
               {/* AI Suggestions Drawer */}
               <Card className="bg-gray-900 border-gray-700">
@@ -2024,16 +2100,15 @@ export default function ComprehensiveTripBuilder({
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+            ))}
 
-              {itineraryDays.length === 0 && (
+            {itineraryDays.length === 0 && (
                 <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 border-2 border-dashed">
-                  <CardContent className="py-12 text-center">
-                    <div className="relative">
-                      <MapPin className="mx-auto h-16 w-16 text-gray-400 mb-4 animate-bounce" />
-                      <div className="absolute -top-2 -right-2">
+                <CardContent className="py-12 text-center">
+                  <div className="relative">
+                    <MapPin className="mx-auto h-16 w-16 text-gray-400 mb-4 animate-bounce" />
+                    <div className="absolute -top-2 -right-2">
                         <Star className="w-6 h-6 text-emerald-500 animate-spin" />
-                      </div>
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2">
                       Ready to Plan Your Adventure! 🗺️
@@ -2054,53 +2129,53 @@ export default function ComprehensiveTripBuilder({
                           });
                         }}
                         className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-6 py-3 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-lg"
-                        disabled={!watchedStartDate || !watchedEndDate}
-                      >
-                        <Rocket className="w-5 h-5 mr-2" />
-                        Generate My Days!
-                        <Sparkles className="w-5 h-5 ml-2" />
-                      </Button>
+                      disabled={!watchedStartDate || !watchedEndDate}
+                    >
+                      <Rocket className="w-5 h-5 mr-2" />
+                      Generate My Days!
+                      <Sparkles className="w-5 h-5 ml-2" />
+                    </Button>
                       <p className="text-slate-500 text-sm">
-                        Or go back to set your travel dates first
-                      </p>
-                      <Button
-                        type="button"
-                        onClick={() => setCurrentTab("basic")}
-                        variant="outline"
-                        size="sm"
+                      Or go back to set your travel dates first
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={() => setCurrentTab("basic")}
+                      variant="outline"
+                      size="sm"
                         className="border-gray-300 text-slate-700 hover:bg-gray-50"
-                      >
-                        ← Back to Dates
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                    >
+                      ← Back to Dates
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-              <div className="flex justify-between">
-                <Button
-                  type="button"
-                  onClick={() => setCurrentTab("basic")}
-                  variant="outline"
+            <div className="flex justify-between">
+              <Button
+                type="button"
+                onClick={() => setCurrentTab("basic")}
+                variant="outline"
                   className="border-gray-300 text-slate-700 hover:bg-gray-50"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Basic Details
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setCurrentTab("budget")}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Basic Details
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setCurrentTab("budget")}
                   className="bg-emerald-600 hover:bg-emerald-700"
-                  disabled={itineraryDays.length === 0}
-                >
-                  Continue to Budget
-                  <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
-                </Button>
-              </div>
-            </TabsContent>
+                disabled={itineraryDays.length === 0}
+              >
+                Continue to Budget
+                <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+              </Button>
+            </div>
+          </TabsContent>
 
-            {/* Budget Overview */}
-            <TabsContent value="budget" className="space-y-6">
+          {/* Budget Overview */}
+          <TabsContent value="budget" className="space-y-6">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="relative">
                   <DollarSign className="w-8 h-8 text-emerald-500 animate-pulse" />
@@ -2182,29 +2257,30 @@ export default function ComprehensiveTripBuilder({
                 </div>
               </div>
 
-              <div className="flex justify-between">
-                <Button
-                  type="button"
-                  onClick={() => setCurrentTab("itinerary")}
-                  variant="outline"
+            )}
+            <div className="flex justify-between">
+              <Button
+                type="button"
+                onClick={() => setCurrentTab("itinerary")}
+                variant="outline"
                   className="border-gray-300 text-slate-700 hover:bg-gray-50"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Itinerary
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setCurrentTab("review")}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Itinerary
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setCurrentTab("review")}
                   className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  Review Trip
-                  <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
-                </Button>
-              </div>
-            </TabsContent>
+              >
+                Review Trip
+                <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+              </Button>
+            </div>
+          </TabsContent>
 
-            {/* Review & Submit */}
-            <TabsContent value="review" className="space-y-6">
+          {/* Review & Submit */}
+          <TabsContent value="review" className="space-y-6">
               <Card className="bg-white border-gray-200 shadow-md">
                 <CardHeader>
                   <CardTitle className="text-slate-900">

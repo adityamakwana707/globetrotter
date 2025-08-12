@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   try {
     const { destination, days = 2, interests = [] } = await req.json()
 
-    const hfToken = process.env.HF_TOKEN
+    const hfToken = process.env.HF_TOKEN || process.env.NEXT_PUBLIC_HF_TOKEN
     if (!hfToken) {
       return NextResponse.json({ message: "HF_TOKEN not set" }, { status: 500 })
     }

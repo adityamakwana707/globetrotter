@@ -205,17 +205,17 @@ export default function Comments({ postId, initialCommentsCount, onCommentsCount
         </Avatar>
         
         <div className="flex-1">
-          <div className="bg-gray-50 rounded-lg p-3">
+          <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
             <div className="flex items-center justify-between mb-1">
-              <h4 className="font-medium text-sm">{comment.user_name}</h4>
+              <h4 className="font-medium text-sm text-slate-900">{comment.user_name}</h4>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-slate-600">
                   {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                 </span>
                 {session?.user?.id === comment.user_id && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-slate-100">
                         <MoreVertical className="h-3 w-3" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -232,15 +232,15 @@ export default function Comments({ postId, initialCommentsCount, onCommentsCount
                 )}
               </div>
             </div>
-            <p className="text-sm text-gray-700">{comment.content}</p>
+            <p className="text-sm text-slate-700">{comment.content}</p>
           </div>
           
-          <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+          <div className="flex items-center gap-4 mt-2 text-xs text-slate-600">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleLikeComment(comment.id)}
-              className={`h-6 px-2 ${comment.is_liked ? "text-red-500" : ""}`}
+              className={`h-6 px-2 hover:bg-slate-100 ${comment.is_liked ? "text-red-500" : "text-slate-600"}`}
               disabled={!session}
             >
               <Heart className={`h-3 w-3 mr-1 ${comment.is_liked ? "fill-current" : ""}`} />
@@ -254,7 +254,7 @@ export default function Comments({ postId, initialCommentsCount, onCommentsCount
                 onClick={() => setReplyToComment(
                   replyToComment === comment.id ? null : comment.id
                 )}
-                className="h-6 px-2"
+                className="h-6 px-2 hover:bg-slate-100 text-slate-600"
               >
                 <Reply className="h-3 w-3 mr-1" />
                 Reply
@@ -275,13 +275,14 @@ export default function Comments({ postId, initialCommentsCount, onCommentsCount
                     onChange={(e) => setReplyContent(e.target.value)}
                     placeholder="Write a reply..."
                     rows={2}
-                    className="flex-1 text-sm"
+                    className="flex-1 text-sm bg-white border-gray-300 text-slate-900"
                   />
                   <div className="flex flex-col gap-2">
                     <Button 
                       type="submit" 
                       size="sm"
                       disabled={!replyContent.trim() || submitting}
+                      className="bg-emerald-600 hover:bg-emerald-700"
                     >
                       <Send className="h-3 w-3" />
                     </Button>
@@ -289,6 +290,7 @@ export default function Comments({ postId, initialCommentsCount, onCommentsCount
                       type="button" 
                       variant="outline" 
                       size="sm"
+                      className="border-gray-300 text-slate-700 hover:bg-gray-50"
                       onClick={() => {
                         setReplyToComment(null);
                         setReplyContent("");
@@ -316,11 +318,11 @@ export default function Comments({ postId, initialCommentsCount, onCommentsCount
   );
 
   return (
-    <Card>
+    <Card className="bg-white border-gray-200 shadow-md">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5" />
-          <h3 className="text-lg font-semibold">
+          <MessageCircle className="h-5 w-5 text-emerald-600" />
+          <h3 className="text-lg font-semibold text-slate-900">
             Comments ({comments.reduce((total, comment) => total + 1 + (comment.replies?.length || 0), 0)})
           </h3>
         </div>
@@ -343,16 +345,17 @@ export default function Comments({ postId, initialCommentsCount, onCommentsCount
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Share your thoughts..."
                   rows={3}
-                  className="resize-none"
+                  className="resize-none bg-white border-gray-300 text-slate-900"
                 />
                 <div className="flex justify-between items-center mt-2">
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-slate-600">
                     {newComment.length}/1000 characters
                   </span>
                   <Button 
                     type="submit" 
                     disabled={!newComment.trim() || submitting || newComment.length > 1000}
                     size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700"
                   >
                     {submitting ? "Posting..." : "Post Comment"}
                   </Button>
@@ -361,8 +364,8 @@ export default function Comments({ postId, initialCommentsCount, onCommentsCount
             </div>
           </form>
         ) : (
-          <div className="text-center py-6 text-gray-500">
-            <MessageCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+          <div className="text-center py-6 text-slate-600">
+            <MessageCircle className="h-8 w-8 mx-auto mb-2 text-slate-400" />
             <p>Sign in to join the conversation</p>
           </div>
         )}
@@ -370,7 +373,7 @@ export default function Comments({ postId, initialCommentsCount, onCommentsCount
         {/* Comments list */}
         {loading ? (
           <div className="text-center py-6">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600 mx-auto"></div>
           </div>
         ) : comments.length > 0 ? (
           <div className="space-y-4">
@@ -379,8 +382,8 @@ export default function Comments({ postId, initialCommentsCount, onCommentsCount
             ))}
           </div>
         ) : (
-          <div className="text-center py-6 text-gray-500">
-            <MessageCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+          <div className="text-center py-6 text-slate-600">
+            <MessageCircle className="h-8 w-8 mx-auto mb-2 text-slate-400" />
             <p>No comments yet</p>
             <p className="text-sm">Be the first to share your thoughts!</p>
           </div>

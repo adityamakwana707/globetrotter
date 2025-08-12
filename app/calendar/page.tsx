@@ -238,14 +238,14 @@ export default function CalendarPage() {
     
     return (
       <div className="w-full h-full min-h-[80px] p-1">
-        <div className="text-sm font-medium">{date.getDate()}</div>
+        <div className="text-sm font-medium text-slate-900">{date.getDate()}</div>
         <div className="space-y-1 mt-1">
           {dayEvents.slice(0, 2).map(event => (
             <div
               key={event.id}
               className={`text-xs p-1 rounded truncate cursor-pointer ${
                 event.type === "trip_start" ? "bg-blue-100 text-blue-800" :
-                event.type === "trip_end" ? "bg-green-100 text-green-800" :
+                event.type === "trip_end" ? "bg-emerald-100 text-emerald-800" :
                 event.type === "activity" ? "bg-purple-100 text-purple-800" :
                 "bg-gray-100 text-gray-800"
               }`}
@@ -255,7 +255,7 @@ export default function CalendarPage() {
             </div>
           ))}
           {dayEvents.length > 2 && (
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-slate-500">
               +{dayEvents.length - 2} more
             </div>
           )}
@@ -267,7 +267,7 @@ export default function CalendarPage() {
   const getEventTypeColor = (type: string) => {
     switch (type) {
       case "trip_start": return "bg-blue-500"
-      case "trip_end": return "bg-green-500"
+      case "trip_end": return "bg-emerald-500"
       case "activity": return "bg-purple-500"
       default: return "bg-gray-500"
     }
@@ -284,91 +284,96 @@ export default function CalendarPage() {
 
   if (!session) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Please sign in to view your calendar</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mb-4">Please sign in to view your calendar</h1>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 text-slate-900">
+      <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold">My Travel Calendar</h1>
-          <p className="text-muted-foreground">Manage your trips and activities</p>
+          <h1 className="text-3xl font-bold text-slate-900">My Travel Calendar</h1>
+          <p className="text-slate-600">Manage your trips and activities</p>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto flex-wrap md:justify-end">
           {/* View Toggle */}
           <Tabs value={view} onValueChange={(v) => setView(v as "calendar" | "list")}>
-            <TabsList>
-              <TabsTrigger value="calendar">Calendar</TabsTrigger>
-              <TabsTrigger value="list">List</TabsTrigger>
+            <TabsList className="p-0 gap-0 bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <TabsTrigger value="calendar" className="text-sm px-3 py-2 data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800">Calendar</TabsTrigger>
+              <TabsTrigger value="list" className="text-sm px-3 py-2 data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800">List</TabsTrigger>
             </TabsList>
           </Tabs>
 
           {/* Add Event Dialog */}
           <Dialog open={isAddEventOpen} onOpenChange={setIsAddEventOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="bg-emerald-600 hover:bg-emerald-700 w-full md:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Event
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="bg-white border-gray-200">
               <DialogHeader>
-                <DialogTitle>Add Calendar Event</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-slate-900">Add Calendar Event</DialogTitle>
+                <DialogDescription className="text-slate-600">
                   Add a custom note or reminder to your calendar
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="title">Title</Label>
+                  <Label htmlFor="title" className="text-slate-800">Title</Label>
                   <Input
                     id="title"
                     value={newEvent.title}
                     onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                     placeholder="Event title"
+                    className="bg-white border-gray-300 text-slate-900 placeholder-slate-400"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description" className="text-slate-800">Description</Label>
                   <Textarea
                     id="description"
                     value={newEvent.description}
                     onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
                     placeholder="Event description"
+                    className="bg-white border-gray-300 text-slate-900 placeholder-slate-400"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="date">Date</Label>
+                    <Label htmlFor="date" className="text-slate-800">Date</Label>
                     <Input
                       id="date"
                       type="date"
                       value={newEvent.date}
                       onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                      className="bg-white border-gray-300 text-slate-900"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="time">Time</Label>
+                    <Label htmlFor="time" className="text-slate-800">Time</Label>
                     <Input
                       id="time"
                       type="time"
                       value={newEvent.time}
                       onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
+                      className="bg-white border-gray-300 text-slate-900"
                     />
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsAddEventOpen(false)}>
+                  <Button variant="outline" onClick={() => setIsAddEventOpen(false)} className="border-gray-300 text-slate-700 hover:bg-gray-50">
                     Cancel
                   </Button>
-                  <Button onClick={handleAddEvent}>Add Event</Button>
+                  <Button onClick={handleAddEvent} className="bg-emerald-600 hover:bg-emerald-700">Add Event</Button>
                 </div>
               </div>
             </DialogContent>
@@ -380,18 +385,18 @@ export default function CalendarPage() {
         {/* Main Calendar/List View */}
         <div className="lg:col-span-3">
           {view === "calendar" ? (
-            <Card>
+            <Card className="bg-white border-gray-200 shadow-md">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <CalendarIcon className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 text-slate-900">
+                    <CalendarIcon className="h-5 w-5 text-emerald-600" />
                     {format(currentMonth, "MMMM yyyy")}
                   </CardTitle>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+                    <Button variant="outline" size="sm" onClick={goToPreviousMonth} className="border-gray-300 text-slate-700 hover:bg-gray-50">
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={goToNextMonth}>
+                    <Button variant="outline" size="sm" onClick={goToNextMonth} className="border-gray-300 text-slate-700 hover:bg-gray-50">
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
@@ -400,7 +405,7 @@ export default function CalendarPage() {
               <CardContent>
                 <div className="grid grid-cols-7 gap-1 mb-4">
                   {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
-                    <div key={day} className="p-2 text-center font-medium text-sm text-muted-foreground">
+                    <div key={day} className="p-2 text-center font-medium text-sm text-slate-600">
                       {day}
                     </div>
                   ))}
@@ -418,9 +423,9 @@ export default function CalendarPage() {
                       <div
                         key={date.toISOString()}
                         className={`border rounded-lg cursor-pointer transition-colors ${
-                          isSelected ? "bg-primary/10 border-primary" :
-                          isToday ? "bg-accent border-accent-foreground/20" :
-                          "border-border hover:bg-accent/50"
+                          isSelected ? "bg-emerald-100 border-emerald-300" :
+                          isToday ? "bg-blue-50 border-blue-200" :
+                          "border-gray-200 hover:bg-gray-50"
                         }`}
                         onClick={() => setSelectedDate(date)}
                       >
@@ -432,20 +437,20 @@ export default function CalendarPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
+            <Card className="bg-white border-gray-200 shadow-md">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Events List</CardTitle>
+                  <CardTitle className="text-slate-900">Events List</CardTitle>
                   <div className="flex items-center gap-2">
                     <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger className="w-40">
+                      <SelectTrigger className="w-40 bg-white border-gray-300 text-slate-900">
                         <SelectValue placeholder="Filter by status" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Events</SelectItem>
-                        <SelectItem value="planning">Planning</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
+                      <SelectContent className="bg-white border-gray-300">
+                        <SelectItem value="all" className="text-slate-900 hover:bg-gray-50">All Events</SelectItem>
+                        <SelectItem value="planning" className="text-slate-900 hover:bg-gray-50">Planning</SelectItem>
+                        <SelectItem value="active" className="text-slate-900 hover:bg-gray-50">Active</SelectItem>
+                        <SelectItem value="completed" className="text-slate-900 hover:bg-gray-50">Completed</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -454,34 +459,34 @@ export default function CalendarPage() {
               <CardContent>
                 <div className="space-y-4">
                   {filteredEvents.map(event => (
-                    <div key={event.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                    <div key={event.id} className="flex items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                       <div className={`w-3 h-3 rounded-full ${getEventTypeColor(event.type)}`} />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           {getEventTypeIcon(event.type)}
-                          <h3 className="font-medium">{event.title}</h3>
+                          <h3 className="font-medium text-slate-900">{event.title}</h3>
                           {event.status && (
-                            <Badge variant="outline">{event.status}</Badge>
+                            <Badge variant="outline" className="border-gray-300 text-slate-700">{event.status}</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-slate-600">
                           {format(event.date, "MMMM d, yyyy")} {event.time && `at ${event.time}`}
                         </p>
                         {event.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
+                          <p className="text-sm text-slate-600 mt-1">{event.description}</p>
                         )}
                         {event.location && (
-                          <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                          <p className="text-sm text-slate-600 flex items-center gap-1 mt-1">
                             <MapPin className="h-3 w-3" />
                             {event.location}
                           </p>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="border-gray-300 text-slate-700 hover:bg-gray-50">
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="border-gray-300 text-slate-700 hover:bg-gray-50">
                           <Edit className="h-4 w-4" />
                         </Button>
                       </div>
@@ -496,12 +501,12 @@ export default function CalendarPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Selected Date Events */}
-          <Card>
+          <Card className="bg-white border-gray-200 shadow-md">
             <CardHeader>
-              <CardTitle className="text-lg">
+              <CardTitle className="text-lg text-slate-900">
                 {format(selectedDate, "MMMM d, yyyy")}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-slate-600">
                 {selectedEvents.length} event{selectedEvents.length !== 1 ? "s" : ""}
               </CardDescription>
             </CardHeader>
@@ -509,31 +514,31 @@ export default function CalendarPage() {
               {selectedEvents.length > 0 ? (
                 <div className="space-y-3">
                   {selectedEvents.map(event => (
-                    <div key={event.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                    <div key={event.id} className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                       <div className={`w-2 h-2 rounded-full mt-2 ${getEventTypeColor(event.type)}`} />
                       <div className="flex-1">
-                        <h4 className="font-medium text-sm">{event.title}</h4>
+                        <h4 className="font-medium text-sm text-slate-900">{event.title}</h4>
                         {event.time && (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <p className="text-xs text-slate-600 flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {event.time}
                           </p>
                         )}
                         {event.location && (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <p className="text-xs text-slate-600 flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
                             {event.location}
                           </p>
                         )}
                         {event.description && (
-                          <p className="text-xs text-muted-foreground mt-1">{event.description}</p>
+                          <p className="text-xs text-slate-600 mt-1">{event.description}</p>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
+                <p className="text-sm text-slate-500 text-center py-4">
                   No events for this date
                 </p>
               )}
@@ -541,25 +546,25 @@ export default function CalendarPage() {
           </Card>
 
           {/* Quick Stats */}
-          <Card>
+          <Card className="bg-white border-gray-200 shadow-md">
             <CardHeader>
-              <CardTitle className="text-lg">Quick Stats</CardTitle>
+              <CardTitle className="text-lg text-slate-900">Quick Stats</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Total Trips</span>
-                  <Badge variant="outline">{trips.length}</Badge>
+                  <span className="text-sm text-slate-600">Total Trips</span>
+                  <Badge variant="outline" className="border-gray-300 text-slate-700">{trips.length}</Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Active Trips</span>
-                  <Badge variant="outline">
+                  <span className="text-sm text-slate-600">Active Trips</span>
+                  <Badge variant="outline" className="border-gray-300 text-slate-700">
                     {trips.filter(trip => trip.status === "active").length}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Upcoming Events</span>
-                  <Badge variant="outline">
+                  <span className="text-sm text-slate-600">Upcoming Events</span>
+                  <Badge variant="outline" className="border-gray-300 text-slate-700">
                     {events.filter(event => event.date > new Date()).length}
                   </Badge>
                 </div>
@@ -568,32 +573,33 @@ export default function CalendarPage() {
           </Card>
 
           {/* Legend */}
-          <Card>
+          <Card className="bg-white border-gray-200 shadow-md">
             <CardHeader>
-              <CardTitle className="text-lg">Legend</CardTitle>
+              <CardTitle className="text-lg text-slate-900">Legend</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-blue-500" />
-                  <span className="text-sm">Trip Start</span>
+                  <span className="text-sm text-slate-700">Trip Start</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <span className="text-sm">Trip End</span>
+                  <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                  <span className="text-sm text-slate-700">Trip End</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-purple-500" />
-                  <span className="text-sm">Activity</span>
+                  <span className="text-sm text-slate-700">Activity</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-gray-500" />
-                  <span className="text-sm">Note/Reminder</span>
+                  <span className="text-sm text-slate-700">Note/Reminder</span>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
+      </div>
       </div>
     </div>
   )
