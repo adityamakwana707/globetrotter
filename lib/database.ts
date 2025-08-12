@@ -664,8 +664,8 @@ export async function getComprehensiveTripDetails(tripId: number, userId: string
   itinerary: any[]
 }> {
   try {
-    // Fetch basic trip info
-    const trip = await getTripById(tripId, userId)
+    // Fetch basic trip info using display_id
+    const trip = await getTripByDisplayId(tripId, userId)
     
     if (!trip) {
       return {
@@ -680,12 +680,13 @@ export async function getComprehensiveTripDetails(tripId: number, userId: string
     }
 
     // Fetch all related data in parallel for better performance
+    // Use display_id for database functions that expect numeric trip_id
     const [cities, activities, budgets, expenses, itinerary] = await Promise.all([
-      getTripCities(tripId),
-      getTripActivities(tripId),
-      getTripBudgets(tripId),
-      getTripExpenses(tripId),
-      getTripItinerary(tripId)
+      getTripCities(trip.display_id), // Use display_id directly
+      getTripActivities(trip.display_id), // Use display_id directly
+      getTripBudgets(trip.display_id), // Use display_id directly
+      getTripExpenses(trip.display_id), // Use display_id directly
+      getTripItinerary(trip.display_id) // Use display_id directly
     ])
 
     // Extract destinations from cities
@@ -1719,6 +1720,19 @@ export async function getCityById(cityId: number): Promise<any | null> {
     return result.rows[0] || null
   } catch (error) {
     console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function findCityByName(name: string): Promise<any | null> {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM cities WHERE LOWER(name) = LOWER($1)",
+      [name]
+    )
+    return result.rows[0] || null
+  } catch (error) {
+    console.error("Database error in findCityByName:", error)
     throw error
   }
 }
