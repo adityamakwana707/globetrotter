@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { LogOut, Plus, User, Home, Shield, Settings } from "lucide-react"
+import { LogOut, Plus, User, Home, Shield, Settings, MapPin, Activity, Users } from "lucide-react"
 
 export default function Navbar() {
   const { data: session } = useSession()
@@ -31,7 +31,59 @@ export default function Navbar() {
           </div>
           <span className="text-2xl font-semibold tracking-tight text-slate-900">GlobeTrotter</span>
         </Link>
-
+        {/* Main Navigation */}
+        <nav className="hidden md:flex items-center gap-8">
+          {session && (
+            <>
+              <Link 
+                href="/dashboard" 
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Dashboard
+              </Link>
+              <Link 
+                href="/trips" 
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                My Trips
+              </Link>
+              <Link 
+                href="/calendar" 
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Calendar
+              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-gray-700 hover:text-blue-600 transition-colors">
+                    <MapPin className="w-4 h-4 mr-1" />
+                    Explore
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-48">
+                  <DropdownMenuItem onClick={() => router.push("/cities")} className="cursor-pointer">
+                    <MapPin className="w-4 h-4 mr-2" /> Cities
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/activities")} className="cursor-pointer">
+                    <Activity className="w-4 h-4 mr-2" /> Activities
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Link 
+                href="/community" 
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Community
+              </Link>
+              <Link 
+                href="/scrapbook" 
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Scrapbook
+              </Link>
+            </>
+          )}
+        </nav>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="p-0 h-10 w-10 rounded-full">
@@ -61,6 +113,9 @@ export default function Navbar() {
                   <>
                     <DropdownMenuItem onClick={() => router.push("/dashboard")} className="cursor-pointer">
                       <User className="w-4 h-4 mr-2" /> Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/scrapbook")} className="cursor-pointer">
+                      <Users className="w-4 h-4 mr-2" /> Scrapbook
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/trips/create")} className="cursor-pointer">
                       <Plus className="w-4 h-4 mr-2" /> Plan a trip
