@@ -196,7 +196,7 @@ interface ItineraryDay {
 }
 
 const ACTIVITY_TYPES = [
-  { value: "travel", label: "Travel", icon: "��", color: "bg-blue-500" },
+  { value: "travel", label: "Travel", icon: "  ", color: "bg-blue-500" },
   {
     value: "accommodation",
     label: "Accommodation",
@@ -206,19 +206,19 @@ const ACTIVITY_TYPES = [
   {
     value: "sightseeing",
     label: "Sightseeing",
-    icon: "��",
+    icon: "  ",
     color: "bg-green-500",
   },
-  { value: "adventure", label: "Adventure", icon: "��️", color: "bg-red-500" },
+  { value: "adventure", label: "Adventure", icon: "  ️", color: "bg-red-500" },
   { value: "dining", label: "Dining", icon: "🍽️", color: "bg-orange-500" },
-  { value: "shopping", label: "Shopping", icon: "��️", color: "bg-pink-500" },
+  { value: "shopping", label: "Shopping", icon: "  ️", color: "bg-pink-500" },
   {
     value: "entertainment",
     label: "Entertainment",
     icon: "🎭",
     color: "bg-indigo-500",
   },
-  { value: "other", label: "Other", icon: "��", color: "bg-gray-500" },
+  { value: "other", label: "Other", icon: "  ", color: "bg-gray-500" },
 ];
 
 interface Trip {
@@ -513,7 +513,7 @@ export default function ComprehensiveTripBuilder({
 
   // Fun emojis for different sections
   const stepEmojis = {
-    basic: "��",
+    basic: "  ",
     itinerary: "🗓️", 
     budget: "💰",
     review: "🚀",
@@ -1508,7 +1508,7 @@ export default function ComprehensiveTripBuilder({
       }
 
       toast({
-        title: `�� Trip ${isEditing ? "updated" : "created"} successfully!`,
+        title: `   Trip ${isEditing ? "updated" : "created"} successfully!`,
         description: "Your adventure is ready to begin!",
         duration: 5000,
       });
@@ -2416,7 +2416,7 @@ export default function ComprehensiveTripBuilder({
                         onClick={() => {
                           generateItineraryDays();
                           toast({
-                            title: "�� Days generated!",
+                            title: "   Days generated!",
                             description:
                               "Your itinerary framework is ready for customization!",
                           });

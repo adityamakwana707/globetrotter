@@ -142,94 +142,95 @@ export default function CitiesSearchPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 text-slate-900">
+      <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4 flex items-center gap-2">
-          <MapPin className="h-8 w-8 text-primary" />
+        <h1 className="text-3xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+          <MapPin className="h-8 w-8 text-emerald-600" />
           City Search
         </h1>
-        <p className="text-muted-foreground">Explore amazing destinations around the world for your next adventure</p>
+        <p className="text-slate-600">Explore amazing destinations around the world for your next adventure</p>
       </div>
 
       {/* Search Bar */}
       <div className="mb-6">
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
             <Input
               placeholder="Search cities by name, country, or description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              className="pl-10"
+              className="pl-10 bg-white border-gray-300 text-slate-900"
             />
           </div>
-          <Button onClick={() => handleSearch()} disabled={isLoading}>
+          <Button onClick={() => handleSearch()} disabled={isLoading} className="bg-emerald-600 hover:bg-emerald-700">
             {isLoading ? "Searching..." : "Search"}
           </Button>
         </div>
       </div>
 
       {/* Filters and Sorting */}
-      <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+      <div className="mb-6 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
         <div className="flex items-center gap-2 mb-4">
-          <Filter className="h-4 w-4" />
-          <span className="font-medium">Filters & Sorting</span>
+          <Filter className="h-4 w-4 text-slate-600" />
+          <span className="font-medium text-slate-900">Filters & Sorting</span>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="text-sm font-medium mb-1 block">Country</label>
+            <label className="text-sm font-medium mb-1 block text-slate-800">Country</label>
             <Select value={countryFilter} onValueChange={setCountryFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                 <SelectValue placeholder="All Countries" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Countries</SelectItem>
+              <SelectContent className="bg-white border-gray-200">
+                <SelectItem value="all" className="text-slate-900 hover:bg-gray-50">All Countries</SelectItem>
                 {uniqueCountries.map(country => (
-                  <SelectItem key={country} value={country}>{country}</SelectItem>
+                  <SelectItem key={country} value={country} className="text-slate-900 hover:bg-gray-50">{country}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">Cost Level</label>
+            <label className="text-sm font-medium mb-1 block text-slate-800">Cost Level</label>
             <Select value={costFilter} onValueChange={setCostFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                 <SelectValue placeholder="All Costs" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Cost Levels</SelectItem>
-                <SelectItem value="low">Budget (≤3)</SelectItem>
-                <SelectItem value="medium">Moderate (3-6)</SelectItem>
-                <SelectItem value="high">Expensive (&gt;6)</SelectItem>
+              <SelectContent className="bg-white border-gray-200">
+                <SelectItem value="all" className="text-slate-900 hover:bg-gray-50">All Cost Levels</SelectItem>
+                <SelectItem value="low" className="text-slate-900 hover:bg-gray-50">Budget (≤3)</SelectItem>
+                <SelectItem value="medium" className="text-slate-900 hover:bg-gray-50">Moderate (3-6)</SelectItem>
+                <SelectItem value="high" className="text-slate-900 hover:bg-gray-50">Expensive (&gt;6)</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">Sort By</label>
+            <label className="text-sm font-medium mb-1 block text-slate-800">Sort By</label>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="popularity">Popularity</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="cost">Cost Index</SelectItem>
-                <SelectItem value="trips">Trip Count</SelectItem>
+              <SelectContent className="bg-white border-gray-200">
+                <SelectItem value="popularity" className="text-slate-900 hover:bg-gray-50">Popularity</SelectItem>
+                <SelectItem value="name" className="text-slate-900 hover:bg-gray-50">Name</SelectItem>
+                <SelectItem value="cost" className="text-slate-900 hover:bg-gray-50">Cost Index</SelectItem>
+                <SelectItem value="trips" className="text-slate-900 hover:bg-gray-50">Trip Count</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">Order</label>
+            <label className="text-sm font-medium mb-1 block text-slate-800">Order</label>
             <Button
               variant="outline"
               onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-              className="w-full justify-start"
+              className="w-full justify-start border-gray-300 text-slate-700 hover:bg-gray-50"
             >
               {sortOrder === "asc" ? <SortAsc className="h-4 w-4 mr-2" /> : <SortDesc className="h-4 w-4 mr-2" />}
               {sortOrder === "asc" ? "Ascending" : "Descending"}
@@ -240,7 +241,8 @@ export default function CitiesSearchPage() {
         <div className="mt-4 flex flex-wrap gap-2">
           <Button 
             variant="outline" 
-            size="sm" 
+            size="sm"
+            className="border-gray-300 text-slate-700 hover:bg-gray-50"
             onClick={() => {
               setCountryFilter("all")
               setCostFilter("all")
@@ -249,7 +251,7 @@ export default function CitiesSearchPage() {
           >
             Clear Filters
           </Button>
-          <div className="text-sm text-muted-foreground flex items-center">
+          <div className="text-sm text-slate-600 flex items-center">
             Showing {sortedAndFilteredCities.length} cities
           </div>
         </div>
@@ -259,17 +261,17 @@ export default function CitiesSearchPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(9)].map((_, i) => (
-            <Card key={i} className="h-[360px]">
-              <Skeleton className="h-48 w-full rounded-t-lg" />
-              <CardHeader>
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-3 w-full mb-2" />
-                <Skeleton className="h-3 w-2/3" />
-              </CardContent>
-            </Card>
+                           <Card key={i} className="h-[360px] bg-white border border-gray-200 shadow-sm">
+                 <Skeleton className="h-48 w-full rounded-t-lg" />
+                 <CardHeader>
+                   <Skeleton className="h-5 w-3/4" />
+                   <Skeleton className="h-4 w-1/2" />
+                 </CardHeader>
+                 <CardContent>
+                   <Skeleton className="h-3 w-full mb-2" />
+                   <Skeleton className="h-3 w-2/3" />
+                 </CardContent>
+               </Card>
           ))}
         </div>
       ) : sortedAndFilteredCities.length > 0 ? (
@@ -279,7 +281,7 @@ export default function CitiesSearchPage() {
             const popularityLevel = getPopularityLevel(Number(city.popularity_score))
             
             return (
-              <Card key={city.id} className="hover:shadow-lg transition-shadow cursor-pointer overflow-hidden">
+                             <Card key={city.id} className="bg-white border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer overflow-hidden">
                 {/* City Image */}
                 <div className="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
                   {city.image_url ? (
@@ -379,11 +381,12 @@ export default function CitiesSearchPage() {
         </div>
       ) : searchQuery || costFilter !== "all" || countryFilter !== "all" ? (
         <div className="text-center py-12">
-          <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No cities found</h3>
-          <p className="text-muted-foreground mb-4">Try adjusting your search terms or filters</p>
+          <MapPin className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+          <h3 className="text-lg font-semibold mb-2 text-slate-900">No cities found</h3>
+          <p className="text-slate-600 mb-4">Try adjusting your search terms or filters</p>
           <Button 
             variant="outline" 
+            className="border-gray-300 text-slate-700 hover:bg-gray-50"
             onClick={() => {
               setSearchQuery("")
               setCountryFilter("all")
@@ -396,11 +399,12 @@ export default function CitiesSearchPage() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Explore Cities</h3>
-          <p className="text-muted-foreground">Search or browse our collection of amazing destinations worldwide</p>
+          <MapPin className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+          <h3 className="text-lg font-semibold mb-2 text-slate-900">Explore Cities</h3>
+          <p className="text-slate-600">Search or browse our collection of amazing destinations worldwide</p>
         </div>
       )}
+      </div>
     </div>
   )
 }

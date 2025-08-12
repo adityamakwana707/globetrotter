@@ -1322,6 +1322,127 @@ export async function createPasswordResetToken(userId: string): Promise<string> 
   return token
 }
 
+// ============================================================================
+// SCRAPBOOK FUNCTIONS
+// ============================================================================
+
+export interface ScrapbookEntry {
+  id: number
+  user_id: string
+  title: string
+  content: string
+  images: string[]
+  created_at: Date
+  updated_at: Date
+}
+
+async function ensureScrapbookTables(): Promise<void> {
+  // Create lightweight tables if they don't exist to avoid separate migration step
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS scrapbook_entries (
+      id SERIAL PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      images TEXT[] DEFAULT ARRAY[]::TEXT[],
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_scrapbook_entries_user_created ON scrapbook_entries(user_id, created_at DESC);
+  `)
+}
+
+export async function createScrapbookEntry(entry: {
+  user_id: string
+  title: string
+  content: string
+  images?: string[]
+}): Promise<ScrapbookEntry> {
+  await ensureScrapbookTables()
+  const result = await pool.query(
+    `INSERT INTO scrapbook_entries (user_id, title, content, images)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id, user_id, title, content, images, created_at, updated_at`,
+    [entry.user_id, entry.title, entry.content, entry.images || []]
+  )
+  return result.rows[0]
+}
+
+export async function getScrapbookEntriesForUser(
+  userId: string,
+  limit: number = 50,
+  offset: number = 0
+): Promise<ScrapbookEntry[]> {
+  await ensureScrapbookTables()
+  const result = await pool.query(
+    `SELECT id, user_id, title, content, images, created_at, updated_at
+     FROM scrapbook_entries
+     WHERE user_id = $1
+     ORDER BY created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [userId, limit, offset]
+  )
+  return result.rows
+}
+
+export async function getScrapbookEntryById(
+  id: number,
+  userId: string
+): Promise<ScrapbookEntry | null> {
+  await ensureScrapbookTables()
+  const result = await pool.query(
+    `SELECT id, user_id, title, content, images, created_at, updated_at
+     FROM scrapbook_entries
+     WHERE id = $1 AND user_id = $2`,
+    [id, userId]
+  )
+  return result.rows[0] || null
+}
+
+export async function updateScrapbookEntry(
+  id: number,
+  userId: string,
+  update: Partial<{ title: string; content: string; images: string[] }>
+): Promise<ScrapbookEntry | null> {
+  await ensureScrapbookTables()
+  const fields: string[] = []
+  const values: any[] = []
+  let p = 1
+  if (update.title !== undefined) {
+    fields.push(`title = $${p++}`)
+    values.push(update.title)
+  }
+  if (update.content !== undefined) {
+    fields.push(`content = $${p++}`)
+    values.push(update.content)
+  }
+  if (update.images !== undefined) {
+    fields.push(`images = $${p++}`)
+    values.push(update.images)
+  }
+  if (fields.length === 0) return await getScrapbookEntryById(id, userId)
+  fields.push(`updated_at = CURRENT_TIMESTAMP`)
+  values.push(id)
+  values.push(userId)
+  const result = await pool.query(
+    `UPDATE scrapbook_entries
+     SET ${fields.join(', ')}
+     WHERE id = $${p++} AND user_id = $${p++}
+     RETURNING id, user_id, title, content, images, created_at, updated_at`,
+    values
+  )
+  return result.rows[0] || null
+}
+
+export async function deleteScrapbookEntry(id: number, userId: string): Promise<boolean> {
+  await ensureScrapbookTables()
+  const result = await pool.query(
+    `DELETE FROM scrapbook_entries WHERE id = $1 AND user_id = $2`,
+    [id, userId]
+  )
+  return (result.rowCount || 0) > 0
+}
+
 export async function verifyPasswordResetToken(token: string): Promise<string | null> {
   const result = await pool.query(
     `SELECT user_id FROM password_resets 
