@@ -122,8 +122,9 @@ export interface Activity {
 export async function getUserByEmail(email: string): Promise<User | null> {
   try {
     // Use prepared statement for security and performance
+    // Use LOWER() for case-insensitive email comparison
     const result = await pool.query(
-      "SELECT * FROM users WHERE email = $1",
+      "SELECT * FROM users WHERE LOWER(email) = LOWER($1)",
       [email]
     )
     return result.rows[0] || null
@@ -155,11 +156,12 @@ export async function createUser(userData: {
   phoneNumber?: string
   city?: string
   country?: string
+  emailVerified?: boolean
 }): Promise<User> {
   try {
     const result = await pool.query(
-      `INSERT INTO users (email, password, first_name, last_name, phone_number, city, country)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO users (email, password, first_name, last_name, phone_number, city, country, email_verified)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
       [
         userData.email,
@@ -169,6 +171,7 @@ export async function createUser(userData: {
         userData.phoneNumber,
         userData.city,
         userData.country,
+        userData.emailVerified ?? false,
       ],
     )
     return result.rows[0]
@@ -1560,7 +1563,7 @@ export async function getUnverifiedUserById(userId: string): Promise<any | null>
 
 export async function getUnverifiedUserByEmail(email: string): Promise<any | null> {
   const result = await pool.query(
-    'SELECT * FROM unverified_users WHERE email = $1',
+    'SELECT * FROM unverified_users WHERE LOWER(email) = LOWER($1)',
     [email]
   )
   
@@ -1571,15 +1574,20 @@ export async function moveUnverifiedUserToVerified(userId: string): Promise<User
   const client = await pool.connect()
   
   try {
+    console.log(`🔄 Starting user verification process for user ${userId}`)
     await client.query('BEGIN')
     
     // Get unverified user data
     const unverifiedUser = await getUnverifiedUserById(userId)
     if (!unverifiedUser) {
+      console.log(`❌ Unverified user ${userId} not found`)
       throw new Error('Unverified user not found')
     }
     
+    console.log(`📋 Found unverified user: ${unverifiedUser.email}, ${unverifiedUser.first_name} ${unverifiedUser.last_name}`)
+    
     // Create verified user
+    console.log(`👤 Creating verified user with email_verified = true`)
     const verifiedUser = await createUser({
       email: unverifiedUser.email,
       password: unverifiedUser.password, // Already hashed
@@ -1588,12 +1596,17 @@ export async function moveUnverifiedUserToVerified(userId: string): Promise<User
       phoneNumber: unverifiedUser.phone_number,
       city: unverifiedUser.city,
       country: unverifiedUser.country,
+      emailVerified: true, // Set email as verified
     })
+    
+    console.log(`✅ Verified user created with ID: ${verifiedUser.id}, email_verified: ${verifiedUser.email_verified}`)
     
     // Delete from unverified_users
     await client.query('DELETE FROM unverified_users WHERE id = $1', [userId])
+    console.log(`🗑️ Deleted unverified user ${userId}`)
     
     await client.query('COMMIT')
+    console.log(`💾 Transaction committed successfully`)
     return verifiedUser
   } catch (error) {
     await client.query('ROLLBACK')
@@ -1608,6 +1621,19 @@ export async function cleanupExpiredUnverifiedUsers(): Promise<void> {
   await pool.query(
     'DELETE FROM unverified_users WHERE created_at < CURRENT_TIMESTAMP - INTERVAL \'24 hours\''
   )
+}
+
+export async function deleteUnverifiedUser(userId: string): Promise<boolean> {
+  try {
+    const result = await pool.query(
+      'DELETE FROM unverified_users WHERE id = $1',
+      [userId]
+    )
+    return (result.rowCount || 0) > 0
+  } catch (error) {
+    console.error("Database error in deleteUnverifiedUser:", error)
+    throw error
+  }
 }
 
 // ============================================================================
@@ -1646,6 +1672,7 @@ export async function verifyEmailVerificationOTP(userId: string, email: string, 
   const client = await pool.connect()
   
   try {
+    console.log(`🔍 Verifying OTP for user ${userId}, email: ${email}, OTP: ${otpCode}`)
     const result = await client.query(
       `SELECT * FROM email_verification_otps 
        WHERE user_id = $1 AND email = $2 AND otp_code = $3 AND expires_at > NOW() AND used_at IS NULL`,
@@ -1653,8 +1680,11 @@ export async function verifyEmailVerificationOTP(userId: string, email: string, 
     )
     
     if (result.rows.length === 0) {
+      console.log(`❌ No valid OTP found for user ${userId}`)
       return { success: false }
     }
+    
+    console.log(`✅ Valid OTP found, marking as used`)
     
     // Mark OTP as used
     await client.query(
@@ -1662,10 +1692,17 @@ export async function verifyEmailVerificationOTP(userId: string, email: string, 
       [userId, email]
     )
     
+    console.log(`🔄 Moving unverified user ${userId} to verified users table`)
+    
     // Move unverified user to verified users table
     const verifiedUser = await moveUnverifiedUserToVerified(userId)
     
+    console.log(`✅ User verification completed. New user ID: ${verifiedUser.id}, Email verified: ${verifiedUser.email_verified}`)
+    
     return { success: true, user: verifiedUser }
+  } catch (error) {
+    console.error(`❌ Error during OTP verification:`, error)
+    throw error
   } finally {
     client.release()
   }
@@ -2397,7 +2434,7 @@ export async function deleteCommunityPost(postId: number, userId: string): Promi
       'DELETE FROM community_posts WHERE id = $1 AND user_id = $2',
       [postId, userId]
     )
-    return result.rowCount > 0
+    return (result.rowCount ?? 0) > 0
   } catch (error) {
     console.error("Database error:", error)
     throw error

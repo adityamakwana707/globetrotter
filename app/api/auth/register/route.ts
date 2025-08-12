@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
-import { createUnverifiedUser, getUserByEmail, getUnverifiedUserByEmail, createEmailVerificationOTP } from "@/lib/database"
+import { createUnverifiedUser, getUserByEmail, getUnverifiedUserByEmail, createEmailVerificationOTP, deleteUnverifiedUser } from "@/lib/database"
 import { sendEmailVerificationOTP } from "@/lib/email"
 
 export async function POST(request: NextRequest) {
@@ -13,14 +13,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
     }
 
+    console.log(`🔍 Registration attempt for email: ${email}`)
+
     // Check if user already exists (either verified or unverified)
     const existingUser = await getUserByEmail(email)
-        const existingUnverifiedUser = await getUnverifiedUserByEmail(email)
-      
-    if (existingUser || existingUnverifiedUser) {
+    const existingUnverifiedUser = await getUnverifiedUserByEmail(email)
+    
+    console.log(`📊 User check results:`)
+    console.log(`  - Existing user: ${existingUser ? 'YES' : 'NO'}`)
+    console.log(`  - Existing unverified user: ${existingUnverifiedUser ? 'YES' : 'NO'}`)
+    
+    if (existingUser) {
+      console.log(`❌ User already exists in users table: ${existingUser.id}`)
+      return NextResponse.json({ message: "User already exists" }, { status: 409 })
+    }
+    
+    if (existingUnverifiedUser) {
+      console.log(`❌ Unverified user already exists: ${existingUnverifiedUser.id}`)
       return NextResponse.json({ message: "User already exists" }, { status: 409 })
     }
  
+    console.log(`✅ No existing user found, proceeding with registration`)
+    
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
@@ -35,14 +49,26 @@ export async function POST(request: NextRequest) {
       country,
     })
 
+    console.log(`✅ Created unverified user with ID: ${tempUserId}`)
+
     // Send OTP verification email
     try {
       const otpCode = await createEmailVerificationOTP(tempUserId, email)
       await sendEmailVerificationOTP(email, otpCode, firstName)
+      console.log(`✅ OTP email sent successfully`)
     } catch (emailError) {
       console.error("Failed to send OTP email:", emailError)
-      // If email fails, we should clean up the unverified user
-      // For now, just log it - in production you might want to implement cleanup
+      // Clean up the unverified user since OTP creation failed
+      try {
+        await deleteUnverifiedUser(tempUserId)
+        console.log(`🧹 Cleaned up unverified user ${tempUserId} due to OTP failure`)
+      } catch (cleanupError) {
+        console.error("Failed to cleanup unverified user:", cleanupError)
+      }
+      
+      return NextResponse.json({ 
+        message: "Registration failed - unable to send verification email. Please try again." 
+      }, { status: 500 })
     }
 
     return NextResponse.json({ 

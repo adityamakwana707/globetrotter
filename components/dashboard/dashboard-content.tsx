@@ -10,12 +10,20 @@ import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 // import { useTripStore } from "@/lib/store"
 import { toast } from "@/hooks/use-toast"
+import EditProfileModal from "./edit-profile-modal"
 
 interface UserType {
   id: string
-  name?: string | null
-  email?: string | null
+  name: string
+  email: string
   image?: string | null
+  first_name: string
+  last_name: string
+  phone_number?: string
+  city?: string
+  country?: string
+  role: string
+  email_verified: boolean
 }
 
 interface Trip {
@@ -32,6 +40,8 @@ interface Trip {
 export default function DashboardContent({ user, session }: { user: UserType; session?: any }) {
   const [recentTrips, setRecentTrips] = useState<Trip[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
+  const [currentUser, setCurrentUser] = useState<UserType>(user)
   const router = useRouter()
   // const { trips, setTrips, clearStore } = useTripStore()
 
@@ -68,6 +78,14 @@ export default function DashboardContent({ user, session }: { user: UserType; se
     } catch (error) {
       console.error("Logout error:", error)
       toast({ title: "Logout failed", variant: "destructive" })
+    }
+  }
+
+  const handleProfileUpdate = (updatedUser: UserType) => {
+    setCurrentUser(updatedUser)
+    // Update the session user data if needed
+    if (session?.user) {
+      session.user.name = updatedUser.name
     }
   }
 
@@ -113,10 +131,20 @@ export default function DashboardContent({ user, session }: { user: UserType; se
                 </div>
               </div>
               <div className="md:col-span-2 space-y-2">
-                <p className="text-lg font-semibold">{user.name || user.email}</p>
-                <p className="text-slate-500 text-sm break-all">{user.email}</p>
+                <p className="text-lg font-semibold">{currentUser.name || currentUser.email}</p>
+                <p className="text-slate-500 text-sm break-all">{currentUser.email}</p>
+                {currentUser.city && currentUser.country && (
+                  <p className="text-slate-500 text-sm">
+                    📍 {currentUser.city}, {currentUser.country}
+                  </p>
+                )}
                 <div className="flex gap-2 pt-2">
-                  <Button size="sm" variant="outline" className="border-gray-300 text-slate-700 hover:bg-gray-50">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="border-gray-300 text-slate-700 hover:bg-gray-50"
+                    onClick={() => setIsEditProfileOpen(true)}
+                  >
                     <Pencil className="w-4 h-4 mr-2" /> Edit Profile
                   </Button>
                   <Link href="/trips">
@@ -206,6 +234,14 @@ export default function DashboardContent({ user, session }: { user: UserType; se
           )}
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+        user={currentUser}
+        onProfileUpdate={handleProfileUpdate}
+      />
     </div>
   )
 }
