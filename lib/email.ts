@@ -3,6 +3,27 @@
 
 import nodemailer from 'nodemailer'
 
+// Create reusable transporter
+export const emailTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+})
+
+// Verify connection
+emailTransporter.verify(function (error, success) {
+  if (error) {
+    console.error('Email configuration error:', error)
+  } else {
+    console.log('Server is ready to send emails')
+  }
+})
+
 interface EmailConfig {
   from: string
   to: string
@@ -10,34 +31,12 @@ interface EmailConfig {
   html: string
 }
 
-// Create Gmail SMTP transporter
-let transporter: nodemailer.Transporter | null = null
-
-if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  })
-  
-  // Verify connection configuration
-  transporter.verify((error, success) => {
-    if (error) {
-      console.error('❌ Gmail SMTP connection failed:', error)
-    } else {
-      console.log('✅ Gmail SMTP connection established')
-    }
-  })
-}
-
 // Email service with fallback to mock for development
 export async function sendEmail(config: EmailConfig): Promise<void> {
   // If Gmail SMTP is configured, use it
-  if (transporter) {
+  if (emailTransporter) {
     try {
-      const result = await transporter.sendMail({
+      const result = await emailTransporter.sendMail({
         from: config.from,
         to: config.to,
         subject: config.subject,
