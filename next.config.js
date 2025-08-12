@@ -15,7 +15,10 @@ const nextConfig = {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     DATABASE_URL: process.env.DATABASE_URL,
   },
-  // Fix Leaflet bundling issues
+  experimental: {
+    serverComponentsExternalPackages: ['next-auth', 'openid-client', '@panva/hkdf', 'jose', 'oauth4webapi'],
+  },
+  // Fix Leaflet bundling issues and NextAuth dependencies
   webpack: (config, { isServer }) => {
     // Handle Leaflet's server-side rendering issues
     if (!isServer) {
@@ -25,12 +28,6 @@ const nextConfig = {
         net: false,
         tls: false,
       }
-    }
-    
-    // Exclude Leaflet from server-side bundling
-    config.externals = config.externals || []
-    if (isServer) {
-      config.externals.push('leaflet')
     }
     
     return config

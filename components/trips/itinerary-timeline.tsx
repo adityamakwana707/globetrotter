@@ -55,6 +55,7 @@ interface ItineraryTimelineProps {
   trip: Trip
   cities: City[]
   activities: Activity[]
+  itinerary?: any[]
 }
 
 interface DaySchedule {
@@ -69,12 +70,26 @@ interface DaySchedule {
 export default function ItineraryTimeline({
   trip,
   cities,
-  activities
+  activities,
+  itinerary = []
 }: ItineraryTimelineProps) {
   const [viewMode, setViewMode] = useState<"timeline" | "calendar">("timeline")
 
   // Generate day-by-day schedule
   const generateDaySchedule = (): DaySchedule[] => {
+    // If we have stored itinerary, use it
+    if (itinerary && itinerary.length > 0) {
+      return itinerary.map((day: any) => ({
+        date: new Date(day.date),
+        dayNumber: day.dayNumber,
+        city: cities.find(c => c.name === day.location?.name),
+        activities: day.activities || [],
+        isToday: new Date(day.date).toDateString() === new Date().toDateString(),
+        isPast: new Date(day.date) < new Date()
+      }))
+    }
+
+    // Fallback to generating from basic trip data
     const startDate = new Date(trip.start_date)
     const endDate = new Date(trip.end_date)
     const today = new Date()
@@ -228,13 +243,13 @@ export default function ItineraryTimeline({
     <div className="space-y-6">
       {/* View Toggle */}
       <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-bold text-white">Trip Itinerary</h3>
-        <div className="flex space-x-1 bg-gray-800 rounded-lg p-1">
+        <h3 className="text-2xl font-bold text-slate-900">Trip Itinerary</h3>
+        <div className="flex space-x-1 bg-white border border-gray-200 rounded-lg p-1">
           <Button
             variant={viewMode === "timeline" ? "default" : "ghost"}
             size="sm"
             onClick={() => setViewMode("timeline")}
-            className={viewMode === "timeline" ? "bg-blue-600" : "text-gray-400"}
+            className={viewMode === "timeline" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "text-slate-600 hover:bg-gray-50"}
           >
             Timeline
           </Button>
@@ -242,7 +257,7 @@ export default function ItineraryTimeline({
             variant={viewMode === "calendar" ? "default" : "ghost"}
             size="sm"
             onClick={() => setViewMode("calendar")}
-            className={viewMode === "calendar" ? "bg-blue-600" : "text-gray-400"}
+            className={viewMode === "calendar" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "text-slate-600 hover:bg-gray-50"}
           >
             Calendar
           </Button>
@@ -257,24 +272,24 @@ export default function ItineraryTimeline({
             const StatusIcon = status.icon
 
             return (
-              <Card key={index} className="bg-gray-800 border-gray-700 relative">
+              <Card key={index} className="bg-white border-gray-200 shadow-md relative">
                 {/* Timeline Connector */}
                 {index < daySchedule.length - 1 && (
-                  <div className="absolute left-6 top-16 w-0.5 h-full bg-gray-600 z-0"></div>
+                  <div className="absolute left-6 top-16 w-0.5 h-full bg-gray-200 z-0"></div>
                 )}
 
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div className={`flex items-center justify-center w-12 h-12 rounded-full bg-gray-700 border-2 ${status.color.replace('text-', 'border-')} z-10`}>
+                      <div className={`flex items-center justify-center w-12 h-12 rounded-full bg-gray-50 border-2 ${status.color.replace('text-', 'border-')} z-10`}>
                         <StatusIcon className={`w-6 h-6 ${status.color}`} />
                       </div>
                       
                       <div>
-                        <h3 className="text-xl font-bold text-white">
+                        <h3 className="text-xl font-bold text-slate-900">
                           Day {day.dayNumber}
                         </h3>
-                        <p className="text-gray-400">
+                        <p className="text-slate-600">
                           {day.date.toLocaleDateString('en-US', { 
                             weekday: 'long',
                             month: 'long', 
@@ -293,11 +308,11 @@ export default function ItineraryTimeline({
                     {/* Day Location */}
                     {day.city && (
                       <div className="text-right">
-                        <div className="flex items-center space-x-2 text-blue-400">
+                        <div className="flex items-center space-x-2 text-emerald-600">
                           <MapPin className="w-4 h-4" />
                           <span className="font-medium">{day.city.name}</span>
                         </div>
-                        <p className="text-gray-400 text-sm">{day.city.country}</p>
+                        <p className="text-slate-600 text-sm">{day.city.country}</p>
                       </div>
                     )}
                   </div>
@@ -308,15 +323,15 @@ export default function ItineraryTimeline({
                   {day.activities.length > 0 ? (
                     <div className="space-y-3">
                       {day.activities.map((activity, activityIndex) => (
-                        <div key={activity.id} className="flex items-start space-x-4 p-4 bg-gray-700 rounded-lg">
+                        <div key={activity.id} className="flex items-start space-x-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                           {/* Activity Time */}
                           <div className="text-center min-w-[60px]">
                             {activity.scheduled_time ? (
-                              <div className="text-blue-400 font-medium">
+                              <div className="text-emerald-600 font-medium">
                                 {formatTime(activity.scheduled_time)}
                               </div>
                             ) : (
-                              <div className="text-gray-400 text-sm">All Day</div>
+                              <div className="text-slate-500 text-sm">All Day</div>
                             )}
                           </div>
 
@@ -327,7 +342,7 @@ export default function ItineraryTimeline({
                                 <span className="text-lg">
                                   {getActivityIcon(activity.category)}
                                 </span>
-                                <h4 className="text-white font-medium">{activity.name}</h4>
+                                <h4 className="text-slate-900 font-medium">{activity.name}</h4>
                                 {activity.category && (
                                   <Badge variant="secondary" className="bg-purple-600 text-white text-xs">
                                     {activity.category}
@@ -345,25 +360,25 @@ export default function ItineraryTimeline({
                                 {activity.estimated_cost && (
                                   <div className="flex items-center space-x-1">
                                     <DollarSign className="w-4 h-4 text-green-400" />
-                                    <span className="text-gray-400 text-sm">${activity.estimated_cost}</span>
+                                    <span className="text-slate-600 text-sm">${activity.estimated_cost}</span>
                                   </div>
                                 )}
                               </div>
                             </div>
 
                             {activity.description && (
-                              <p className="text-gray-300 text-sm mb-2">{activity.description}</p>
+                              <p className="text-slate-600 text-sm mb-2">{activity.description}</p>
                             )}
 
                             {activity.notes && (
-                              <div className="bg-gray-800 p-2 rounded text-gray-400 text-sm">
+                              <div className="bg-gray-50 border border-gray-200 p-2 rounded text-slate-600 text-sm">
                                 <FileText className="w-3 h-3 inline mr-1" />
                                 {activity.notes}
                               </div>
                             )}
 
                             <div className="flex items-center justify-between mt-2">
-                              <div className="flex items-center space-x-4 text-sm text-gray-400">
+                              <div className="flex items-center space-x-4 text-sm text-slate-600">
                                 {activity.duration_hours && (
                                   <div className="flex items-center space-x-1">
                                     <Clock className="w-3 h-3" />
@@ -381,14 +396,14 @@ export default function ItineraryTimeline({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="text-gray-400 hover:text-white"
+                                  className="text-slate-600 hover:text-emerald-600"
                                 >
                                   <Edit className="w-3 h-3" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="text-gray-400 hover:text-red-400"
+                                  className="text-slate-600 hover:text-red-500"
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </Button>
@@ -413,12 +428,12 @@ export default function ItineraryTimeline({
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <Calendar className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                      <p className="text-gray-400">No activities planned for this day</p>
+                      <Calendar className="mx-auto h-8 w-8 text-slate-400 mb-2" />
+                      <p className="text-slate-500">No activities planned for this day</p>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="mt-2 border-gray-600 text-gray-300 hover:bg-gray-700"
+                        className="mt-2 border-gray-300 text-slate-700 hover:bg-gray-50"
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Add Activity
@@ -434,14 +449,14 @@ export default function ItineraryTimeline({
 
       {/* Calendar View */}
       {viewMode === "calendar" && (
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-white border-gray-200 shadow-md">
           <CardHeader>
-            <CardTitle className="text-white">Calendar View</CardTitle>
+            <CardTitle className="text-slate-900">Calendar View</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-7 gap-2 mb-4">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center text-gray-400 font-medium p-2">
+                <div key={day} className="text-center text-slate-600 font-medium p-2">
                   {day}
                 </div>
               ))}
@@ -455,11 +470,11 @@ export default function ItineraryTimeline({
                     key={index}
                     className={`
                       p-2 border rounded-lg min-h-[100px] 
-                      ${day.isToday ? 'border-green-500 bg-green-900/20' : 'border-gray-600'}
-                      ${day.isPast ? 'bg-gray-700/50' : 'bg-gray-700'}
+                      ${day.isToday ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200'}
+                      ${day.isPast ? 'bg-gray-100' : 'bg-white'}
                     `}
                   >
-                    <div className={`text-sm font-medium mb-1 ${status.color}`}>
+                    <div className={`text-sm font-medium mb-1 ${status.color.replace('text-blue-400','text-emerald-600').replace('text-green-400','text-emerald-600')}`}>
                       {day.date.getDate()}
                     </div>
                     {day.city && (

@@ -627,6 +627,353 @@ export async function getTripActivities(tripId: number): Promise<any[]> {
   }
 }
 
+export async function getTripBudgets(tripId: number): Promise<any[]> {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM budgets WHERE trip_id = $1 ORDER BY category`,
+      [tripId]
+    )
+    return result.rows
+  } catch (error) {
+    console.error("Database error in getTripBudgets:", error)
+    throw error
+  }
+}
+
+export async function getTripExpenses(tripId: number): Promise<any[]> {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM expenses WHERE trip_id = $1 ORDER BY expense_date DESC`,
+      [tripId]
+    )
+    return result.rows
+  } catch (error) {
+    console.error("Database error in getTripExpenses:", error)
+    throw error
+  }
+}
+
+// Comprehensive function to get all trip details with related data
+export async function getComprehensiveTripDetails(tripId: number, userId: string): Promise<{
+  trip: Trip | null,
+  cities: any[],
+  activities: any[],
+  budgets: any[],
+  expenses: any[],
+  destinations: string[],
+  itinerary: any[]
+}> {
+  try {
+    // Fetch basic trip info
+    const trip = await getTripById(tripId, userId)
+    
+    if (!trip) {
+      return {
+        trip: null,
+        cities: [],
+        activities: [],
+        budgets: [],
+        expenses: [],
+        destinations: [],
+        itinerary: []
+      }
+    }
+
+    // Fetch all related data in parallel for better performance
+    const [cities, activities, budgets, expenses, itinerary] = await Promise.all([
+      getTripCities(tripId),
+      getTripActivities(tripId),
+      getTripBudgets(tripId),
+      getTripExpenses(tripId),
+      getTripItinerary(tripId)
+    ])
+
+    // Extract destinations from cities
+    const destinations = cities.map(city => city.name)
+
+    return {
+      trip,
+      cities,
+      activities,
+      budgets,
+      expenses,
+      destinations,
+      itinerary
+    }
+  } catch (error) {
+    console.error("Database error in getComprehensiveTripDetails:", error)
+    throw error
+  }
+}
+
+// Store daily itinerary efficiently using existing tables
+export async function storeTripItinerary(tripId: number, itineraryDays: any[]) {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    // Ensure table for day headers exists (idempotent)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS itinerary_days (
+        id SERIAL PRIMARY KEY,
+        trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+        day_number INTEGER NOT NULL,
+        date DATE NOT NULL,
+        title TEXT,
+        description TEXT,
+        location_name TEXT,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_itinerary_days_trip_date ON itinerary_days(trip_id, date);
+
+      CREATE TABLE IF NOT EXISTS itinerary_entries (
+        id SERIAL PRIMARY KEY,
+        trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+        date DATE NOT NULL,
+        scheduled_time TIME,
+        title TEXT NOT NULL,
+        notes TEXT,
+        order_index INTEGER,
+        estimated_cost DECIMAL(10,2),
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_itinerary_entries_trip_date ON itinerary_entries(trip_id, date);
+    `)
+
+    // Clear previous entries
+    await client.query('DELETE FROM itinerary_days WHERE trip_id = $1', [tripId])
+    await client.query('DELETE FROM trip_activities WHERE trip_id = $1', [tripId])
+
+    let totalActivitiesStored = 0
+    for (const day of itineraryDays) {
+      // Insert day header
+      await client.query(
+        `INSERT INTO itinerary_days (trip_id, day_number, date, title, description, location_name)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          tripId,
+          typeof day.dayNumber === 'number' ? day.dayNumber : 1,
+          day.date,
+          day.title || null,
+          day.description || null,
+          day?.location?.name || null,
+        ]
+      )
+
+      if (day.activities && Array.isArray(day.activities) && day.activities.length > 0) {
+        for (const activity of day.activities) {
+          if (activity?.id && typeof activity.id === 'number' && activity.id > 0) {
+            let estimatedCost = 0
+            if (typeof activity.estimatedCost === 'number') estimatedCost = activity.estimatedCost
+            else if (activity.price_range) estimatedCost = String(activity.price_range).length * 25
+
+            await client.query(
+              `INSERT INTO trip_activities (
+                trip_id, activity_id, scheduled_date, scheduled_time,
+                order_index, notes, estimated_cost, trip_city_id
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+              [
+                tripId,
+                activity.id,
+                day.date,
+                activity.startTime || '09:00:00',
+                activity.orderIndex || 1,
+                activity.notes || '',
+                estimatedCost,
+                null,
+              ]
+            )
+            totalActivitiesStored++
+          } else if (activity && (activity.name || activity.title)) {
+            // Store free-form entry not in catalog
+            let estimatedCost = 0
+            if (typeof activity.estimatedCost === 'number') estimatedCost = activity.estimatedCost
+            else if (activity.price_range) estimatedCost = String(activity.price_range).length * 25
+            await client.query(
+              `INSERT INTO itinerary_entries (trip_id, date, scheduled_time, title, notes, order_index, estimated_cost)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+              [
+                tripId,
+                day.date,
+                activity.startTime || null,
+                activity.name || activity.title,
+                activity.notes || null,
+                activity.orderIndex || 1,
+                estimatedCost || 0,
+              ]
+            )
+          }
+        }
+      } else {
+        // No catalog activities; persist a single entry if day has meaningful content
+        const hasMeaning = (day.title && day.title.trim() !== '') || (day.description && day.description.trim() !== '') || (day.notes && day.notes.trim() !== '') || (day.budget && day.budget.estimated)
+        if (hasMeaning) {
+          await client.query(
+            `INSERT INTO itinerary_entries (trip_id, date, scheduled_time, title, notes, order_index, estimated_cost)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [
+              tripId,
+              day.date,
+              day.startTime || null,
+              day.title || 'Itinerary Item',
+              day.description || day.notes || null,
+              day.dayNumber || 1,
+              (day.budget && typeof day.budget.estimated === 'number') ? day.budget.estimated : 0,
+            ]
+          )
+        }
+      }
+    }
+
+    await client.query('COMMIT')
+    console.log(`Stored itinerary: ${itineraryDays.length} days, ${totalActivitiesStored} activities`)
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error('Error storing itinerary:', error)
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+// Fetch comprehensive itinerary using existing tables
+export async function getTripItinerary(tripId: number): Promise<any[]> {
+  try {
+    // Ensure supporting tables exist (in case script hasn't been run for this env/DB)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS itinerary_days (
+        id SERIAL PRIMARY KEY,
+        trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+        day_number INTEGER NOT NULL,
+        date DATE NOT NULL,
+        title TEXT,
+        description TEXT,
+        location_name TEXT,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_itinerary_days_trip_date ON itinerary_days(trip_id, date);
+
+      CREATE TABLE IF NOT EXISTS itinerary_entries (
+        id SERIAL PRIMARY KEY,
+        trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+        date DATE NOT NULL,
+        scheduled_time TIME,
+        title TEXT NOT NULL,
+        notes TEXT,
+        order_index INTEGER,
+        estimated_cost DECIMAL(10,2),
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_itinerary_entries_trip_date ON itinerary_entries(trip_id, date);
+    `)
+
+    const dayRows = await pool.query(`
+      SELECT id, trip_id, day_number, date, title, description, location_name
+      FROM itinerary_days
+      WHERE trip_id = $1
+      ORDER BY date, day_number
+    `, [tripId]).catch(() => ({ rows: [] as any[] }))
+
+    const activitiesResult = await pool.query(`
+      SELECT 
+        ta.*, 
+        a.name, 
+        a.description, 
+        a.category, 
+        a.price_range,
+        tc.city_id,
+        c.name as city_name,
+        c.country,
+        c.latitude,
+        c.longitude
+      FROM trip_activities ta
+      LEFT JOIN activities a ON ta.activity_id = a.id
+      LEFT JOIN trip_cities tc ON ta.trip_city_id = tc.id
+      LEFT JOIN cities c ON tc.city_id = c.id
+      WHERE ta.trip_id = $1 
+        AND ta.activity_id IS NOT NULL
+      ORDER BY ta.scheduled_date, ta.order_index
+    `, [tripId])
+
+    const customEntriesResult = await pool.query(`
+      SELECT id, trip_id, date as scheduled_date, scheduled_time, title as name, notes as description,
+             NULL::text as category, NULL::text as price_range, NULL::int as city_id, NULL::text as city_name,
+             NULL::text as country, NULL::float as latitude, NULL::float as longitude,
+             order_index, estimated_cost
+      FROM itinerary_entries
+      WHERE trip_id = $1
+      ORDER BY date, order_index
+    `, [tripId])
+
+    const activitiesByDate = new Map<string, any[]>()
+    for (const a of activitiesResult.rows) {
+      const key = String(a.scheduled_date)
+      if (!activitiesByDate.has(key)) activitiesByDate.set(key, [])
+      activitiesByDate.get(key)!.push(a)
+    }
+    for (const e of customEntriesResult.rows) {
+      const key = String(e.scheduled_date)
+      if (!activitiesByDate.has(key)) activitiesByDate.set(key, [])
+      activitiesByDate.get(key)!.push(e)
+    }
+
+    if (dayRows.rows.length > 0) {
+      return dayRows.rows.map((d, idx) => {
+        const dayActivities = activitiesByDate.get(String(d.date)) || []
+        const estimated = dayActivities.reduce((s, x) => s + (x.estimated_cost ? parseFloat(x.estimated_cost) : 0), 0)
+        const first = dayActivities[0]
+        return {
+          id: `day-${d.date}`,
+          dayNumber: d.day_number || idx + 1,
+          title: d.title || `Day ${d.day_number || idx + 1}`,
+          description: d.description || `Activities for ${new Date(d.date).toLocaleDateString()}`,
+          date: d.date,
+          startTime: '09:00:00',
+          location: {
+            name: d.location_name || first?.city_name || 'Unknown',
+            coordinates: first?.latitude && first?.longitude ? { lat: first.latitude, lng: first.longitude } : undefined,
+          },
+          activityType: 'sightseeing',
+          budget: { estimated, breakdown: [] },
+          activities: dayActivities,
+          completed: false,
+        }
+      })
+    }
+
+    // Fallback: build from activities and custom entries only
+    const daysMap = new Map<string, any>()
+    const merged = [...activitiesResult.rows, ...customEntriesResult.rows]
+    for (const activity of merged) {
+      const dateKey = activity.scheduled_date
+      if (!daysMap.has(dateKey)) {
+        daysMap.set(dateKey, {
+          id: `day-${dateKey}`,
+          dayNumber: daysMap.size + 1,
+          title: `Day ${daysMap.size + 1}`,
+          description: `Activities for ${new Date(dateKey).toLocaleDateString()}`,
+          date: dateKey,
+          startTime: '09:00:00',
+          location: {
+            name: activity.city_name || 'Unknown',
+            coordinates: activity.latitude && activity.longitude ? { lat: activity.latitude, lng: activity.longitude } : undefined
+          },
+          activityType: 'sightseeing',
+          budget: { estimated: 0, breakdown: [] },
+          activities: [],
+          completed: false,
+        })
+      }
+      const day = daysMap.get(dateKey)!
+      day.activities.push(activity)
+      if (activity.estimated_cost) day.budget.estimated += parseFloat(activity.estimated_cost)
+    }
+    return Array.from(daysMap.values()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  } catch (error) {
+    console.error("Database error in getTripItinerary:", error)
+    return []
+  }
+}
+
 export async function addTripCity(tripData: {
   tripId: number
   cityId: number
@@ -1717,6 +2064,547 @@ export async function bulkUpdateUsers(
     await client.query('COMMIT')
   } catch (error) {
     await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+// ============================================================================
+// COMMUNITY FUNCTIONS
+// ============================================================================
+
+export interface CommunityPost {
+  id: number
+  display_id: number
+  user_id: string
+  title: string
+  content: string
+  post_type: 'experience' | 'review' | 'tip' | 'recommendation'
+  trip_id?: number
+  city_id?: number
+  activity_id?: number
+  images?: string[]
+  tags?: string[]
+  rating?: number
+  likes_count: number
+  comments_count: number
+  views_count: number
+  is_published: boolean
+  is_featured: boolean
+  is_verified: boolean
+  created_at: Date
+  updated_at: Date
+  
+  // Joined data
+  user_name?: string
+  user_email?: string
+  user_profile_image?: string
+  trip_name?: string
+  city_name?: string
+  city_country?: string
+  activity_name?: string
+  is_liked?: boolean
+}
+
+export interface CommunityPostFilters {
+  search?: string
+  post_type?: string
+  city_id?: number
+  activity_id?: number
+  user_id?: string
+  tags?: string[]
+  rating?: number
+  is_featured?: boolean
+  sort_by?: 'newest' | 'oldest' | 'most_liked' | 'most_commented' | 'highest_rated'
+  limit?: number
+  offset?: number
+}
+
+export async function createCommunityPost(postData: {
+  user_id: string
+  title: string
+  content: string
+  post_type: 'experience' | 'review' | 'tip' | 'recommendation'
+  trip_id?: number
+  city_id?: number
+  activity_id?: number
+  images?: string[]
+  tags?: string[]
+  rating?: number
+}): Promise<CommunityPost> {
+  try {
+    const result = await pool.query(
+      `INSERT INTO community_posts (
+        user_id, title, content, post_type, trip_id, city_id, activity_id, 
+        images, tags, rating
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING *`,
+      [
+        postData.user_id,
+        postData.title,
+        postData.content,
+        postData.post_type,
+        postData.trip_id,
+        postData.city_id,
+        postData.activity_id,
+        postData.images,
+        postData.tags,
+        postData.rating
+      ]
+    )
+    return result.rows[0]
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getCommunityPosts(
+  filters: CommunityPostFilters = {},
+  currentUserId?: string
+): Promise<CommunityPost[]> {
+  try {
+    let query = `
+      SELECT 
+        cp.*,
+        u.first_name || ' ' || u.last_name as user_name,
+        u.email as user_email,
+        u.profile_image as user_profile_image,
+        t.name as trip_name,
+        c.name as city_name,
+        c.country as city_country,
+        a.name as activity_name
+        ${currentUserId ? `, EXISTS(
+          SELECT 1 FROM community_post_likes cpl 
+          WHERE cpl.post_id = cp.id AND cpl.user_id = $${currentUserId ? 'currentUserId' : 'null'}
+        ) as is_liked` : ''}
+      FROM community_posts cp
+      LEFT JOIN users u ON cp.user_id = u.id
+      LEFT JOIN trips t ON cp.trip_id = t.id
+      LEFT JOIN cities c ON cp.city_id = c.id
+      LEFT JOIN activities a ON cp.activity_id = a.id
+      WHERE cp.is_published = true
+    `
+
+    const queryParams: any[] = []
+    let paramIndex = 1
+
+    if (currentUserId) {
+      queryParams.push(currentUserId)
+      query = query.replace('$currentUserId', `$${paramIndex}`)
+      paramIndex++
+    }
+
+    if (filters.search) {
+      query += ` AND (cp.title ILIKE $${paramIndex} OR cp.content ILIKE $${paramIndex} OR $${paramIndex} = ANY(cp.tags))`
+      queryParams.push(`%${filters.search}%`)
+      paramIndex++
+    }
+
+    if (filters.post_type) {
+      query += ` AND cp.post_type = $${paramIndex}`
+      queryParams.push(filters.post_type)
+      paramIndex++
+    }
+
+    if (filters.city_id) {
+      query += ` AND cp.city_id = $${paramIndex}`
+      queryParams.push(filters.city_id)
+      paramIndex++
+    }
+
+    if (filters.activity_id) {
+      query += ` AND cp.activity_id = $${paramIndex}`
+      queryParams.push(filters.activity_id)
+      paramIndex++
+    }
+
+    if (filters.user_id) {
+      query += ` AND cp.user_id = $${paramIndex}`
+      queryParams.push(filters.user_id)
+      paramIndex++
+    }
+
+    if (filters.rating) {
+      query += ` AND cp.rating >= $${paramIndex}`
+      queryParams.push(filters.rating)
+      paramIndex++
+    }
+
+    if (filters.is_featured) {
+      query += ` AND cp.is_featured = $${paramIndex}`
+      queryParams.push(filters.is_featured)
+      paramIndex++
+    }
+
+    // Sorting
+    switch (filters.sort_by) {
+      case 'oldest':
+        query += ` ORDER BY cp.created_at ASC`
+        break
+      case 'most_liked':
+        query += ` ORDER BY cp.likes_count DESC, cp.created_at DESC`
+        break
+      case 'most_commented':
+        query += ` ORDER BY cp.comments_count DESC, cp.created_at DESC`
+        break
+      case 'highest_rated':
+        query += ` ORDER BY cp.rating DESC NULLS LAST, cp.created_at DESC`
+        break
+      default: // newest
+        query += ` ORDER BY cp.created_at DESC`
+        break
+    }
+
+    // Pagination
+    if (filters.limit) {
+      query += ` LIMIT $${paramIndex}`
+      queryParams.push(filters.limit)
+      paramIndex++
+    }
+
+    if (filters.offset) {
+      query += ` OFFSET $${paramIndex}`
+      queryParams.push(filters.offset)
+      paramIndex++
+    }
+
+    const result = await pool.query(query, queryParams)
+    return result.rows
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function getCommunityPostById(
+  postId: number, 
+  currentUserId?: string
+): Promise<CommunityPost | null> {
+  try {
+    // Increment view count
+    await pool.query(
+      'UPDATE community_posts SET views_count = views_count + 1 WHERE id = $1',
+      [postId]
+    )
+
+    const query = `
+      SELECT 
+        cp.*,
+        u.first_name || ' ' || u.last_name as user_name,
+        u.email as user_email,
+        u.profile_image as user_profile_image,
+        t.name as trip_name,
+        c.name as city_name,
+        c.country as city_country,
+        a.name as activity_name
+        ${currentUserId ? `, EXISTS(
+          SELECT 1 FROM community_post_likes cpl 
+          WHERE cpl.post_id = cp.id AND cpl.user_id = $2
+        ) as is_liked` : ''}
+      FROM community_posts cp
+      LEFT JOIN users u ON cp.user_id = u.id
+      LEFT JOIN trips t ON cp.trip_id = t.id
+      LEFT JOIN cities c ON cp.city_id = c.id
+      LEFT JOIN activities a ON cp.activity_id = a.id
+      WHERE cp.id = $1 AND cp.is_published = true
+    `
+
+    const params = currentUserId ? [postId, currentUserId] : [postId]
+    const result = await pool.query(query, params)
+    return result.rows[0] || null
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function toggleCommunityPostLike(
+  postId: number, 
+  userId: string
+): Promise<{ liked: boolean; newLikeCount: number }> {
+  const client = await pool.connect()
+  
+  try {
+    await client.query('BEGIN')
+
+    // Check if already liked
+    const existingLike = await client.query(
+      'SELECT id FROM community_post_likes WHERE post_id = $1 AND user_id = $2',
+      [postId, userId]
+    )
+
+    let liked: boolean
+    if (existingLike.rows.length > 0) {
+      // Remove like
+      await client.query(
+        'DELETE FROM community_post_likes WHERE post_id = $1 AND user_id = $2',
+        [postId, userId]
+      )
+      await client.query(
+        'UPDATE community_posts SET likes_count = likes_count - 1 WHERE id = $1',
+        [postId]
+      )
+      liked = false
+    } else {
+      // Add like
+      await client.query(
+        'INSERT INTO community_post_likes (post_id, user_id) VALUES ($1, $2)',
+        [postId, userId]
+      )
+      await client.query(
+        'UPDATE community_posts SET likes_count = likes_count + 1 WHERE id = $1',
+        [postId]
+      )
+      liked = true
+    }
+
+    // Get new like count
+    const result = await client.query(
+      'SELECT likes_count FROM community_posts WHERE id = $1',
+      [postId]
+    )
+
+    await client.query('COMMIT')
+    return { liked, newLikeCount: result.rows[0].likes_count }
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error("Database error:", error)
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+export async function deleteCommunityPost(postId: number, userId: string): Promise<boolean> {
+  try {
+    const result = await pool.query(
+      'DELETE FROM community_posts WHERE id = $1 AND user_id = $2',
+      [postId, userId]
+    )
+    return result.rowCount > 0
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+// ============================================================================
+// COMMUNITY COMMENTS FUNCTIONS
+// ============================================================================
+
+export interface CommunityComment {
+  id: number
+  post_id: number
+  user_id: string
+  content: string
+  parent_comment_id?: number
+  likes_count: number
+  is_deleted: boolean
+  created_at: Date
+  updated_at: Date
+  
+  // Joined data
+  user_name?: string
+  user_email?: string
+  user_profile_image?: string
+  is_liked?: boolean
+  replies?: CommunityComment[]
+}
+
+export async function createCommunityComment(commentData: {
+  post_id: number
+  user_id: string
+  content: string
+  parent_comment_id?: number
+}): Promise<CommunityComment> {
+  const client = await pool.connect()
+  
+  try {
+    await client.query('BEGIN')
+
+    // Create the comment
+    const result = await client.query(
+      `INSERT INTO community_post_comments (
+        post_id, user_id, content, parent_comment_id
+      ) VALUES ($1, $2, $3, $4)
+      RETURNING *`,
+      [
+        commentData.post_id,
+        commentData.user_id,
+        commentData.content,
+        commentData.parent_comment_id
+      ]
+    )
+
+    // Update comment count on the post
+    await client.query(
+      'UPDATE community_posts SET comments_count = comments_count + 1 WHERE id = $1',
+      [commentData.post_id]
+    )
+
+    await client.query('COMMIT')
+    return result.rows[0]
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error("Database error:", error)
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+export async function getCommunityComments(
+  postId: number,
+  currentUserId?: string
+): Promise<CommunityComment[]> {
+  try {
+    const query = `
+      SELECT 
+        cc.*,
+        u.first_name || ' ' || u.last_name as user_name,
+        u.email as user_email,
+        u.profile_image as user_profile_image
+        ${currentUserId ? `, EXISTS(
+          SELECT 1 FROM community_comment_likes ccl 
+          WHERE ccl.comment_id = cc.id AND ccl.user_id = $2
+        ) as is_liked` : ''}
+      FROM community_post_comments cc
+      LEFT JOIN users u ON cc.user_id = u.id
+      WHERE cc.post_id = $1 AND cc.is_deleted = false
+      ORDER BY cc.created_at ASC
+    `
+
+    const params = currentUserId ? [postId, currentUserId] : [postId]
+    const result = await pool.query(query, params)
+    
+    // Organize comments into threaded structure
+    const comments = result.rows
+    const topLevelComments: CommunityComment[] = []
+    const commentMap = new Map<number, CommunityComment>()
+
+    // First pass: create map and identify top-level comments
+    comments.forEach(comment => {
+      comment.replies = []
+      commentMap.set(comment.id, comment)
+      
+      if (!comment.parent_comment_id) {
+        topLevelComments.push(comment)
+      }
+    })
+
+    // Second pass: organize replies
+    comments.forEach(comment => {
+      if (comment.parent_comment_id) {
+        const parent = commentMap.get(comment.parent_comment_id)
+        if (parent) {
+          parent.replies!.push(comment)
+        }
+      }
+    })
+
+    return topLevelComments
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}
+
+export async function toggleCommunityCommentLike(
+  commentId: number, 
+  userId: string
+): Promise<{ liked: boolean; newLikeCount: number }> {
+  const client = await pool.connect()
+  
+  try {
+    await client.query('BEGIN')
+
+    // Check if already liked
+    const existingLike = await client.query(
+      'SELECT id FROM community_comment_likes WHERE comment_id = $1 AND user_id = $2',
+      [commentId, userId]
+    )
+
+    let liked: boolean
+    if (existingLike.rows.length > 0) {
+      // Remove like
+      await client.query(
+        'DELETE FROM community_comment_likes WHERE comment_id = $1 AND user_id = $2',
+        [commentId, userId]
+      )
+      await client.query(
+        'UPDATE community_post_comments SET likes_count = likes_count - 1 WHERE id = $1',
+        [commentId]
+      )
+      liked = false
+    } else {
+      // Add like
+      await client.query(
+        'INSERT INTO community_comment_likes (comment_id, user_id) VALUES ($1, $2)',
+        [commentId, userId]
+      )
+      await client.query(
+        'UPDATE community_post_comments SET likes_count = likes_count + 1 WHERE id = $1',
+        [commentId]
+      )
+      liked = true
+    }
+
+    // Get new like count
+    const result = await client.query(
+      'SELECT likes_count FROM community_post_comments WHERE id = $1',
+      [commentId]
+    )
+
+    await client.query('COMMIT')
+    return { liked, newLikeCount: result.rows[0].likes_count }
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error("Database error:", error)
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+export async function deleteCommunityComment(commentId: number, userId: string): Promise<boolean> {
+  const client = await pool.connect()
+  
+  try {
+    await client.query('BEGIN')
+
+    // Get the comment to check post_id
+    const commentResult = await client.query(
+      'SELECT post_id FROM community_post_comments WHERE id = $1 AND user_id = $2',
+      [commentId, userId]
+    )
+
+    if (commentResult.rows.length === 0) {
+      return false
+    }
+
+    const postId = commentResult.rows[0].post_id
+
+    // Delete the comment
+    const deleteResult = await client.query(
+      'DELETE FROM community_post_comments WHERE id = $1 AND user_id = $2',
+      [commentId, userId]
+    )
+
+    if ((deleteResult.rowCount ?? 0) > 0) {
+      // Update comment count on the post
+      await client.query(
+        'UPDATE community_posts SET comments_count = comments_count - 1 WHERE id = $1',
+        [postId]
+      )
+    }
+
+    await client.query('COMMIT')
+    return (deleteResult.rowCount ?? 0) > 0
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error("Database error:", error)
     throw error
   } finally {
     client.release()

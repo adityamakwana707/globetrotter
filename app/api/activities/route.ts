@@ -1,21 +1,33 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { getActivities } from "@/lib/database"
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-    }
-
     const { searchParams } = new URL(request.url)
     const cityId = searchParams.get("cityId")
     const search = searchParams.get("search")
+    const category = searchParams.get("category")
+    const priceRange = searchParams.get("priceRange")
+    const limit = parseInt(searchParams.get("limit") || "50")
 
-    const activities = await getActivities(cityId || undefined, search || undefined)
+    let activities = await getActivities(
+      cityId ? parseInt(cityId) : undefined, 
+      search || undefined, 
+      limit
+    )
+
+    // Apply additional filters
+    if (category && category !== "all") {
+      activities = activities.filter(activity => 
+        activity.category?.toLowerCase() === category.toLowerCase()
+      )
+    }
+
+    if (priceRange && priceRange !== "all") {
+      activities = activities.filter(activity => 
+        activity.price_range?.toLowerCase() === priceRange.toLowerCase()
+      )
+    }
 
     return NextResponse.json(activities)
   } catch (error) {

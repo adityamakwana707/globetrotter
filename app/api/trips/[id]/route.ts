@@ -1,10 +1,35 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { getTripById, updateTripById, deleteTripById, duplicateTrip } from "@/lib/database"
+import { getTripById, updateTripById, deleteTripById, duplicateTrip, storeTripItinerary } from "@/lib/database"
 import { z } from "zod"
 
 // Validation schemas
+const itineraryItemSchema = z.object({
+  id: z.string().optional(),
+  dayNumber: z.number().optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  date: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  location: z.object({ name: z.string().optional() }).optional(),
+  activityType: z.string().optional(),
+  budget: z.object({ estimated: z.number().optional() }).optional(),
+  notes: z.string().optional(),
+  attachments: z.array(z.any()).optional(),
+  completed: z.boolean().optional(),
+  activities: z.array(z.object({
+    id: z.number().optional(),
+    name: z.string().optional(),
+    startTime: z.string().optional(),
+    orderIndex: z.number().optional(),
+    notes: z.string().optional(),
+    estimatedCost: z.number().optional(),
+    price_range: z.string().optional(),
+  })).optional(),
+})
+
 const updateTripSchema = z.object({
   name: z.string().min(1, "Trip name is required").max(255, "Trip name too long").optional(),
   description: z.string().max(1000, "Description too long").optional(),
@@ -16,7 +41,8 @@ const updateTripSchema = z.object({
     // Allow relative paths starting with / or full URLs
     return val.startsWith('/') || val.startsWith('http://') || val.startsWith('https://');
   }, "Invalid image path or URL").optional(),
-  isPublic: z.boolean().optional()
+  isPublic: z.boolean().optional(),
+  itinerary: z.array(itineraryItemSchema).optional(),
 }).refine((data) => {
   if (data.startDate && data.endDate) {
     const start = new Date(data.startDate)
@@ -95,6 +121,15 @@ export async function PUT(
     }
 
     const trip = await updateTripById(tripId, session.user.id, validationResult.data)
+
+    // If itinerary provided, store it (non-blocking failure)
+    if (Array.isArray(validationResult.data.itinerary) && validationResult.data.itinerary.length > 0) {
+      try {
+        await storeTripItinerary(trip.id, validationResult.data.itinerary as any[])
+      } catch (err) {
+        console.error('Failed to store itinerary on update:', err)
+      }
+    }
 
     return NextResponse.json(trip)
   } catch (error) {

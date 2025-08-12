@@ -10,15 +10,13 @@ interface ImageUploadProps {
   onImagesChange: (images: string[]) => void;
   maxImages?: number;
   disabled?: boolean;
-  uploadUrl?: string;
 }
 
 export default function ImageUpload({ 
   images, 
   onImagesChange, 
   maxImages = 5,
-  disabled = false,
-  uploadUrl = "/api/upload/community",
+  disabled = false 
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -41,7 +39,7 @@ export default function ImageUpload({
         formData.append("files", file);
       });
 
-      const response = await fetch(uploadUrl, {
+      const response = await fetch("/api/upload/community", {
         method: "POST",
         body: formData,
       });

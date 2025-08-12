@@ -12,7 +12,7 @@ import { toast } from "@/hooks/use-toast"
 import { 
   Share2, Copy, ExternalLink, Users, Globe, 
   Lock, QrCode, Mail, MessageCircle, Facebook,
-  Twitter, Linkedin, Eye, EyeOff
+  Twitter, Linkedin, Eye, EyeOff, FileText
 } from "lucide-react"
 
 interface TripSharingProps {
@@ -25,6 +25,8 @@ export default function TripSharing({ tripId, isPublic }: TripSharingProps) {
   const [shareToken, setShareToken] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [emailTo, setEmailTo] = useState<string>("")
+  const [isEmailing, setIsEmailing] = useState(false)
 
   const generateShareLink = async () => {
     setIsGenerating(true)
@@ -149,9 +151,9 @@ export default function TripSharing({ tripId, isPublic }: TripSharingProps) {
   return (
     <div className="space-y-6">
       {/* Privacy Settings */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-white border-gray-200 shadow-md">
         <CardHeader>
-          <CardTitle className="text-white flex items-center">
+          <CardTitle className="text-slate-900 flex items-center">
             <Globe className="w-5 h-5 mr-2" />
             Privacy Settings
           </CardTitle>
@@ -159,8 +161,8 @@ export default function TripSharing({ tripId, isPublic }: TripSharingProps) {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label className="text-white font-medium">Make trip public</Label>
-              <p className="text-gray-400 text-sm">
+              <Label className="text-slate-800 font-medium">Make trip public</Label>
+              <p className="text-slate-600 text-sm">
                 Allow anyone with the link to view your trip itinerary
               </p>
             </div>
@@ -180,24 +182,24 @@ export default function TripSharing({ tripId, isPublic }: TripSharingProps) {
           </div>
 
           {isPublicState && (
-            <div className="p-4 bg-green-900/20 border border-green-700 rounded-lg">
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
-                <Globe className="w-4 h-4 text-green-400" />
-                <span className="text-green-400 font-medium">Public Trip</span>
+                <Globe className="w-4 h-4 text-emerald-600" />
+                <span className="text-emerald-700 font-medium">Public Trip</span>
               </div>
-              <p className="text-gray-300 text-sm">
+              <p className="text-slate-600 text-sm">
                 Your trip is publicly visible. Anyone with the link can view your itinerary.
               </p>
             </div>
           )}
 
           {!isPublicState && (
-            <div className="p-4 bg-gray-900/50 border border-gray-600 rounded-lg">
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <Lock className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-400 font-medium">Private Trip</span>
+                <span className="text-slate-700 font-medium">Private Trip</span>
               </div>
-              <p className="text-gray-300 text-sm">
+              <p className="text-slate-600 text-sm">
                 Your trip is private. Only you can view the itinerary.
               </p>
             </div>
@@ -313,7 +315,7 @@ export default function TripSharing({ tripId, isPublic }: TripSharingProps) {
                         const body = `Hi! I wanted to share my trip itinerary with you: ${shareUrl}`
                         window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
                       }}
-                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                      className="border-gray-300 text-slate-700 hover:bg-gray-50"
                     >
                       <Mail className="w-4 h-4 mr-2" />
                       Email
@@ -327,12 +329,54 @@ export default function TripSharing({ tripId, isPublic }: TripSharingProps) {
                           description: "QR code feature coming soon!",
                         })
                       }}
-                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                      className="border-gray-300 text-slate-700 hover:bg-gray-50"
                     >
                       <QrCode className="w-4 h-4 mr-2" />
                       QR Code
                     </Button>
                   </div>
+                </div>
+
+                <Separator className="bg-gray-700" />
+
+                {/* Email PDF */}
+                <div className="space-y-2">
+                  <Label className="text-white">Email Trip PDF (beautiful HTML)</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      placeholder="Recipient email"
+                      value={emailTo}
+                      onChange={(e) => setEmailTo(e.target.value)}
+                      className="bg-gray-700 border-gray-600 text-white"
+                    />
+                    <Button
+                      variant="outline"
+                      disabled={!emailTo || isEmailing}
+                      onClick={async () => {
+                        try {
+                          setIsEmailing(true)
+                          const resp = await fetch(`/api/trips/${tripId}/email-pdf`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ to: emailTo })
+                          })
+                          if (!resp.ok) throw new Error('Failed to send email')
+                          toast({ title: 'Email sent', description: 'Your trip has been emailed.' })
+                          setEmailTo("")
+                        } catch (err) {
+                          console.error(err)
+                          toast({ title: 'Error', description: 'Could not send email.', variant: 'destructive' })
+                        } finally {
+                          setIsEmailing(false)
+                        }
+                      }}
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      {isEmailing ? 'Sending...' : 'Send PDF'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-400">We generate a beautiful HTML itinerary that email clients can print to PDF. Full attachment PDF can be added later.</p>
                 </div>
               </div>
             )}
@@ -342,9 +386,9 @@ export default function TripSharing({ tripId, isPublic }: TripSharingProps) {
 
       {/* Sharing Stats */}
       {isPublicState && (
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-white border-gray-200 shadow-md">
           <CardHeader>
-            <CardTitle className="text-white flex items-center">
+            <CardTitle className="text-slate-900 flex items-center">
               <Users className="w-5 h-5 mr-2" />
               Sharing Statistics
             </CardTitle>
@@ -352,20 +396,20 @@ export default function TripSharing({ tripId, isPublic }: TripSharingProps) {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-400">0</div>
-                <div className="text-gray-400 text-sm">Views</div>
+                <div className="text-2xl font-bold text-blue-600">0</div>
+                <div className="text-slate-600 text-sm">Views</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">0</div>
-                <div className="text-gray-400 text-sm">Shares</div>
+                <div className="text-2xl font-bold text-emerald-600">0</div>
+                <div className="text-slate-600 text-sm">Shares</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-400">0</div>
-                <div className="text-gray-400 text-sm">Copies</div>
+                <div className="text-2xl font-bold text-purple-600">0</div>
+                <div className="text-slate-600 text-sm">Copies</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-400">0</div>
-                <div className="text-gray-400 text-sm">Likes</div>
+                <div className="text-2xl font-bold text-orange-600">0</div>
+                <div className="text-slate-600 text-sm">Likes</div>
               </div>
             </div>
           </CardContent>
@@ -373,36 +417,36 @@ export default function TripSharing({ tripId, isPublic }: TripSharingProps) {
       )}
 
       {/* Sharing Tips */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-white border-gray-200 shadow-md">
         <CardHeader>
-          <CardTitle className="text-white">Sharing Tips</CardTitle>
+          <CardTitle className="text-slate-900">Sharing Tips</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
-              <h4 className="text-blue-400 font-medium mb-1">Travel Inspiration</h4>
-              <p className="text-gray-300 text-sm">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="text-blue-700 font-medium mb-1">Travel Inspiration</h4>
+              <p className="text-slate-600 text-sm">
                 Share your itinerary to inspire others and get travel tips
               </p>
             </div>
             
-            <div className="p-3 bg-green-900/30 border border-green-700 rounded-lg">
-              <h4 className="text-green-400 font-medium mb-1">Travel Buddies</h4>
-              <p className="text-gray-300 text-sm">
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+              <h4 className="text-emerald-700 font-medium mb-1">Travel Buddies</h4>
+              <p className="text-slate-600 text-sm">
                 Let friends follow your journey and join activities
               </p>
             </div>
             
-            <div className="p-3 bg-purple-900/30 border border-purple-700 rounded-lg">
-              <h4 className="text-purple-400 font-medium mb-1">Safety First</h4>
-              <p className="text-gray-300 text-sm">
+            <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+              <h4 className="text-purple-700 font-medium mb-1">Safety First</h4>
+              <p className="text-slate-600 text-sm">
                 Share with family so they know your travel plans
               </p>
             </div>
             
-            <div className="p-3 bg-orange-900/30 border border-orange-700 rounded-lg">
-              <h4 className="text-orange-400 font-medium mb-1">Get Feedback</h4>
-              <p className="text-gray-300 text-sm">
+            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <h4 className="text-orange-700 font-medium mb-1">Get Feedback</h4>
+              <p className="text-slate-600 text-sm">
                 Ask locals and experienced travelers for recommendations
               </p>
             </div>

@@ -1,7 +1,8 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
-import { isUserAdmin } from "@/lib/database"
+import { isUserAdmin, getComprehensiveTripDetails } from "@/lib/database"
+
 
 import { getTripById, getTripCities, getTripActivities, getTripByDisplayId } from "@/lib/database"
 import EnhancedTripDetails from "@/components/trips/enhanced-trip-details"
@@ -26,9 +27,23 @@ export default async function TripPage({ params }: TripPageProps) {
     redirect("/admin")
   }
 
-  let trip = null
-  let cities = []
-  let activities = []
+  let tripDetails: {
+    trip: any | null,
+    cities: any[],
+    activities: any[],
+    budgets: any[],
+    expenses: any[],
+    destinations: string[],
+    itinerary: any[]
+  } = {
+    trip: null,
+    cities: [],
+    activities: [],
+    budgets: [],
+    expenses: [],
+    destinations: [],
+    itinerary: []
+  }
   
   try {
     // Parse the ID as number since we're using display_id for URLs
@@ -37,25 +52,24 @@ export default async function TripPage({ params }: TripPageProps) {
       redirect("/dashboard")
     }
 
-    trip = await getTripByDisplayId(tripDisplayId, session.user.id)
-    if (trip) {
-      // Fetch related data using the actual trip ID (UUID)
-      cities = await getTripCities(Number(trip.id))
-      activities = await getTripActivities(Number(trip.id))
-    }
+    tripDetails = await getComprehensiveTripDetails(tripId, session.user.id)
   } catch (error) {
-    console.error("Error fetching trip:", error)
+    console.error("Error fetching comprehensive trip details:", error)
   }
 
-  if (!trip) {
+  if (!tripDetails.trip) {
     redirect("/dashboard")
   }
 
   return (
     <EnhancedTripDetails 
-      trip={{ ...trip, id: Number(trip.id) }} 
-      cities={cities}
-      activities={activities}
+      trip={tripDetails.trip} 
+      cities={tripDetails.cities}
+      activities={tripDetails.activities}
+      budgets={tripDetails.budgets}
+      expenses={tripDetails.expenses}
+      destinations={tripDetails.destinations}
+      itinerary={tripDetails.itinerary}
     />
   )
 }

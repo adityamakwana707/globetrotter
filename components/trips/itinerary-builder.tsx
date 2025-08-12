@@ -59,6 +59,8 @@ interface TripCity {
   order_index: number
   arrival_date?: string
   departure_date?: string
+  latitude?: number
+  longitude?: number
 }
 
 interface TripActivity {
@@ -275,13 +277,12 @@ export default function ItineraryBuilder({ tripId }: ItineraryBuilderProps) {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label className="text-white">Search Cities</Label>
-                        <LocationAutocomplete
-                          onLocationSelect={(location) => {
-                            addCityToTrip(location.place_id)
+                        <LocationSearch
+                          onLocationSelect={(location: { name: string; lat: number; lng: number; country: string }) => {
+                            // We only have DB cities; try searching via our API too
+                            searchCities(location.name)
                           }}
                           placeholder="Search for cities..."
-                          types={['(cities)']}
-                          showSuggestions={true}
                         />
                       </div>
                       
@@ -497,26 +498,11 @@ export default function ItineraryBuilder({ tripId }: ItineraryBuilderProps) {
                   <p className="text-sm text-gray-500">Add cities to your trip to see them on the map.</p>
                 </div>
               ) : (
-                <InteractiveMap
-                  locations={[
-                    ...tripCities.map(city => ({
-                      id: city.id,
-                      name: city.name,
-                      latitude: city.latitude || 0,
-                      longitude: city.longitude || 0,
-                      type: 'city' as const,
-                      description: `${city.name}, ${city.country}`
-                    })),
-                    ...tripActivities.map(activity => ({
-                      id: activity.id,
-                      name: activity.name,
-                      latitude: 0, // Would need to get from activity data
-                      longitude: 0,
-                      type: 'activity' as const,
-                      description: activity.description || ''
-                    }))
-                  ].filter(location => location.latitude !== 0 && location.longitude !== 0)}
-                  showRoute={tripCities.length > 1}
+                <LeafletMap
+                  locations={tripCities
+                    .filter(c => !!c.latitude && !!c.longitude)
+                    .map(c => ({ lat: c.latitude as number, lng: c.longitude as number, title: c.name, description: c.country }))}
+                  showRoute={tripCities.filter(c => !!c.latitude && !!c.longitude).length > 1}
                   height="500px"
                 />
               )}
@@ -527,22 +513,9 @@ export default function ItineraryBuilder({ tripId }: ItineraryBuilderProps) {
         <TabsContent value="travel" className="mt-6">
           <TravelTimeCalculator 
             tripId={tripId}
-            locations={[
-              ...tripCities.map(city => ({
-                id: city.id,
-                name: city.name,
-                latitude: city.latitude || 0,
-                longitude: city.longitude || 0,
-                type: 'city' as const
-              })),
-              ...tripActivities.map(activity => ({
-                id: activity.id,
-                name: activity.name,
-                latitude: 0, // Would need to get from activity data
-                longitude: 0,
-                type: 'activity' as const
-              }))
-            ].filter(location => location.latitude !== 0 && location.longitude !== 0)}
+            locations={tripCities
+              .filter(c => !!c.latitude && !!c.longitude)
+              .map(c => ({ id: c.id, name: c.name, latitude: c.latitude as number, longitude: c.longitude as number, type: 'city' as const }))}
           />
         </TabsContent>
 
