@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
+import { 
   Select,
   SelectContent,
   SelectItem,
@@ -59,9 +59,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DndContext,
-  DragOverlay,
+import { 
+  DndContext, 
+  DragOverlay, 
   closestCenter,
   KeyboardSensor,
   PointerSensor,
@@ -81,32 +81,32 @@ const tripSchema = z
       .string()
       .min(1, "Trip name is required")
       .max(255, "Trip name too long"),
-    description: z.string().max(1000, "Description too long"),
-    // Allow zero destinations to enable submitting at ~75% completion
-    destinations: z.array(z.string()).optional().default([]),
+  description: z.string().max(1000, "Description too long"),
+  // Allow zero destinations to enable submitting at ~75% completion
+  destinations: z.array(z.string()).optional().default([]),
     startDate: z
       .string()
       .refine((date) => !isNaN(Date.parse(date)), "Invalid start date"),
     endDate: z
       .string()
       .refine((date) => !isNaN(Date.parse(date)), "Invalid end date"),
-    totalBudget: z.number().min(0, "Budget must be positive").optional(),
-    currency: z.string().default("USD"),
-    status: z.enum(["planning", "active", "completed"]).optional(),
-    isPublic: z.boolean(),
+  totalBudget: z.number().min(0, "Budget must be positive").optional(),
+  currency: z.string().default("USD"),
+  status: z.enum(["planning", "active", "completed"]).optional(),
+  isPublic: z.boolean(),
     itinerary: z
       .array(
         z.object({
-          id: z.string(),
-          dayNumber: z.number(),
-          title: z.string(),
-          description: z.string(),
-          date: z.string(),
-          location: z.object({
-            name: z.string(),
+    id: z.string(),
+    dayNumber: z.number(),
+    title: z.string(),
+    description: z.string(),
+    date: z.string(),
+    location: z.object({
+      name: z.string(),
             coordinates: z
               .object({
-                lat: z.number(),
+        lat: z.number(),
                 lng: z.number(),
               })
               .optional(),
@@ -122,37 +122,37 @@ const tripSchema = z
             "entertainment",
             "other",
           ]),
-          budget: z.object({
-            estimated: z.number(),
-            actual: z.number().optional(),
+    budget: z.object({
+      estimated: z.number(),
+      actual: z.number().optional(),
             breakdown: z.array(
               z.object({
-                category: z.string(),
-                amount: z.number(),
+        category: z.string(),
+        amount: z.number(),
                 description: z.string().optional(),
               })
             ),
-          }),
-          notes: z.string().optional(),
-          completed: z.boolean().default(false),
+    }),
+    notes: z.string().optional(),
+    completed: z.boolean().default(false),
           activities: z
             .array(
               z.object({
-                id: z.number(),
-                name: z.string(),
-                description: z.string().optional(),
-                category: z.string().optional(),
-                price_range: z.string().optional(),
-                rating: z.number().optional(),
-                duration_hours: z.number().optional(),
-                city_id: z.number(),
-                image_url: z.string().optional(),
+      id: z.number(),
+      name: z.string(),
+      description: z.string().optional(),
+      category: z.string().optional(),
+      price_range: z.string().optional(),
+      rating: z.number().optional(),
+      duration_hours: z.number().optional(),
+      city_id: z.number(),
+      image_url: z.string().optional(),
                 start_time: z.string().optional(),
                 end_time: z.string().optional(),
-                startTime: z.string().optional(),
-                endTime: z.string().optional(),
-                orderIndex: z.number().optional(),
-                notes: z.string().optional(),
+      startTime: z.string().optional(),
+      endTime: z.string().optional(),
+      orderIndex: z.number().optional(),
+      notes: z.string().optional(),
                 estimatedCost: z.number().optional(),
               })
             )
@@ -450,12 +450,12 @@ const TimeSlotDroppable = React.memo(({
   );
 });
 
-export default function ComprehensiveTripBuilder({
-  existingTrip,
-  existingCities = [],
-  existingActivities = [],
-  existingBudgets = [],
-  existingDestinations = [],
+export default function ComprehensiveTripBuilder({ 
+  existingTrip, 
+  existingCities = [], 
+  existingActivities = [], 
+  existingBudgets = [], 
+  existingDestinations = [], 
   existingItinerary = [],
 }: ComprehensiveTripBuilderProps) {
   const router = useRouter();
@@ -501,7 +501,7 @@ export default function ComprehensiveTripBuilder({
   // Fun emojis for different sections
   const stepEmojis = {
     basic: "��",
-    itinerary: "🗓️",
+    itinerary: "🗓️", 
     budget: "💰",
     review: "🚀",
   };
@@ -516,25 +516,25 @@ export default function ComprehensiveTripBuilder({
     resolver: zodResolver(tripSchema),
     defaultValues: existingTrip
       ? {
-          name: existingTrip.name,
-          description: existingTrip.description,
-          destinations: [],
-          startDate: formatDateForInput(existingTrip.start_date),
-          endDate: formatDateForInput(existingTrip.end_date),
-          totalBudget: 0,
-          currency: "USD",
-          isPublic: existingTrip.is_public,
+      name: existingTrip.name,
+      description: existingTrip.description,
+      destinations: [],
+      startDate: formatDateForInput(existingTrip.start_date),
+      endDate: formatDateForInput(existingTrip.end_date),
+      totalBudget: 0,
+      currency: "USD",
+      isPublic: existingTrip.is_public,
           itinerary: [],
         }
       : {
-          name: "",
-          description: "",
-          destinations: [],
-          startDate: "",
-          endDate: "",
-          totalBudget: 0,
-          currency: "USD",
-          isPublic: false,
+      name: "",
+      description: "",
+      destinations: [],
+      startDate: "",
+      endDate: "",
+      totalBudget: 0,
+      currency: "USD",
+      isPublic: false,
           itinerary: [],
         },
   });
@@ -574,19 +574,19 @@ export default function ComprehensiveTripBuilder({
   // Calculate form completion percentage
   useEffect(() => {
     let progress = 0;
-
+    
     // Basic details (40%)
     if (watchedName) progress += 10;
     if (selectedDestinations.length > 0) progress += 10;
     if (watchedStartDate && watchedEndDate) progress += 20;
-
+    
     // Itinerary (30%)
     if (itineraryDays.length > 0) progress += 15;
     if (itineraryDays.some((day) => day.description)) progress += 15;
-
+    
     // Budget (20%)
     if (totalEstimatedBudget > 0) progress += 20;
-
+    
     // Review (10%)
     if (currentTab === "review") progress += 10;
 
@@ -708,7 +708,7 @@ export default function ComprehensiveTripBuilder({
     for (let i = 0; i < diffDays; i++) {
       const currentDate = new Date(start);
       currentDate.setDate(start.getDate() + i);
-
+      
       newDays.push({
         id: `day-${i + 1}-${Date.now()}`,
         dayNumber: i + 1,
@@ -764,7 +764,7 @@ export default function ComprehensiveTripBuilder({
     const updatedDays = [...itineraryDays, newDay];
     setItineraryDays(updatedDays);
     setValue("itinerary", updatedDays);
-
+    
     // Recalculate total budget
     const total = updatedDays.reduce(
       (sum, day) => sum + day.budget.estimated,
@@ -787,7 +787,7 @@ export default function ComprehensiveTripBuilder({
     );
     setItineraryDays(updatedDays);
     setValue("itinerary", updatedDays);
-
+    
     // Recalculate total budget
     const total = updatedDays.reduce(
       (sum, day) => sum + day.budget.estimated,
@@ -802,10 +802,10 @@ export default function ComprehensiveTripBuilder({
     const updatedDays = itineraryDays
       .filter((day) => day.id !== dayId)
       .map((day, index) => ({ ...day, dayNumber: index + 1 }));
-
+    
     setItineraryDays(updatedDays);
     setValue("itinerary", updatedDays);
-
+    
     // Recalculate total budget
     const total = updatedDays.reduce(
       (sum, day) => sum + day.budget.estimated,
@@ -836,7 +836,7 @@ export default function ComprehensiveTripBuilder({
           const priceLevel = activity.price_range.length;
           estimatedCost = priceLevel * 25; // $25 per level as a reasonable estimate
         }
-
+        
         // Calculate end time based on duration
         const startTime = selectedTime || activity.startTime || "09:00:00";
         const duration = activity.duration_hours || 2;
@@ -848,7 +848,7 @@ export default function ComprehensiveTripBuilder({
           2,
           "0"
         )}:${String(endMinutes % 60).padStart(2, "0")}:00`;
-
+        
         const newActivity = {
           id: activity.id || null, // Keep original ID if from database
           name: activity.name || "Untitled Activity",
@@ -871,9 +871,9 @@ export default function ComprehensiveTripBuilder({
           enriched: activity.enriched || false,
           enrichedAt: activity.enrichedAt || null,
         };
-
+        
         console.log(`Adding activity to day ${dayId}:`, newActivity);
-
+        
         return {
           ...day,
           activities: [...day.activities, newActivity],
@@ -888,7 +888,7 @@ export default function ComprehensiveTripBuilder({
 
     setItineraryDays(updatedDays);
     setValue("itinerary", updatedDays);
-
+    
     // Recalculate total budget
     const total = updatedDays.reduce(
       (sum, day) => sum + day.budget.estimated,
@@ -961,7 +961,7 @@ export default function ComprehensiveTripBuilder({
       const step = 30; // minutes
       const durationMin = Math.round((durationHours || 2) * 60);
       const occupied: Array<[number, number]> = [];
-      for (const a of day.activities) {
+    for (const a of day.activities) {
         if (!a.startTime) continue;
         const s = timeToMinutes(a.startTime);
         const d = Math.round(((a as any).duration_hours || 1) * 60);
@@ -969,7 +969,7 @@ export default function ComprehensiveTripBuilder({
       }
       occupied.sort((x, y) => x[0] - y[0]);
       const free: string[] = [];
-      for (let t = startHour * 60; t + durationMin <= endHour * 60; t += step) {
+    for (let t = startHour * 60; t + durationMin <= endHour * 60; t += step) {
         const slot: [number, number] = [t, t + durationMin];
         const overlaps = occupied.some(
           ([s, e]) => Math.max(s, slot[0]) < Math.min(e, slot[1])
@@ -1063,18 +1063,18 @@ export default function ComprehensiveTripBuilder({
           const targetDay = itineraryDays.find((d) => d.id === targetDayId);
           if (!targetDay) return;
 
-          // Show time slot selection dialog
+      // Show time slot selection dialog
           const slots = computeAvailableSlots(
             targetDay,
             suggestion.duration_hours || 2
           );
-          setTimeDialog({
-            open: true,
-            dayId: targetDayId,
-            suggestion: suggestion,
+      setTimeDialog({ 
+        open: true, 
+        dayId: targetDayId, 
+        suggestion: suggestion, 
             slots,
           });
-        }
+    }
       }
     },
     [aiSuggestions, itineraryDays, computeAvailableSlots]
@@ -1099,7 +1099,7 @@ export default function ComprehensiveTripBuilder({
       }
 
       const result = await response.json();
-
+      
       if (result.success && result.data) {
         // Update the suggestion with enriched information
         const enrichedSuggestion = {
@@ -1135,20 +1135,20 @@ export default function ComprehensiveTripBuilder({
   // Simple suggestion component with click-to-add
   const SuggestionCard = React.memo(
     ({ suggestion, index }: { suggestion: any; index: number }) => {
-      return (
-        <div
-          className={`p-3 bg-gray-800 rounded border ${
+    return (
+      <div
+        className={`p-3 bg-gray-800 rounded border ${
             suggestion.enriched
               ? "border-green-500 bg-gray-800/80"
               : "border-gray-700"
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
               <p className="text-white font-medium text-sm">
                 {suggestion.name}
               </p>
-              <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-400">
                 {suggestion.category || "general"}
                 {suggestion.price_range ? ` • ${suggestion.price_range}` : ""}
                 {suggestion.duration_hours
@@ -1157,34 +1157,34 @@ export default function ComprehensiveTripBuilder({
                 {suggestion.enriched && (
                   <span className="text-green-400"> • Enriched</span>
                 )}
+            </p>
+            {suggestion.description && suggestion.enriched && (
+              <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                {suggestion.description.slice(0, 100)}...
               </p>
-              {suggestion.description && suggestion.enriched && (
-                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                  {suggestion.description.slice(0, 100)}...
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col gap-1 ml-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="text-xs bg-gray-700 border-gray-600 hover:bg-gray-600"
-                onClick={(e) => {
+            )}
+          </div>
+          <div className="flex flex-col gap-1 ml-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="text-xs bg-gray-700 border-gray-600 hover:bg-gray-600"
+              onClick={(e) => {
                   e.stopPropagation();
                   handleEnrichPlace(suggestion);
-                }}
-              >
-                Enrich
-              </Button>
-              <div className="flex gap-1">
+              }}
+            >
+              Enrich
+            </Button>
+            <div className="flex gap-1">
                 {itineraryDays.slice(0, 3).map((d) => (
-                  <Button
-                    key={d.id}
-                    type="button"
-                    size="sm"
-                    className="text-xs bg-blue-600 hover:bg-blue-700"
-                    onClick={() => {
+                <Button 
+                  key={d.id} 
+                  type="button" 
+                  size="sm" 
+                  className="text-xs bg-blue-600 hover:bg-blue-700" 
+                  onClick={() => {
                       const slots = computeAvailableSlots(
                         d,
                         suggestion.duration_hours || 2
@@ -1195,15 +1195,15 @@ export default function ComprehensiveTripBuilder({
                         suggestion,
                         slots,
                       });
-                    }}
-                  >
-                    Day {d.dayNumber}
-                  </Button>
-                ))}
-              </div>
+                  }}
+                >
+                  Day {d.dayNumber}
+                </Button>
+              ))}
             </div>
           </div>
         </div>
+      </div>
       );
     }
   );
@@ -1211,19 +1211,19 @@ export default function ComprehensiveTripBuilder({
   // Simple droppable wrapper component
   const DroppableWrapper = React.memo(
     ({ day, children }: { day: ItineraryDay; children: React.ReactNode }) => {
-      const { setNodeRef, isOver } = useDroppable({
-        id: `day-${day.id}`,
+    const { setNodeRef, isOver } = useDroppable({ 
+      id: `day-${day.id}`,
         data: { day },
       });
 
-      return (
-        <div ref={setNodeRef} className="relative">
-          {/* Drop indicator overlay */}
-          {isOver && (
-            <div className="absolute -inset-2 bg-blue-500/10 border-2 border-blue-500 border-dashed rounded-lg pointer-events-none z-10" />
-          )}
-          {children}
-        </div>
+    return (
+      <div ref={setNodeRef} className="relative">
+        {/* Drop indicator overlay */}
+        {isOver && (
+          <div className="absolute -inset-2 bg-blue-500/10 border-2 border-blue-500 border-dashed rounded-lg pointer-events-none z-10" />
+        )}
+        {children}
+      </div>
       );
     }
   );
@@ -1252,7 +1252,7 @@ export default function ComprehensiveTripBuilder({
 
       const result = await response.json();
       setCoverImage(result.url);
-
+      
       toast({
         title: "Image uploaded successfully",
         description: "Your trip cover image has been uploaded.",
@@ -1306,7 +1306,7 @@ export default function ComprehensiveTripBuilder({
       }
 
       const result = await response.json();
-
+      
       // Add to store (result is the trip directly, not wrapped)
       if (!isEditing) {
         addTrip({
@@ -1332,7 +1332,7 @@ export default function ComprehensiveTripBuilder({
       let autoStatus = "planning";
       let statusIcon = "📋";
       let statusMessage = "Trip is in planning phase";
-
+      
       if (now >= startDate && now <= endDate) {
         autoStatus = "active";
         statusIcon = "🌍";
@@ -1405,8 +1405,8 @@ export default function ComprehensiveTripBuilder({
 
           {/* Progress Bar */}
           <div className="relative">
-            <Progress
-              value={formProgress}
+            <Progress 
+              value={formProgress} 
               className="h-3 bg-gray-200 border border-gray-300"
             />
             <div
@@ -1425,8 +1425,8 @@ export default function ComprehensiveTripBuilder({
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-4 mb-8 bg-white border-gray-200 shadow-sm rounded-lg p-0 gap-0">
-              <TabsTrigger
-                value="basic"
+              <TabsTrigger 
+                value="basic" 
                 className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg"
               >
                 <span className="text-2xl mr-2">{stepEmojis.basic}</span>
@@ -1435,8 +1435,8 @@ export default function ComprehensiveTripBuilder({
                   <CheckCircle className="w-4 h-4 ml-2 text-emerald-500" />
                 )}
               </TabsTrigger>
-              <TabsTrigger
-                value="itinerary"
+              <TabsTrigger 
+                value="itinerary" 
                 className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg"
               >
                 <span className="text-2xl mr-2">{stepEmojis.itinerary}</span>
@@ -1445,8 +1445,8 @@ export default function ComprehensiveTripBuilder({
                   <CheckCircle className="w-4 h-4 ml-2 text-emerald-500" />
                 )}
               </TabsTrigger>
-              <TabsTrigger
-                value="budget"
+              <TabsTrigger 
+                value="budget" 
                 className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg"
               >
                 <span className="text-2xl mr-2">{stepEmojis.budget}</span>
@@ -1455,8 +1455,8 @@ export default function ComprehensiveTripBuilder({
                   <CheckCircle className="w-4 h-4 ml-2 text-emerald-500" />
                 )}
               </TabsTrigger>
-              <TabsTrigger
-                value="review"
+              <TabsTrigger 
+                value="review" 
                 className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:bg-white relative rounded-none border-r border-gray-200 transition-all duration-200 first:rounded-l-lg last:rounded-r-lg"
               >
                 <span className="text-2xl mr-2">{stepEmojis.review}</span>
@@ -1545,11 +1545,11 @@ export default function ComprehensiveTripBuilder({
                       ))}
                     </div>
                     <div className="relative">
-                      <Input
+                    <Input
                         placeholder="Search a city/place (powered by OpenStreetMap)…"
                         value={destinationQuery}
                         onChange={(e) => setDestinationQuery(e.target.value)}
-                        onKeyDown={(e) => {
+                      onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
                             const value = destinationQuery.trim();
@@ -1562,15 +1562,15 @@ export default function ComprehensiveTripBuilder({
                               setValue("destinations", updated);
                               setDestinationQuery("");
                               setDestinationSuggestions([]);
-                              toast({
+                            toast({
                                 title: `📍 ${value} added!`,
-                                description: "Great choice for your adventure!",
+                              description: "Great choice for your adventure!",
                               });
-                            }
                           }
-                        }}
-                        className="bg-white border-gray-300 text-slate-900"
-                      />
+                        }
+                      }}
+                      className="bg-white border-gray-300 text-slate-900"
+                    />
                       {destinationSuggestions.length > 0 && (
                         <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg max-h-60 overflow-auto">
                           {destinationSuggestions.map((s) => (
@@ -1588,7 +1588,7 @@ export default function ComprehensiveTripBuilder({
                         </div>
                       )}
                     </div>
-
+                    
                     <div className="mt-2 text-xs text-slate-500">
                       💡 Tip: Type any destination and press Enter to add it
                     </div>
@@ -1739,7 +1739,7 @@ export default function ComprehensiveTripBuilder({
                       Day-by-Day Itinerary
                     </h3>
                     <p className="text-slate-600">
-                      {itineraryDays.length === 0
+                      {itineraryDays.length === 0 
                         ? "Let's plan your perfect days! ✨"
                         : `${itineraryDays.length} amazing ${
                             itineraryDays.length === 1 ? "day" : "days"
@@ -1933,7 +1933,7 @@ export default function ComprehensiveTripBuilder({
                         </Select>
                       </div>
                     </div>
-
+                    
                     <div className="space-y-2">
                       <Label className="text-slate-800">Location</Label>
                       <Input
@@ -2113,74 +2113,74 @@ export default function ComprehensiveTripBuilder({
                   <p className="text-slate-600">
                     Plan and track your trip expenses! 💰
                   </p>
-                </div>
-              </div>
+                    </div>
+                  </div>
 
-              <div className="space-y-4">
+                  <div className="space-y-4">
                 <h4 className="text-lg font-semibold text-slate-900">
                   Budget Breakdown by Day
                 </h4>
-                <div className="space-y-2">
-                  {itineraryDays.map((day) => (
+                    <div className="space-y-2">
+                      {itineraryDays.map((day) => (
                     <div
                       key={day.id}
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
                           <span className="text-sm font-semibold text-emerald-700">
                             {day.dayNumber}
                           </span>
-                        </div>
-                        <div>
+                            </div>
+                            <div>
                           <p className="font-medium text-slate-900">
                             {day.title}
                           </p>
                           <p className="text-sm text-slate-600">
                             {day.location.name}
                           </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
+                            </div>
+                          </div>
+                          <div className="text-right">
                         <p className="font-semibold text-slate-900">
                           ${day.budget.estimated}
                         </p>
                         <p className="text-xs text-slate-500">
                           {day.activityType}
                         </p>
-                      </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
 
-              <div className="space-y-4">
+                  <div className="space-y-4">
                 <h4 className="text-lg font-semibold text-slate-900">
                   Budget Categories
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {ACTIVITY_TYPES.map((type) => {
-                    const categoryTotal = itineraryDays
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {ACTIVITY_TYPES.map((type) => {
+                        const categoryTotal = itineraryDays
                       .filter((day) => day.activityType === type.value)
                       .reduce((sum, day) => sum + day.budget.estimated, 0);
-
-                    return (
+                        
+                        return (
                       <div
                         key={type.value}
                         className="p-3 bg-gray-50 rounded-lg text-center"
                       >
-                        <div className="text-2xl mb-1">{type.icon}</div>
+                            <div className="text-2xl mb-1">{type.icon}</div>
                         <p className="text-sm font-medium text-slate-900">
                           {type.label}
                         </p>
                         <p className="text-lg font-bold text-emerald-600">
                           ${categoryTotal}
                         </p>
-                      </div>
+                          </div>
                     );
-                  })}
-                </div>
-              </div>
+                      })}
+                    </div>
+                  </div>
 
               <div className="flex justify-between">
                 <Button
@@ -2212,119 +2212,119 @@ export default function ComprehensiveTripBuilder({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-slate-600">Trip Name</Label>
+                                  <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-slate-600">Trip Name</Label>
                       <p className="text-slate-900 font-medium">
                         {watchedName || "Untitled Trip"}
                       </p>
-                    </div>
-                    <div>
-                      <Label className="text-slate-600">Duration</Label>
-                      <p className="text-slate-900 font-medium">
+                  </div>
+                  <div>
+                    <Label className="text-slate-600">Duration</Label>
+                    <p className="text-slate-900 font-medium">
                         {itineraryDays.length}{" "}
                         {itineraryDays.length === 1 ? "day" : "days"}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-slate-600">Destinations</Label>
-                      <p className="text-slate-900 font-medium">
-                        {selectedDestinations.join(", ") || "No destinations"}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-slate-600">Total Budget</Label>
-                      <p className="text-slate-900 font-medium">
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-slate-600">Destinations</Label>
+                    <p className="text-slate-900 font-medium">
+                      {selectedDestinations.join(", ") || "No destinations"}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-slate-600">Total Budget</Label>
+                    <p className="text-slate-900 font-medium">
                         ${totalEstimatedBudget.toLocaleString()}{" "}
                         {watch("currency")}
-                      </p>
-                    </div>
+                    </p>
                   </div>
+                </div>
 
-                  <Separator className="bg-gray-200" />
+                <Separator className="bg-gray-200" />
 
-                  <div>
-                    <Label className="text-slate-600">Description</Label>
+                <div>
+                  <Label className="text-slate-600">Description</Label>
                     <p className="text-slate-900 font-medium">
                       {watch("description") || "No description"}
                     </p>
-                  </div>
+                </div>
 
-                  <div>
-                    <Label className="text-slate-600">Itinerary Summary</Label>
-                    <div className="mt-2 space-y-2">
-                      {itineraryDays.map((day) => (
+                <div>
+                  <Label className="text-slate-600">Itinerary Summary</Label>
+                  <div className="mt-2 space-y-2">
+                    {itineraryDays.map((day) => (
                         <div
                           key={day.id}
                           className="flex justify-between items-center p-2 bg-gray-50 rounded"
                         >
-                          <span className="text-slate-900">{day.title}</span>
+                        <span className="text-slate-900">{day.title}</span>
                           <Badge
                             variant="secondary"
                             className="bg-emerald-100 text-emerald-700"
                           >
-                            ${day.budget.estimated}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
+                          ${day.budget.estimated}
+                        </Badge>
+                      </div>
+                    ))}
                   </div>
+                </div>
                 </CardContent>
               </Card>
 
-              <div className="flex justify-between">
-                <Button
-                  type="button"
-                  onClick={() => setCurrentTab("budget")}
-                  variant="outline"
+            <div className="flex justify-between">
+              <Button
+                type="button"
+                onClick={() => setCurrentTab("budget")}
+                variant="outline"
                   className="border-gray-300 text-slate-700 hover:bg-gray-50"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Budget
-                </Button>
-                <Button
-                  type="submit"
-                  // Allow submitting even without itinerary days; backend will accept and store later edits
-                  disabled={isSubmitting}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-8 py-4 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-xl text-lg"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-3"></div>
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Budget
+              </Button>
+              <Button
+                type="submit"
+                // Allow submitting even without itinerary days; backend will accept and store later edits
+                disabled={isSubmitting}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-8 py-4 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-xl text-lg"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-3"></div>
                       {existingTrip
                         ? "Updating Your Adventure..."
                         : "Creating Your Adventure..."}
-                    </>
-                  ) : (
-                    <>
-                      <Trophy className="w-5 h-5 mr-3" />
+                  </>
+                ) : (
+                  <>
+                    <Trophy className="w-5 h-5 mr-3" />
                       {existingTrip ? "Update My Trip!" : "Launch My Trip!"}
-                      <Rocket className="w-5 h-5 ml-3" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </form>
+                    <Rocket className="w-5 h-5 ml-3" />
+                  </>
+                )}
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </form>
 
-        {/* Time selection dialog for dropped/added suggestion */}
+      {/* Time selection dialog for dropped/added suggestion */}
         <Dialog
           open={timeDialog.open}
           onOpenChange={(open) => setTimeDialog((prev) => ({ ...prev, open }))}
         >
-          <DialogContent className="bg-gray-900 border-gray-700">
-            <DialogHeader>
+        <DialogContent className="bg-gray-900 border-gray-700">
+          <DialogHeader>
               <DialogTitle className="text-white">
                 Select a start time
               </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
+          </DialogHeader>
+          <div className="space-y-3">
               <p className="text-gray-300 text-sm">
                 {timeDialog.suggestion?.name}
               </p>
-              <div className="flex flex-wrap gap-2">
-                {(timeDialog.slots || []).slice(0, 20).map((t) => (
+            <div className="flex flex-wrap gap-2">
+              {(timeDialog.slots || []).slice(0, 20).map((t) => (
                   <Button
                     key={t}
                     type="button"
@@ -2343,16 +2343,16 @@ export default function ComprehensiveTripBuilder({
                   >
                     {t.slice(0, 5)}
                   </Button>
-                ))}
-              </div>
-              {timeDialog.slots.length === 0 && (
+              ))}
+            </div>
+            {timeDialog.slots.length === 0 && (
                 <p className="text-gray-400 text-sm">
                   No free slots available. Adjust existing items or day times.
                 </p>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );

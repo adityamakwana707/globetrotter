@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { getUserTrips, createTrip, storeTripItinerary } from "@/lib/database"
+import { getUserTrips, createTrip, storeTripItinerary, createCity, addTripCity, findCityByName } from "@/lib/database"
 import { z } from "zod"
 
 // Validation schemas
@@ -95,6 +95,46 @@ export async function POST(request: NextRequest) {
 
     const trip = await createTrip(tripData)
 
+    // Store destinations as cities if provided
+    if (validationResult.data.destinations && validationResult.data.destinations.length > 0) {
+      try {
+        console.log("Processing destinations:", validationResult.data.destinations)
+        
+        for (let i = 0; i < validationResult.data.destinations.length; i++) {
+          const destination = validationResult.data.destinations[i]
+          
+          // Try to find existing city first
+          let city = await findCityByName(destination)
+          
+          // If city doesn't exist, create it
+          if (!city) {
+            city = await createCity({
+              name: destination,
+              country: destination.includes(',') ? destination.split(',')[1]?.trim() || 'Unknown' : 'Unknown',
+              latitude: 0, // Default coordinates
+              longitude: 0,
+              timezone: 'UTC',
+              description: `Added from trip destinations`,
+              cost_index: 50,
+              popularity_score: 0
+            })
+          }
+          
+          // Add city to trip using display_id
+          await addTripCity({
+            tripId: trip.display_id, // Use display_id for numeric database functions
+            cityId: city.id,
+            orderIndex: i + 1
+          })
+        }
+        
+        console.log(`Successfully added ${validationResult.data.destinations.length} destinations to trip`)
+      } catch (error) {
+        console.error("Error storing destinations:", error)
+        // Don't fail the trip creation if destination storage fails
+      }
+    }
+
     // Store itinerary if provided
     if (validationResult.data.itinerary && validationResult.data.itinerary.length > 0) {
       try {
@@ -149,7 +189,7 @@ export async function POST(request: NextRequest) {
         
         if (validItinerary.length > 0) {
           console.log(`Storing ${validItinerary.length} valid itinerary days`)
-          await storeTripItinerary(trip.id, validItinerary)
+          await storeTripItinerary(trip.display_id, validItinerary) // Use display_id for numeric database functions
         } else {
           console.log("No valid itinerary days to store")
         }

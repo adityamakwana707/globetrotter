@@ -8,7 +8,7 @@ import { Calendar, MapPin, Plus, Users, LogOut, Pencil } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { useTripStore } from "@/lib/store"
+// import { useTripStore } from "@/lib/store"
 import { toast } from "@/hooks/use-toast"
 
 interface UserType {
@@ -20,6 +20,7 @@ interface UserType {
 
 interface Trip {
   id: string
+  display_id?: number
   name: string
   description: string
   start_date: string
@@ -28,11 +29,11 @@ interface Trip {
   cover_image?: string
 }
 
-export default function DashboardContent({ user }: { user: UserType }) {
+export default function DashboardContent({ user, session }: { user: UserType; session?: any }) {
   const [recentTrips, setRecentTrips] = useState<Trip[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
-  const { trips, setTrips, clearStore } = useTripStore()
+  // const { trips, setTrips, clearStore } = useTripStore()
 
   useEffect(() => {
     fetchDashboardData()
@@ -45,7 +46,7 @@ export default function DashboardContent({ user }: { user: UserType }) {
       if (tripsResponse.ok) {
         const tripsData = await tripsResponse.json()
         setRecentTrips(tripsData)
-        setTrips(tripsData)
+        // setTrips(tripsData)
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error)
@@ -61,7 +62,7 @@ export default function DashboardContent({ user }: { user: UserType }) {
 
   const handleLogout = async () => {
     try {
-      clearStore()
+      // clearStore()
       await signOut({ redirect: true, callbackUrl: "/" })
       toast({ title: "Logged out successfully" })
     } catch (error) {
@@ -81,7 +82,7 @@ export default function DashboardContent({ user }: { user: UserType }) {
     }
   }
 
-  const allTrips = trips && trips.length > 0 ? trips : recentTrips
+  const allTrips = recentTrips
   const preplanned = allTrips.filter((t) => t.status === "planning")
   const previous = allTrips.filter((t) => t.status === "completed")
 
@@ -141,7 +142,7 @@ export default function DashboardContent({ user }: { user: UserType }) {
             </Card>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {preplanned.map((trip) => (
+                                    {preplanned.map((trip) => (
                 <Card key={trip.id} className="bg-white border-gray-200 rounded-2xl shadow-sm overflow-hidden">
                   <CardContent className="p-0">
                     <div className="h-40 bg-gray-100">
@@ -157,7 +158,7 @@ export default function DashboardContent({ user }: { user: UserType }) {
                       <p className="text-slate-500 text-sm truncate">{trip.description}</p>
                       <div className="flex items-center justify-between mt-2">
                         <Badge className={`${getStatusColor(trip.status)} text-white`}>{trip.status}</Badge>
-                        <Button size="sm" variant="outline" className="border-gray-300" onClick={() => router.push(`/trips/${trip.display_id}`)}>View</Button>
+                        <Button size="sm" variant="outline" className="border-gray-300" onClick={() => router.push(`/trips/${trip.display_id || trip.id}`)}>View</Button>
                       </div>
                     </div>
                   </CardContent>
@@ -179,7 +180,7 @@ export default function DashboardContent({ user }: { user: UserType }) {
             </Card>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {previous.map((trip) => (
+                                    {previous.map((trip) => (
                 <Card key={trip.id} className="bg-white border-gray-200 rounded-2xl shadow-sm overflow-hidden">
                   <CardContent className="p-0">
                     <div className="h-40 bg-gray-100">
@@ -195,7 +196,7 @@ export default function DashboardContent({ user }: { user: UserType }) {
                       <p className="text-slate-500 text-sm truncate">{trip.description}</p>
                       <div className="flex items-center justify-between mt-2">
                         <Badge className={`${getStatusColor(trip.status)} text-white`}>{trip.status}</Badge>
-                        <Button size="sm" variant="outline" className="border-gray-300" onClick={() => router.push(`/trips/${trip.display_id}`)}>View</Button>
+                        <Button size="sm" variant="outline" className="border-gray-300" onClick={() => router.push(`/trips/${trip.display_id || trip.id}`)}>View</Button>
                       </div>
                     </div>
                   </CardContent>

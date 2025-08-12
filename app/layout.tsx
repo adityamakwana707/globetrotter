@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description:
     "Create, manage, and share personalized travel itineraries with intelligent features and collaborative capabilities.",
   keywords: "travel, planning, itinerary, vacation, trip, destinations",
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -27,7 +27,9 @@ export default function RootLayout({
       <body className={`${poppins.className} min-h-screen bg-gray-50 text-slate-900`}>
         <AuthProvider>
           <Navbar />
-          {children}
+          <main>
+            {children}
+          </main>
           <Toaster />
         </AuthProvider>
       </body>

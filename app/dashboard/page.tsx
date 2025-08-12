@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { isUserAdmin } from "@/lib/database"
-import DashboardContent from "@/components/dashboard/dashboard-content"
+import DashboardClientWrapper from "@/components/dashboard/dashboard-client-wrapper"
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -18,5 +18,5 @@ export default async function DashboardPage() {
     redirect("/admin")
   }
 
-  return <DashboardContent user={session.user} />
+  return <DashboardClientWrapper user={session.user} session={session} />
 }
