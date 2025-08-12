@@ -33,7 +33,7 @@ export async function POST(
       )
     }
 
-    const newTrip = await duplicateTrip(params.id, session.user.id, validationResult.data.name)
+    const newTrip = await duplicateTrip(parseInt(params.id, 10), session.user.id, validationResult.data.name)
 
     return NextResponse.json(newTrip, { status: 201 })
   } catch (error) {

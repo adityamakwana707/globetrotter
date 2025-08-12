@@ -448,7 +448,7 @@ export async function deleteTripById(tripId: string, userId: string): Promise<bo
   }
 }
 
-export async function duplicateTrip(tripId: string, userId: string, newName: string): Promise<Trip> {
+export async function duplicateTrip(tripId: string | number, userId: string, newName: string): Promise<Trip> {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
@@ -456,7 +456,7 @@ export async function duplicateTrip(tripId: string, userId: string, newName: str
     // Get original trip
     const originalTrip = await client.query(
       "SELECT * FROM trips WHERE id = $1 AND user_id = $2",
-      [tripId, userId]
+      [String(tripId), userId]
     )
 
     if (originalTrip.rows.length === 0) {
@@ -488,7 +488,7 @@ export async function duplicateTrip(tripId: string, userId: string, newName: str
       `INSERT INTO trip_cities (trip_id, city_id, order_index, arrival_date, departure_date)
        SELECT $1, city_id, order_index, arrival_date, departure_date
        FROM trip_cities WHERE trip_id = $2`,
-      [newTripId, tripId]
+      [newTripId, String(tripId)]
     )
 
     // Copy trip activities

@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { getComprehensiveTripDetails, isUserAdmin } from "@/lib/database"
-import ComprehensiveTripBuilder from "@/components/trips/comprehensive-trip-builder"
+import TripBuilderClientWrapper from "@/components/trips/trip-builder-client-wrapper"
 
 interface EditTripPageProps {
   params: {
@@ -69,7 +69,7 @@ export default async function EditTripPage({ params }: EditTripPageProps) {
             <p className="text-gray-400 text-lg">Update your trip details and make it even more amazing!</p>
           </div>
           
-          <ComprehensiveTripBuilder 
+          <TripBuilderClientWrapper 
             existingTrip={tripDetails.trip}
             existingCities={tripDetails.cities}
             existingActivities={tripDetails.activities}

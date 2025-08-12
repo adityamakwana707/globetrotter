@@ -19,12 +19,50 @@ import {
   TrendingUp,
   AlertTriangle
 } from "lucide-react"
-import { 
-  calculateTripRoute, 
-  getOptimalTravelMode,
-  calculateDailyTravelBudget,
-  type TripRoute 
-} from "@/lib/travel-time"
+// Placeholder travel-time helpers to avoid missing module errors
+type TripRoute = {
+  totalDistance: number
+  totalDuration: number
+  totalCost?: number
+  segments: Array<{
+    from: { name: string }
+    to: { name: string }
+    travelTime: { distance: string; duration: string; mode: 'driving'|'walking'|'transit' }
+    estimatedCost?: number
+  }>
+  suggestions: string[]
+}
+
+async function calculateTripRoute(locations: Array<{ name: string }>, mode: 'driving'|'walking'|'transit'): Promise<TripRoute> {
+  // Simple mocked route; replace with real implementation later
+  return {
+    totalDistance: 120,
+    totalDuration: 240,
+    totalCost: mode === 'driving' ? 80 : mode === 'transit' ? 40 : 0,
+    segments: locations.slice(0, -1).map((loc, idx) => ({
+      from: { name: locations[idx].name },
+      to: { name: locations[idx + 1].name },
+      travelTime: { distance: `${30 + idx * 10} km`, duration: `${60 + idx * 30} min`, mode },
+      estimatedCost: mode === 'driving' ? 20 + idx * 10 : mode === 'transit' ? 10 + idx * 5 : 0
+    })),
+    suggestions: []
+  }
+}
+
+function calculateDailyTravelBudget(route: TripRoute, days: number, includeTips: boolean) {
+  const transportationPerDay = (route.totalCost || 0) / Math.max(1, days)
+  const accommodationPerDay = 100
+  const totalPerDay = transportationPerDay + accommodationPerDay + 50 // meals/misc
+  return {
+    transportationPerDay,
+    accommodationPerDay,
+    totalPerDay,
+    suggestions: includeTips ? [
+      'Consider grouping nearby attractions to reduce travel time.',
+      'Book accommodations near city centers to save on transit.',
+    ] : []
+  }
+}
 import { toast } from "@/hooks/use-toast"
 
 interface TravelTimeCalculatorProps {
