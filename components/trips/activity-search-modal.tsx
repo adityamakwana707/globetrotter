@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -116,9 +116,18 @@ export default function ActivitySearchModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-800 border-gray-700 max-w-4xl max-h-[80vh] overflow-hidden">
+      <DialogContent 
+        className="bg-gray-800 border-gray-700 max-w-4xl max-h-[80vh] overflow-hidden"
+        aria-describedby="activity-search-description"
+      >
         <DialogHeader>
           <DialogTitle className="text-white">Search Destinations & Activities</DialogTitle>
+          <DialogDescription 
+            id="activity-search-description"
+            className="text-gray-400"
+          >
+            Search for cities and activities to add to your trip itinerary.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

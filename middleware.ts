@@ -37,8 +37,10 @@ export default withAuth(
     // Add security headers
     addSecurityHeaders(response)
     
-    // Add CSP header
-    response.headers.set('Content-Security-Policy', getCSPHeader())
+    // Add CSP header (disabled in development for easier debugging)
+    if (process.env.NODE_ENV !== 'development') {
+      response.headers.set('Content-Security-Policy', getCSPHeader())
+    }
 
     return response
   },

@@ -133,18 +133,28 @@ export function validateCSRFToken(request: NextRequest): boolean {
 
 // Content Security Policy
 export function getCSPHeader(): string {
-  return [
+  const isDevelopment = process.env.NODE_ENV === 'development'
+  
+  const directives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
-    "font-src 'self'",
-    "connect-src 'self'",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+    "img-src 'self' data: https: blob:",
+    "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+    "connect-src 'self' https: ws: wss:",
     "media-src 'self'",
     "object-src 'none'",
     "child-src 'self'",
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'"
-  ].join('; ')
+  ]
+
+  // Add development-specific directives
+  if (isDevelopment) {
+    directives.push("script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com 'unsafe-eval'")
+    directives.push("style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com")
+  }
+
+  return directives.join('; ')
 }
