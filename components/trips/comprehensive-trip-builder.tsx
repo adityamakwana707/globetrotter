@@ -58,6 +58,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { 
   DndContext, 
@@ -74,92 +75,41 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 
-// Enhanced schema with itinerary validation
+// Enhanced schema with more flexible validation
 const tripSchema = z
   .object({
     name: z
       .string()
       .min(1, "Trip name is required")
       .max(255, "Trip name too long"),
-  description: z.string().max(1000, "Description too long"),
-  // Allow zero destinations to enable submitting at ~75% completion
-  destinations: z.array(z.string()).optional().default([]),
+    description: z
+      .string()
+      .max(1000, "Description too long")
+      .optional()
+      .default(""),
+    destinations: z
+      .array(z.string())
+      .min(1, "At least one destination is required"),
     startDate: z
       .string()
+      .min(1, "Start date is required")
       .refine((date) => !isNaN(Date.parse(date)), "Invalid start date"),
     endDate: z
       .string()
+      .min(1, "End date is required")
       .refine((date) => !isNaN(Date.parse(date)), "Invalid end date"),
-  totalBudget: z.number().min(0, "Budget must be positive").optional(),
+    totalBudget: z
+      .number()
+      .min(0, "Budget must be positive")
+      .optional()
+      .default(0),
   currency: z.string().default("USD"),
-  status: z.enum(["planning", "active", "completed"]).optional(),
-  isPublic: z.boolean(),
-    itinerary: z
-      .array(
-        z.object({
-    id: z.string(),
-    dayNumber: z.number(),
-    title: z.string(),
-    description: z.string(),
-    date: z.string(),
-    location: z.object({
-      name: z.string(),
-            coordinates: z
-              .object({
-        lat: z.number(),
-                lng: z.number(),
-              })
-              .optional(),
-            address: z.string().optional(),
-          }),
-          activityType: z.enum([
-            "travel",
-            "accommodation",
-            "sightseeing",
-            "adventure",
-            "dining",
-            "shopping",
-            "entertainment",
-            "other",
-          ]),
-    budget: z.object({
-      estimated: z.number(),
-      actual: z.number().optional(),
-            breakdown: z.array(
-              z.object({
-        category: z.string(),
-        amount: z.number(),
-                description: z.string().optional(),
-              })
-            ),
-    }),
-    notes: z.string().optional(),
-    completed: z.boolean().default(false),
-          activities: z
-            .array(
-              z.object({
-      id: z.number(),
-      name: z.string(),
-      description: z.string().optional(),
-      category: z.string().optional(),
-      price_range: z.string().optional(),
-      rating: z.number().optional(),
-      duration_hours: z.number().optional(),
-      city_id: z.number(),
-      image_url: z.string().optional(),
-                start_time: z.string().optional(),
-                end_time: z.string().optional(),
-      startTime: z.string().optional(),
-      endTime: z.string().optional(),
-      orderIndex: z.number().optional(),
-      notes: z.string().optional(),
-                estimatedCost: z.number().optional(),
-              })
-            )
-            .default([]),
-        })
-      )
-      .optional(),
+    status: z
+      .enum(["planning", "active", "completed"])
+      .optional()
+      .default("planning"),
+    isPublic: z.boolean().default(false),
+    itinerary: z.array(z.any()).optional().default([]),
   })
   .refine(
     (data) => {
@@ -298,157 +248,204 @@ interface ComprehensiveTripBuilderProps {
 }
 
 // AI Suggestion Card Component with Drag functionality
-const SuggestionCard = React.memo(({ 
-  suggestion, 
-  index 
-}: { 
-  suggestion: any; 
-  index: number;
-}) => {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: `suggestion-${index}`,
-  });
+const SuggestionCard = React.memo(
+  ({ suggestion, index }: { suggestion: any; index: number }) => {
+    const { attributes, listeners, setNodeRef, transform, isDragging } =
+      useDraggable({
+        id: `suggestion-${index}`,
+      });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    opacity: isDragging ? 0.5 : 1,
-  };
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      opacity: isDragging ? 0.5 : 1,
+    };
 
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      className={`p-3 bg-gray-800 rounded border cursor-grab active:cursor-grabbing transition-all duration-200 ${
-        suggestion.enriched
-          ? 'border-emerald-500 shadow-emerald-500/20 shadow-lg'
-          : 'border-gray-700 hover:border-gray-600'
-      } ${isDragging ? 'scale-105 shadow-xl' : 'hover:shadow-lg'}`}
-    >
-      <div className="flex items-start justify-between mb-2">
-        <h4 className="text-white font-medium text-sm leading-tight">
-          {suggestion.name}
-        </h4>
-        <div className="flex items-center gap-1 ml-2">
-          {suggestion.rating && (
-            <div className="flex items-center">
-              <Star className="h-3 w-3 text-yellow-400 fill-current" />
-              <span className="text-xs text-gray-300 ml-1">
-                {suggestion.rating.toFixed(1)}
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...listeners}
+        {...attributes}
+        className={`p-3 bg-gray-800 rounded border cursor-grab active:cursor-grabbing transition-all duration-200 ${
+          suggestion.enriched
+            ? "border-emerald-500 shadow-emerald-500/20 shadow-lg"
+            : "border-gray-700 hover:border-gray-600"
+        } ${isDragging ? "scale-105 shadow-xl" : "hover:shadow-lg"}`}
+      >
+        <div className="flex items-start justify-between mb-2">
+          <h4 className="text-white font-medium text-sm leading-tight">
+            {suggestion.name}
+          </h4>
+          <div className="flex items-center gap-1 ml-2">
+            {suggestion.rating && (
+              <div className="flex items-center">
+                <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                <span className="text-xs text-gray-300 ml-1">
+                  {suggestion.rating.toFixed(1)}
+                </span>
+              </div>
+            )}
+            <GripVertical className="h-4 w-4 text-gray-400" />
+          </div>
+        </div>
+
+        {suggestion.description && (
+          <p className="text-gray-300 text-xs mb-2 line-clamp-2">
+            {suggestion.description}
+          </p>
+        )}
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {suggestion.category && (
+              <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                {suggestion.category}
+              </Badge>
+            )}
+            {suggestion.price_range && (
+              <span className="text-xs text-emerald-400 font-medium">
+                {suggestion.price_range}
               </span>
+            )}
+          </div>
+
+          {suggestion.duration_hours && (
+            <div className="flex items-center text-xs text-gray-400">
+              <Clock className="h-3 w-3 mr-1" />
+              {suggestion.duration_hours}h
             </div>
           )}
-          <GripVertical className="h-4 w-4 text-gray-400" />
+        </div>
+
+        <div className="mt-2 text-xs text-gray-500">
+          💡 Drag to add to time slot
         </div>
       </div>
-      
-      {suggestion.description && (
-        <p className="text-gray-300 text-xs mb-2 line-clamp-2">
-          {suggestion.description}
-        </p>
-      )}
-      
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {suggestion.category && (
-            <Badge variant="secondary" className="text-xs px-2 py-0.5">
-              {suggestion.category}
-            </Badge>
-          )}
-          {suggestion.price_range && (
-            <span className="text-xs text-emerald-400 font-medium">
-              {suggestion.price_range}
-            </span>
-          )}
+    );
+  }
+);
+
+// Draggable Activity Component
+const DraggableActivity = React.memo(
+  ({
+    activity,
+    slotId,
+    dayId,
+  }: {
+    activity: any;
+    slotId: string;
+    dayId: string;
+  }) => {
+    const { attributes, listeners, setNodeRef, transform, isDragging } =
+      useDraggable({
+        id: `activity-${dayId}-${slotId}`,
+        data: {
+          activity,
+          sourceSlotId: slotId,
+          sourceDayId: dayId,
+        },
+      });
+
+    const style = transform
+      ? {
+          transform: CSS.Transform.toString(transform),
+        }
+      : undefined;
+
+    return (
+      <div
+        ref={setNodeRef}
+        {...listeners}
+        {...attributes}
+        style={style}
+        className={`space-y-1 cursor-grab active:cursor-grabbing p-2 rounded border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all duration-200 ${
+          isDragging ? "opacity-50 scale-105" : "hover:scale-102"
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-medium text-gray-900 leading-tight">
+            {activity.name}
+          </h4>
+          <GripVertical className="h-3 w-3 text-gray-400" />
         </div>
-        
-        {suggestion.duration_hours && (
-          <div className="flex items-center text-xs text-gray-400">
-            <Clock className="h-3 w-3 mr-1" />
-            {suggestion.duration_hours}h
-          </div>
+        {activity.description && (
+          <p className="text-xs text-gray-600 line-clamp-2">
+            {activity.description}
+          </p>
+        )}
+        {activity.category && (
+          <Badge variant="secondary" className="text-xs px-2 py-0.5">
+            {activity.category}
+          </Badge>
+        )}
+        {activity.price_range && (
+          <span className="text-xs text-emerald-600 font-medium">
+            {activity.price_range}
+          </span>
         )}
       </div>
-      
-      <div className="mt-2 text-xs text-gray-500">
-        💡 Drag to add to time slot
-      </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 // Time Slot Droppable Component
-const TimeSlotDroppable = React.memo(({ 
-  slot, 
-  dayId, 
-  onRemoveActivity 
-}: { 
-  slot: any; 
-  dayId: string; 
-  onRemoveActivity: (slotId: string) => void;
-}) => {
-  const { setNodeRef } = useDroppable({
-    id: `slot-${dayId}-${slot.id}`,
-  });
+const TimeSlotDroppable = React.memo(
+  ({
+    slot,
+    dayId,
+    onRemoveActivity,
+  }: {
+    slot: any;
+    dayId: string;
+    onRemoveActivity: (slotId: string) => void;
+  }) => {
+    const { setNodeRef } = useDroppable({
+      id: `slot-${dayId}-${slot.id}`,
+    });
 
-  return (
-    <div
-      ref={setNodeRef}
-      className={`p-3 rounded-lg border-2 border-dashed transition-all duration-200 min-h-[80px] ${
-        slot.isOccupied
-          ? 'bg-emerald-50 border-emerald-200 shadow-sm'
-          : 'bg-gray-50 border-gray-300 hover:border-emerald-300 hover:bg-emerald-50/50'
-      }`}
-    >
-      <div className="flex justify-between items-start mb-2">
-        <span className="text-xs font-medium text-gray-600">
-          {slot.startTime} - {slot.endTime}
-        </span>
-        {slot.isOccupied && slot.activity && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onRemoveActivity(slot.id)}
-            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
+    return (
+      <div
+        ref={setNodeRef}
+        className={`p-3 rounded-lg border-2 border-dashed transition-all duration-200 min-h-[80px] ${
+          slot.isOccupied
+            ? "bg-emerald-50 border-emerald-200 shadow-sm"
+            : "bg-gray-50 border-gray-300 hover:border-emerald-300 hover:bg-emerald-50/50"
+        }`}
+      >
+        <div className="flex justify-between items-start mb-2">
+          <span className="text-xs font-medium text-gray-600">
+            {slot.startTime} - {slot.endTime}
+          </span>
+          {slot.isOccupied && slot.activity && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onRemoveActivity(slot.id)}
+              className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+
+        {slot.isOccupied && slot.activity ? (
+          <DraggableActivity
+            activity={slot.activity}
+            slotId={slot.id}
+            dayId={dayId}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-400">
+            <div className="text-center">
+              <Clock className="h-4 w-4 mx-auto mb-1" />
+              <span className="text-xs">Drop activity here</span>
+            </div>
+          </div>
         )}
       </div>
-      
-      {slot.isOccupied && slot.activity ? (
-        <div className="space-y-1">
-          <h4 className="text-sm font-medium text-gray-900 leading-tight">
-            {slot.activity.name}
-          </h4>
-          {slot.activity.description && (
-            <p className="text-xs text-gray-600 line-clamp-2">
-              {slot.activity.description}
-            </p>
-          )}
-          {slot.activity.category && (
-            <Badge variant="secondary" className="text-xs px-2 py-0.5">
-              {slot.activity.category}
-            </Badge>
-          )}
-          {slot.activity.price_range && (
-            <span className="text-xs text-emerald-600 font-medium">
-              {slot.activity.price_range}
-            </span>
-          )}
-        </div>
-      ) : (
-        <div className="flex items-center justify-center h-full text-gray-400">
-          <div className="text-center">
-            <Clock className="h-4 w-4 mx-auto mb-1" />
-            <span className="text-xs">Drop activity here</span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
+    );
+  }
+);
 
 export default function ComprehensiveTripBuilder({ 
   existingTrip, 
@@ -481,6 +478,8 @@ export default function ComprehensiveTripBuilder({
     slots: string[];
   }>({ open: false, dayId: "", suggestion: null, slots: [] });
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [weatherData, setWeatherData] = useState<any>(null);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -492,7 +491,21 @@ export default function ComprehensiveTripBuilder({
   );
   const [destinationQuery, setDestinationQuery] = useState("");
   const [destinationSuggestions, setDestinationSuggestions] = useState<
-    Array<{ displayName: string; lat: string; lon: string }>
+    Array<{
+      display_name?: string;
+      name?: string;
+      displayName?: string;
+      lat: string;
+      lon: string;
+      isLocal?: boolean;
+      address?: { country?: string };
+      country?: string;
+      type?: string;
+      source?: 'database' | 'geocoding';
+      popularity_score?: number;
+      cost_index?: number;
+      importance?: number;
+    }>
   >([]);
   const [totalEstimatedBudget, setTotalEstimatedBudget] = useState(0);
   const [formProgress, setFormProgress] = useState(0);
@@ -553,14 +566,6 @@ export default function ComprehensiveTripBuilder({
       );
       setTotalEstimatedBudget(totalBudget);
       setValue("totalBudget", totalBudget);
-      console.log("Loaded existing trip data:", {
-        name: existingTrip.name,
-        destinations: existingDestinations.length,
-        cities: existingCities.length,
-        activities: existingActivities.length,
-        budgets: existingBudgets.length,
-        totalBudget,
-      });
     }
   }, [
     existingTrip,
@@ -601,57 +606,61 @@ export default function ComprehensiveTripBuilder({
     currentTab,
   ]);
 
-  // Destination autocomplete using Nominatim (Leaflet-compatible)
+  // Hybrid destination search: Database first (instant), then geocoding (background)
   useEffect(() => {
-    const controller = new AbortController();
-    const query = destinationQuery.trim();
-    if (query.length < 3) {
-      setDestinationSuggestions([]);
-      return () => controller.abort();
-    }
-    const timeout = setTimeout(async () => {
-      try {
-        const url = `/api/geocode?q=${encodeURIComponent(query)}`;
-        const res = await fetch(url, {
-          signal: controller.signal,
-          headers: { Accept: "application/json" },
-        });
-        if (!res.ok) return;
-        const data: Array<any> = await res.json();
-        setDestinationSuggestions(
-          (data || []).map((d) => ({
-            displayName:
-              (d.display_name as string) ||
-              `${d.name || ""}${d.country ? ", " + d.country : ""}`,
-            lat: String(d.latitude ?? d.lat ?? ""),
-            lon: String(d.longitude ?? d.lon ?? ""),
-          }))
-        );
-      } catch (_) {
-        // ignore aborted/failed requests
+    const fetchSuggestions = async () => {
+      if (!destinationQuery.trim()) {
+        setDestinationSuggestions([]);
+        return;
       }
-    }, 300);
-    return () => {
-      clearTimeout(timeout);
-      controller.abort();
+
+      try {
+        // Use our new hybrid search API that combines database + geocoding
+        const response = await fetch(
+          `/api/destinations/search?q=${encodeURIComponent(destinationQuery)}&limit=15`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setDestinationSuggestions(data);
+        } else {
+          setDestinationSuggestions([]);
+        }
+      } catch (error) {
+        console.error("Error fetching destination suggestions:", error);
+        setDestinationSuggestions([]);
+      }
     };
+
+    // Reduced delay for faster response
+    const timeoutId = setTimeout(fetchSuggestions, 200);
+
+    return () => clearTimeout(timeoutId);
   }, [destinationQuery]);
+
+  // Fetch weather when destinations change
+  useEffect(() => {
+    if (selectedDestinations.length > 0) {
+      fetchWeatherData(selectedDestinations);
+    }
+  }, [selectedDestinations]);
 
   // Initialize time slots for existing itinerary days
   useEffect(() => {
     if (itineraryDays.length > 0) {
-      const updatedDays = itineraryDays.map(day => {
+      const updatedDays = itineraryDays.map((day) => {
         if (!day.timeSlots || day.timeSlots.length === 0) {
           return { ...day, timeSlots: generateTimeSlots() };
         }
         return day;
       });
-      
+
       // Only update if there were changes
-      const hasChanges = updatedDays.some((day, index) => 
-        !itineraryDays[index].timeSlots || itineraryDays[index].timeSlots.length === 0
+      const hasChanges = updatedDays.some(
+        (day, index) =>
+          !itineraryDays[index].timeSlots ||
+          itineraryDays[index].timeSlots.length === 0
       );
-      
+
       if (hasChanges) {
         setItineraryDays(updatedDays);
         setValue("itinerary", updatedDays);
@@ -659,31 +668,38 @@ export default function ComprehensiveTripBuilder({
     }
   }, [itineraryDays.length]); // Only run when the number of days changes
 
-  const handleSelectDestinationSuggestion = (s: {
-    displayName: string;
-    lat: string;
-    lon: string;
-  }) => {
-    if (!s?.displayName) return;
-    if (selectedDestinations.includes(s.displayName)) {
+  const handleSelectDestinationSuggestion = (s: any) => {
+    // Handle both database and geocoding results
+    const displayName = s.display_name || s.name || s.displayName || '';
+    const country = s.country || s.address?.country || 'Unknown';
+    const source = s.source || 'database';
+    
+    if (!displayName) return;
+    
+    if (selectedDestinations.includes(displayName)) {
       setDestinationQuery("");
       setDestinationSuggestions([]);
       return;
     }
-    const updated = [...selectedDestinations, s.displayName];
+    
+    const updated = [...selectedDestinations, displayName];
     setSelectedDestinations(updated);
     setValue("destinations", updated);
     setDestinationQuery("");
     setDestinationSuggestions([]);
-    toast({ title: `📍 ${s.displayName} added!` });
+    
+    toast({ 
+      title: `📍 ${displayName} added!`,
+      description: `Added from ${source === 'geocoding' ? 'OpenStreetMap' : 'our database'}`
+    });
   };
 
   // Generate time slots for a day (8 AM to 10 PM in 2-hour intervals)
   const generateTimeSlots = () => {
     const slots = [];
     for (let hour = 8; hour <= 22; hour += 2) {
-      const startTime = `${hour.toString().padStart(2, '0')}:00`;
-      const endTime = `${(hour + 2).toString().padStart(2, '0')}:00`;
+      const startTime = `${hour.toString().padStart(2, "0")}:00`;
+      const endTime = `${(hour + 2).toString().padStart(2, "0")}:00`;
       slots.push({
         id: `slot-${hour}`,
         startTime,
@@ -871,8 +887,15 @@ export default function ComprehensiveTripBuilder({
           enriched: activity.enriched || false,
           enrichedAt: activity.enrichedAt || null,
         };
-        
-        console.log(`Adding activity to day ${dayId}:`, newActivity);
+
+        // Append activity to day description
+        const activityText = `${newActivity.name}${
+          newActivity.description ? ` - ${newActivity.description}` : ""
+        }`;
+        const currentDescription = day.description || "";
+        const newDescription = currentDescription
+          ? `${currentDescription}\n• ${activityText}`
+          : `• ${activityText}`;
         
         return {
           ...day,
@@ -881,6 +904,7 @@ export default function ComprehensiveTripBuilder({
             ...day.budget,
             estimated: day.budget.estimated + estimatedCost,
           },
+          description: newDescription,
         };
       }
       return day;
@@ -896,13 +920,37 @@ export default function ComprehensiveTripBuilder({
     );
     setTotalEstimatedBudget(total);
     setValue("totalBudget", total);
+  };
 
-    console.log(
-      `Total activities across all days: ${updatedDays.reduce(
-        (sum, day) => sum + day.activities.length,
-        0
-      )}`
-    );
+  // Fetch weather data for the first destination
+  const fetchWeatherData = async (destinations: string[]) => {
+    if (destinations.length === 0) return;
+
+    try {
+      setIsLoadingWeather(true);
+      const response = await fetch(
+        `/api/weather?city=${encodeURIComponent(destinations[0])}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setWeatherData(data);
+      } else {
+        const errorData = await response.json();
+        setWeatherData({
+          available: false,
+          error: errorData.error || "Failed to fetch weather data",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching weather:", error);
+      setWeatherData({
+        available: false,
+        error: "Network error while fetching weather data",
+      });
+    } finally {
+      setIsLoadingWeather(false);
+    }
   };
 
   // Fetch AI suggestions for the first destination
@@ -1002,11 +1050,83 @@ export default function ComprehensiveTripBuilder({
 
       if (!over) return;
 
-      const suggestionId = active.id as string;
+      const activeId = active.id as string;
       const overId = over.id as string;
 
-      if (suggestionId.startsWith("suggestion-")) {
-        const suggestionIndex = parseInt(suggestionId.split("-")[1]);
+      // Handle moving activities between time slots
+      if (activeId.startsWith("activity-")) {
+        const [, sourceDayId, sourceSlotId] = activeId.split("-");
+        const sourceDay = itineraryDays.find((d) => d.id.includes(sourceDayId));
+        if (!sourceDay) return;
+
+        const sourceSlotIndex = sourceDay.timeSlots.findIndex(
+          (slot) => slot.id === sourceSlotId
+        );
+        if (
+          sourceSlotIndex === -1 ||
+          !sourceDay.timeSlots[sourceSlotIndex].isOccupied
+        )
+          return;
+
+        const activity = sourceDay.timeSlots[sourceSlotIndex].activity;
+        if (!activity) return;
+
+        // Check if dropped on a time slot
+        if (overId.startsWith("slot-")) {
+          const [, targetDayId, targetSlotId] = overId.split("-");
+          const targetDay = itineraryDays.find((d) =>
+            d.id.includes(targetDayId)
+          );
+          if (!targetDay) return;
+
+          const targetSlotIndex = targetDay.timeSlots.findIndex(
+            (slot) => slot.id === targetSlotId
+          );
+          if (
+            targetSlotIndex === -1 ||
+            targetDay.timeSlots[targetSlotIndex].isOccupied
+          )
+            return;
+
+          // Move activity from source to target
+          const updatedDays = itineraryDays.map((day) => {
+            if (day.id === sourceDay.id) {
+              // Clear source slot
+              const updatedTimeSlots = [...day.timeSlots];
+              updatedTimeSlots[sourceSlotIndex] = {
+                ...updatedTimeSlots[sourceSlotIndex],
+                activity: undefined,
+                isOccupied: false,
+              };
+              return { ...day, timeSlots: updatedTimeSlots };
+            }
+            if (day.id === targetDay.id) {
+              // Add activity to target slot
+              const updatedTimeSlots = [...day.timeSlots];
+              updatedTimeSlots[targetSlotIndex] = {
+                ...updatedTimeSlots[targetSlotIndex],
+                activity: activity,
+                isOccupied: true,
+              };
+              return { ...day, timeSlots: updatedTimeSlots };
+            }
+            return day;
+          });
+
+          setItineraryDays(updatedDays);
+          setValue("itinerary", updatedDays);
+
+          toast({
+            title: "🔄 Activity Moved!",
+            description: `${activity.name} moved to ${targetDay.timeSlots[targetSlotIndex].startTime}-${targetDay.timeSlots[targetSlotIndex].endTime}`,
+          });
+        }
+        return;
+      }
+
+      // Handle AI suggestions (existing logic)
+      if (activeId.startsWith("suggestion-")) {
+        const suggestionIndex = parseInt(activeId.split("-")[1]);
         const suggestion = aiSuggestions[suggestionIndex];
         if (!suggestion) return;
 
@@ -1016,10 +1136,13 @@ export default function ComprehensiveTripBuilder({
           const targetDay = itineraryDays.find((d) => d.id.includes(dayId));
           if (!targetDay) return;
 
-          const slotIndex = targetDay.timeSlots.findIndex((slot) => slot.id === slotId);
-          if (slotIndex === -1 || targetDay.timeSlots[slotIndex].isOccupied) return;
+          const slotIndex = targetDay.timeSlots.findIndex(
+            (slot) => slot.id === slotId
+          );
+          if (slotIndex === -1 || targetDay.timeSlots[slotIndex].isOccupied)
+            return;
 
-          // Add activity to the time slot
+          // Add activity to the time slot and update day description
           const updatedDays = itineraryDays.map((day) => {
             if (day.id === targetDay.id) {
               const updatedTimeSlots = [...day.timeSlots];
@@ -1040,10 +1163,20 @@ export default function ComprehensiveTripBuilder({
                 },
                 isOccupied: true,
               };
-              
+
+              // Append activity to day description
+              const activityText = `${suggestion.name}${
+                suggestion.description ? ` - ${suggestion.description}` : ""
+              }`;
+              const currentDescription = day.description || "";
+              const newDescription = currentDescription
+                ? `${currentDescription}\n• ${activityText}`
+                : `• ${activityText}`;
+
               return {
                 ...day,
                 timeSlots: updatedTimeSlots,
+                description: newDescription,
               };
             }
             return day;
@@ -1051,7 +1184,7 @@ export default function ComprehensiveTripBuilder({
 
           setItineraryDays(updatedDays);
           setValue("itinerary", updatedDays);
-          
+
           toast({
             title: "🎯 Activity Added!",
             description: `${suggestion.name} added to ${targetDay.timeSlots[slotIndex].startTime}-${targetDay.timeSlots[slotIndex].endTime}`,
@@ -1165,18 +1298,6 @@ export default function ComprehensiveTripBuilder({
             )}
           </div>
           <div className="flex flex-col gap-1 ml-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="text-xs bg-gray-700 border-gray-600 hover:bg-gray-600"
-              onClick={(e) => {
-                  e.stopPropagation();
-                  handleEnrichPlace(suggestion);
-              }}
-            >
-              Enrich
-            </Button>
             <div className="flex gap-1">
                 {itineraryDays.slice(0, 3).map((d) => (
                 <Button 
@@ -1272,23 +1393,57 @@ export default function ComprehensiveTripBuilder({
 
   // Handle form submission
   const onSubmit = async (data: TripFormData) => {
+    console.log("🚀 === FORM SUBMISSION STARTED ===");
+    console.log("📝 Form data:", data);
+    console.log("📍 Selected destinations:", selectedDestinations);
+    console.log("️ Itinerary days:", itineraryDays);
+    console.log("💰 Total budget:", totalEstimatedBudget);
+    console.log("🖼️ Cover image:", coverImage);
+
+    // Validate required fields
+    if (
+      !data.name ||
+      !data.startDate ||
+      !data.endDate ||
+      selectedDestinations.length === 0
+    ) {
+      console.error("❌ Missing required fields:");
+      console.error("- Name:", data.name);
+      console.error("- Start date:", data.startDate);
+      console.error("- End date:", data.endDate);
+      console.error("- Destinations:", selectedDestinations);
+      toast({
+        title: "Missing required fields",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const tripData = {
         name: data.name,
-        description: data.description,
+        description: data.description || "",
         startDate: data.startDate,
         endDate: data.endDate,
-        isPublic: data.isPublic,
+        isPublic: data.isPublic || false,
         destinations: selectedDestinations,
-        totalBudget: totalEstimatedBudget,
-        itinerary: itineraryDays,
+        totalBudget: totalEstimatedBudget || 0,
+        itinerary: itineraryDays || [],
         ...(coverImage && coverImage.trim() !== "" && { coverImage }),
       };
+
+      console.log(
+        "📤 Sending trip data to API:",
+        JSON.stringify(tripData, null, 2)
+      );
 
       const isEditing = !!existingTrip;
       const url = isEditing ? `/api/trips/${existingTrip.id}` : "/api/trips";
       const method = isEditing ? "PUT" : "POST";
+
+      console.log(" Making API call to:", url, "with method:", method);
 
       const response = await fetch(url, {
         method,
@@ -1298,19 +1453,28 @@ export default function ComprehensiveTripBuilder({
         body: JSON.stringify(tripData),
       });
 
+      console.log("📥 API response status:", response.status);
+      console.log(
+        "📥 API response headers:",
+        Object.fromEntries(response.headers.entries())
+      );
+
       if (!response.ok) {
         const error = await response.json();
+        console.error("❌ API error response:", error);
         throw new Error(
           error.message || `Failed to ${isEditing ? "update" : "create"} trip`
         );
       }
 
       const result = await response.json();
+      console.log("✅ API success result:", result);
       
       // Add to store (result is the trip directly, not wrapped)
       if (!isEditing) {
         addTrip({
-          id: result.display_id.toString(),
+          id:
+            result.display_id?.toString() || result.id?.toString() || "unknown",
           name: result.name,
           description: result.description,
           start_date: result.start_date,
@@ -1349,12 +1513,20 @@ export default function ComprehensiveTripBuilder({
         duration: 5000,
       });
 
+      console.log("🔄 Redirecting to trip details...");
+
       // Redirect to trip details
-      router.push(
-        `/trips/${result.display_id || result.id || existingTrip?.id}`
-      );
+      const redirectId = result.display_id || result.id || existingTrip?.id;
+      console.log("🎯 Redirect ID:", redirectId);
+
+      if (redirectId) {
+        router.push(`/trips/${redirectId}`);
+      } else {
+        console.error("❌ No valid ID for redirect");
+        router.push("/dashboard");
+      }
     } catch (error) {
-      console.error("Error creating trip:", error);
+      console.error("💥 Error in onSubmit:", error);
       const isEditing = !!existingTrip;
       toast({
         title: `Failed to ${isEditing ? "update" : "create"} trip`,
@@ -1364,8 +1536,127 @@ export default function ComprehensiveTripBuilder({
       });
     } finally {
       setIsSubmitting(false);
+      console.log("🏁 === FORM SUBMISSION ENDED ===");
     }
   };
+
+  // Add this debug section before the form
+  {
+    process.env.NODE_ENV === "development" && (
+      <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <h3 className="text-sm font-medium text-yellow-800 mb-2">
+          🔍 Debug Info (Development Only)
+        </h3>
+        <div className="text-xs text-yellow-700 space-y-1">
+          <p>Form Progress: {formProgress}%</p>
+          <p>
+            Destinations: {selectedDestinations.length} -{" "}
+            {selectedDestinations.join(", ") || "None"}
+          </p>
+          <p>Itinerary Days: {itineraryDays.length}</p>
+          <p>Total Budget: ${totalEstimatedBudget}</p>
+          <p>Form Valid: {Object.keys(errors).length === 0 ? "✅" : "❌"}</p>
+          <p>Current Tab: {currentTab}</p>
+          <p>Is Submitting: {isSubmitting ? "Yes" : "No"}</p>
+          <p>Cover Image: {coverImage ? "Set" : "Not set"}</p>
+
+          {Object.keys(errors).length > 0 && (
+            <div>
+              <p className="font-medium">Validation Errors:</p>
+              <ul className="list-disc list-inside ml-2">
+                {Object.entries(errors).map(([field, error]) => (
+                  <li key={field}>
+                    {field}: {error?.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="mt-2 p-2 bg-yellow-100 rounded">
+            <p className="font-medium">Required Fields Status:</p>
+            <ul className="list-disc list-inside ml-2">
+              <li>Name: {watch("name") ? "✅" : "❌"}</li>
+              <li>Start Date: {watch("startDate") ? "✅" : "❌"}</li>
+              <li>End Date: {watch("endDate") ? "✅" : "❌"}</li>
+              <li>
+                Destinations: {selectedDestinations.length > 0 ? "✅" : "❌"}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  {
+    /* Test Form Submission Button */
+  }
+  {
+    process.env.NODE_ENV === "development" && (
+      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <h3 className="text-sm font-medium text-blue-800 mb-2">
+          🧪 Test Form Submission
+        </h3>
+        <Button
+          type="button"
+          onClick={() => {
+            console.log("🧪 Testing form submission...");
+            console.log("Form data:", watch());
+            console.log("Errors:", errors);
+            console.log("Selected destinations:", selectedDestinations);
+            console.log("Itinerary days:", itineraryDays);
+
+            // Test the form validation
+            const formData = {
+              name: watch("name") || "Test Trip",
+              description: watch("description") || "Test Description",
+              destinations:
+                selectedDestinations.length > 0
+                  ? selectedDestinations
+                  : ["Test City"],
+              startDate:
+                watch("startDate") || new Date().toISOString().split("T")[0],
+              endDate:
+                watch("endDate") ||
+                new Date(Date.now() + 86400000).toISOString().split("T")[0],
+              totalBudget: totalEstimatedBudget || 100,
+              currency: "USD",
+              status: "planning",
+              isPublic: false,
+              itinerary: itineraryDays || [],
+            };
+
+            console.log("Test form data:", formData);
+
+            // Test API call
+            fetch("/api/trips", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(formData),
+            })
+              .then((response) => {
+                console.log("Test API response status:", response.status);
+                return response.json();
+              })
+              .then((data) => {
+                console.log("Test API response data:", data);
+              })
+              .catch((error) => {
+                console.error("Test API error:", error);
+              });
+          }}
+          className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1"
+        >
+          Test API Call
+        </Button>
+      </div>
+    );
+  }
+
+  <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+    {/* ... existing form content ... */}
+  </form>;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 sm:py-10">
@@ -1546,51 +1837,96 @@ export default function ComprehensiveTripBuilder({
                     </div>
                     <div className="relative">
                     <Input
-                        placeholder="Search a city/place (powered by OpenStreetMap)…"
+                        placeholder="Search for cities, places, landmarks... (powered by OpenStreetMap)"
                         value={destinationQuery}
                         onChange={(e) => setDestinationQuery(e.target.value)}
                       onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
-                            const value = destinationQuery.trim();
-                            if (
-                              value &&
-                              !selectedDestinations.includes(value)
-                            ) {
-                              const updated = [...selectedDestinations, value];
-                              setSelectedDestinations(updated);
-                              setValue("destinations", updated);
-                              setDestinationQuery("");
-                              setDestinationSuggestions([]);
-                            toast({
-                                title: `📍 ${value} added!`,
-                              description: "Great choice for your adventure!",
-                              });
+                            if (destinationSuggestions.length > 0) {
+                              handleSelectDestinationSuggestion(destinationSuggestions[0]);
                           }
                         }
                       }}
                       className="bg-white border-gray-300 text-slate-900"
                     />
+
+                      {/* Hybrid suggestions: Database + Geocoding */}
                       {destinationSuggestions.length > 0 && (
                         <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg max-h-60 overflow-auto">
-                          {destinationSuggestions.map((s) => (
-                            <button
-                              type="button"
-                              key={`${s.displayName}-${s.lat}-${s.lon}`}
-                              className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm text-slate-700"
-                              onClick={() =>
-                                handleSelectDestinationSuggestion(s)
-                              }
-                            >
-                              {s.displayName}
-                            </button>
-                          ))}
+                          {destinationSuggestions.map((suggestion, index) => {
+                            const displayName =
+                              suggestion.display_name ||
+                              suggestion.name ||
+                              suggestion.displayName ||
+                              "Unknown Location";
+                            const country =
+                              suggestion.address?.country ||
+                              suggestion.country ||
+                              "Unknown Country";
+                            const type = suggestion.type || "place";
+                            const source = suggestion.source || "database";
+                            const popularity = suggestion.popularity_score || 0;
+                            const costIndex = suggestion.cost_index || 50;
+
+                            return (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => handleSelectDestinationSuggestion(suggestion)}
+                                className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 focus:bg-gray-50 focus:outline-none"
+                              >
+                                <div className="flex items-start space-x-3">
+                                  <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-sm font-medium text-gray-900 truncate">
+                                        {displayName}
+                                      </p>
+                                      <div className="flex items-center space-x-1 ml-2">
+                                        {source === 'geocoding' && (
+                                          <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                                            🌍 Live
+                                          </span>
+                                        )}
+                                        {source === 'database' && popularity > 0 && (
+                                          <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                                            ⭐ {popularity}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center space-x-2 mt-1">
+                                      {country && (
+                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                          {country}
+                                        </span>
+                                      )}
+                                      <span className="text-xs text-gray-400 capitalize">
+                                        {type}
+                                      </span>
+                                      {source === 'database' && costIndex && (
+                                        <span className={`text-xs px-2 py-0.5 rounded ${
+                                          costIndex <= 30 ? 'text-green-600 bg-green-50' :
+                                          costIndex <= 60 ? 'text-yellow-600 bg-yellow-50' :
+                                          'text-red-600 bg-red-50'
+                                        }`}>
+                                          ${costIndex <= 30 ? 'Budget' : costIndex <= 60 ? 'Mid' : 'Premium'}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
                     
                     <div className="mt-2 text-xs text-slate-500">
-                      💡 Tip: Type any destination and press Enter to add it
+                      💡 Tip: Type to search real places from OpenStreetMap
+                      database
                     </div>
                   </div>
 
@@ -1781,86 +2117,102 @@ export default function ComprehensiveTripBuilder({
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="text-white font-medium mb-2">
-                        Untimed suggestions
-                      </h4>
-                      {aiSuggestions.length === 0 ? (
-                        <p className="text-gray-400 text-sm">
-                          Click Get Suggestions.
-                        </p>
-                      ) : (
-                        <div className="grid grid-cols-1 gap-3">
-                          {aiSuggestions.map((s, i) => (
-                            <SuggestionCard
-                              key={`sugg-${i}`}
-                              suggestion={s}
-                              index={i}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="text-white font-medium mb-2">
-                        Timed day plan
-                      </h4>
-                      {aiSchedule.length === 0 ? (
-                        <p className="text-gray-400 text-sm">
-                          Will appear if the model returns schedule.
-                        </p>
-                      ) : (
-                        <div className="space-y-2">
-                          {aiSchedule.map((s, i) => (
-                            <div
-                              key={`sched-${i}`}
-                              className="p-3 bg-gray-800 rounded border border-gray-700 flex items-center justify-between"
-                            >
-                              <div>
-                                <p className="text-white text-sm">
-                                  Day {s.dayNumber} •{" "}
-                                  {s.startTime?.slice(0, 5) || "09:00"} •{" "}
-                                  {s.name}
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                  {s.category || "general"}{" "}
-                                  {s.price_range ? `• ${s.price_range}` : ""}
-                                </p>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="text-white font-medium mb-2">
+                          Untimed suggestions
+                        </h4>
+                        {aiSuggestions.length === 0 ? (
+                          <p className="text-gray-400 text-sm">
+                            Click Get Suggestions.
+                          </p>
+                        ) : (
+                          <div className="grid grid-cols-1 gap-3">
+                            {aiSuggestions.map((s, i) => (
+                              <SuggestionCard
+                                key={`sugg-${i}`}
+                                suggestion={s}
+                                index={i}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="text-white font-medium mb-2">
+                          Timed day plan
+                        </h4>
+                        {aiSchedule.length === 0 ? (
+                          <p className="text-gray-400 text-sm">
+                            Will appear if the model returns schedule.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {aiSchedule.map((s, i) => (
+                              <div
+                                key={`sched-${i}`}
+                                className="p-3 bg-gray-800 rounded border border-gray-700 flex items-center justify-between"
+                              >
+                                <div>
+                                  <p className="text-white text-sm">
+                                    Day {s.dayNumber} •{" "}
+                                    {s.startTime?.slice(0, 5) || "09:00"} •{" "}
+                                    {s.name}
+                                  </p>
+                                  <p className="text-xs text-gray-400">
+                                    {s.category || "general"}{" "}
+                                    {s.price_range ? `• ${s.price_range}` : ""}
+                                  </p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => {
+                                      const day =
+                                        itineraryDays.find(
+                                          (d) => d.dayNumber === s.dayNumber
+                                        ) || itineraryDays[0];
+                                      if (!day) return;
+                                      const slots = computeAvailableSlots(
+                                        day,
+                                        s.duration_hours || 2
+                                      );
+                                      // preselect the suggested time if available, otherwise show slots
+                                      setTimeDialog({
+                                        open: true,
+                                        dayId: day.id,
+                                        suggestion: { ...s },
+                                        slots,
+                                      });
+                                    }}
+                                  >
+                                    Add
+                                  </Button>
+                                </div>
                               </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  className="bg-green-600 hover:bg-green-700"
-                                  onClick={() => {
-                                    const day =
-                                      itineraryDays.find(
-                                        (d) => d.dayNumber === s.dayNumber
-                                      ) || itineraryDays[0];
-                                    if (!day) return;
-                                    const slots = computeAvailableSlots(
-                                      day,
-                                      s.duration_hours || 2
-                                    );
-                                    // preselect the suggested time if available, otherwise show slots
-                                    setTimeDialog({
-                                      open: true,
-                                      dayId: day.id,
-                                      suggestion: { ...s },
-                                      slots,
-                                    });
-                                  }}
-                                >
-                                  Add
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                    <DragOverlay>
+                      {activeDragId && dragSuggestion ? (
+                        <div className="p-3 bg-gray-800 rounded border border-gray-700 opacity-80">
+                          <p className="text-white font-medium text-sm">
+                            {dragSuggestion.name}
+                          </p>
+                        </div>
+                      ) : null}
+                    </DragOverlay>
+                  </DndContext>
                 </CardContent>
               </Card>
 
@@ -1995,33 +2347,49 @@ export default function ComprehensiveTripBuilder({
                     </div>
 
                     {/* Time Slots Section */}
-                    <div className="space-y-3">
+                    {/* <div className="space-y-3">
                       <Label className="text-slate-800 font-semibold">Daily Schedule</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {day.timeSlots?.map((slot, slotIndex) => (
-                          <TimeSlotDroppable
-                            key={slot.id}
-                            slot={slot}
-                            dayId={day.id}
-                            onRemoveActivity={(slotId) => {
-                              const updatedDays = itineraryDays.map((d) => {
-                                if (d.id === day.id) {
-                                  const updatedTimeSlots = d.timeSlots.map((s) => 
-                                    s.id === slotId 
-                                      ? { ...s, activity: undefined, isOccupied: false }
-                                      : s
-                                  );
-                                  return { ...d, timeSlots: updatedTimeSlots };
-                                }
-                                return d;
-                              });
-                              setItineraryDays(updatedDays);
-                              setValue("itinerary", updatedDays);
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {day.timeSlots?.map((slot, slotIndex) => (
+                            <TimeSlotDroppable
+                              key={slot.id}
+                              slot={slot}
+                              dayId={day.id}
+                              onRemoveActivity={(slotId) => {
+                                const updatedDays = itineraryDays.map((d) => {
+                                  if (d.id === day.id) {
+                                    const updatedTimeSlots = d.timeSlots.map((s) => 
+                                      s.id === slotId 
+                                        ? { ...s, activity: undefined, isOccupied: false }
+                                        : s
+                                    );
+                                    return { ...d, timeSlots: updatedTimeSlots };
+                                  }
+                                  return d;
+                                });
+                                setItineraryDays(updatedDays);
+                                setValue("itinerary", updatedDays);
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <DragOverlay>
+                          {activeDragId && dragSuggestion ? (
+                            <div className="p-3 bg-gray-800 rounded border border-gray-700 opacity-80">
+                              <p className="text-white font-medium text-sm">
+                                {dragSuggestion.name}
+                              </p>
+                            </div>
+                          ) : null}
+                        </DragOverlay>
+                      </DndContext>
+                    </div> */}
                   </CardContent>
                 </Card>
               ))}
@@ -2284,22 +2652,21 @@ export default function ComprehensiveTripBuilder({
               </Button>
               <Button
                 type="submit"
-                // Allow submitting even without itinerary days; backend will accept and store later edits
                 disabled={isSubmitting}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-8 py-4 rounded-lg transform transition-all duration-200 hover:scale-105 shadow-xl text-lg"
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg text-base"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-3"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
                       {existingTrip
                         ? "Updating Your Adventure..."
                         : "Creating Your Adventure..."}
                   </>
                 ) : (
                   <>
-                    <Trophy className="w-5 h-5 mr-3" />
+                      <Trophy className="w-4 h-4 mr-2" />
                       {existingTrip ? "Update My Trip!" : "Launch My Trip!"}
-                    <Rocket className="w-5 h-5 ml-3" />
+                      <Rocket className="w-4 h-4 ml-2" />
                   </>
                 )}
               </Button>
@@ -2313,15 +2680,24 @@ export default function ComprehensiveTripBuilder({
           open={timeDialog.open}
           onOpenChange={(open) => setTimeDialog((prev) => ({ ...prev, open }))}
         >
-        <DialogContent className="bg-gray-900 border-gray-700">
+          <DialogContent
+            className="bg-gray-900 border-gray-700"
+            aria-describedby="dialog-description"
+          >
           <DialogHeader>
               <DialogTitle className="text-white">
                 Select a start time
               </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-              <p className="text-gray-300 text-sm">
-                {timeDialog.suggestion?.name}
+              <p id="dialog-description" className="text-gray-300 text-sm">
+                Choose when you'd like to schedule "
+                {timeDialog.suggestion?.name}" on your itinerary.
+                {timeDialog.suggestion?.duration_hours && (
+                  <span className="text-gray-400 ml-2">
+                    Duration: {timeDialog.suggestion.duration_hours} hours
+                  </span>
+                )}
               </p>
             <div className="flex flex-wrap gap-2">
               {(timeDialog.slots || []).slice(0, 20).map((t) => (
@@ -2338,6 +2714,10 @@ export default function ComprehensiveTripBuilder({
                         dayId: "",
                         suggestion: null,
                         slots: [],
+                      });
+                      toast({
+                        title: " Activity Added!",
+                        description: `${s.name} scheduled for ${t.slice(0, 5)}`,
                       });
                     }}
                   >

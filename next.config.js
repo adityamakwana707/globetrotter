@@ -32,6 +32,15 @@ const nextConfig = {
     
     return config
   },
+
+  async rewrites() {
+    return [
+      {
+        source: '/.well-known/appspecific/com.chrome.devtools.json',
+        destination: '/api/devtools-config'
+      }
+    ]
+  }
 }
 
 module.exports = nextConfig
