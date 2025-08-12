@@ -366,11 +366,17 @@ export default function ItineraryBuilder({ tripId }: ItineraryBuilderProps) {
                       Add Activity
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-gray-800 border-gray-700">
+                  <DialogContent 
+                    className="bg-gray-800 border-gray-700"
+                    aria-describedby="add-activity-description"
+                  >
                     <DialogHeader>
                       <DialogTitle className="text-white">Add Activity to Trip</DialogTitle>
-                      <DialogDescription className="text-gray-400">
-                        Search and select activities to add to your itinerary.
+                      <DialogDescription 
+                        id="add-activity-description"
+                        className="text-gray-400"
+                      >
+                        Search and select activities to add to your trip itinerary.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">

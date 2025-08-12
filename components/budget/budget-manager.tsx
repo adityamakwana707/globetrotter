@@ -394,11 +394,14 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
                       Add Budget
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-white border-gray-200">
+                  <DialogContent 
+                    className="bg-white border-gray-200"
+                    aria-describedby="budget-dialog-description"
+                  >
                     <DialogHeader>
-                      <DialogTitle className="text-slate-900">Add Budget Category</DialogTitle>
-                      <DialogDescription className="text-slate-600">
-                        Set a budget limit for a spending category.
+                      <DialogTitle>Add Budget Item</DialogTitle>
+                      <DialogDescription id="budget-dialog-description">
+                        Add a new budget item to track your trip expenses.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -514,10 +517,13 @@ export default function BudgetManager({ tripId }: BudgetManagerProps) {
                       Add Expense
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-white border-gray-200">
+                  <DialogContent 
+                    className="bg-white border-gray-200"
+                    aria-describedby="add-expense-description"
+                  >
                     <DialogHeader>
-                      <DialogTitle className="text-slate-900">Add Expense</DialogTitle>
-                      <DialogDescription className="text-slate-600">
+                      <DialogTitle>Add Expense</DialogTitle>
+                      <DialogDescription id="add-expense-description">
                         Record a new expense for this trip.
                       </DialogDescription>
                     </DialogHeader>

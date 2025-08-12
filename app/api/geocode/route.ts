@@ -5,76 +5,60 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q')
     
-    if (!query || query.length < 2) {
+    if (!query || query.trim().length < 2) {
       return NextResponse.json([])
     }
 
-    // Make the request from our server (no CORS issues)
-    const nominatimUrl = `https://nominatim.openstreetmap.org/search?` +
-      `format=json&` +
-      `q=${encodeURIComponent(query)}&` +
-      `limit=6&` +
-      `addressdetails=1&` +
-      `extratags=1&` +
-      `accept-language=en`
+    // Use Nominatim API for geocoding
+    const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query.trim())}&format=json&limit=10&addressdetails=1&countrycodes=`
+    
+    // Create AbortController for timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
 
     const response = await fetch(nominatimUrl, {
+      signal: controller.signal,
       headers: {
-        'User-Agent': 'GlobeTrotter-App/1.0 (travel-planning-app)', // Required by Nominatim
-      },
+        'User-Agent': 'GlobeTrotter/1.0 (https://yourdomain.com)'
+      }
     })
+
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       console.error(`Nominatim API error: ${response.status} ${response.statusText}`)
-      return NextResponse.json([], { status: 500 })
+      return NextResponse.json([])
     }
 
     const data = await response.json()
     
     // Filter and format the results
-    const filteredResults = data
-      .filter((location: any) => location.importance > 0.3)
-      .sort((a: any, b: any) => b.importance - a.importance)
-      .slice(0, 6)
-      .map((location: any) => ({
-        id: parseInt(location.place_id) || Math.random(),
-        name: getLocationName(location),
-        country: getCountryFromDisplay(location.display_name),
-        latitude: parseFloat(location.lat),
-        longitude: parseFloat(location.lon),
-        type: location.type,
-        importance: location.importance,
-        display_name: location.display_name
+    const formattedResults = data
+      .filter((item: any) => item.display_name && item.lat && item.lon)
+      .map((item: any) => ({
+        name: item.name || item.display_name.split(',')[0],
+        display_name: item.display_name,
+        lat: parseFloat(item.lat),
+        lon: parseFloat(item.lon),
+        type: item.type,
+        importance: item.importance,
+        country: item.address?.country,
+        address: item.address
       }))
+      .sort((a: any, b: any) => b.importance - a.importance) // Sort by importance
+      .slice(0, 8) // Limit to top 8 results
 
-    return NextResponse.json(filteredResults)
+    return NextResponse.json(formattedResults)
 
   } catch (error) {
-    console.error('Geocoding API error:', error)
-    return NextResponse.json([], { status: 500 })
+    console.error('Geocoding error:', error)
+    
+    // Check if it's a timeout error
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.log('Geocoding request timed out')
+      return NextResponse.json([])
+    }
+    
+    return NextResponse.json([])
   }
-}
-
-// Helper function to extract location name
-function getLocationName(location: any): string {
-  const parts = location.display_name.split(', ')
-  
-  // For cities, return city name
-  if (location.class === 'place' && (location.type === 'city' || location.type === 'town')) {
-    return parts[0]
-  }
-  
-  // For countries, return country name
-  if (location.class === 'place' && location.type === 'country') {
-    return parts[0]
-  }
-  
-  // For other places, return first part
-  return parts[0]
-}
-
-// Helper function to extract country from display_name
-function getCountryFromDisplay(displayName: string): string {
-  const parts = displayName.split(', ')
-  return parts[parts.length - 1] || ''
 }
