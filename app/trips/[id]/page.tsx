@@ -52,7 +52,7 @@ export default async function TripPage({ params }: TripPageProps) {
       redirect("/dashboard")
     }
 
-    tripDetails = await getComprehensiveTripDetails(tripId, session.user.id)
+    tripDetails = await getComprehensiveTripDetails(tripDisplayId, session.user.id)
   } catch (error) {
     console.error("Error fetching comprehensive trip details:", error)
   }

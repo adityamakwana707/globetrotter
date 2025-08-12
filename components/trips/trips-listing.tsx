@@ -256,14 +256,14 @@ export default function TripsListing() {
                     {/* Actions */}
                     <div className="flex justify-between items-center">
                       <Button
-                        onClick={() => router.push(`/trips/${trip.id}`)}
+                        onClick={() => router.push(`/trips/${trip.display_id}`)}
                         className="bg-emerald-600 hover:bg-emerald-700 flex-1 mr-2"
                       >
                         View Trip
                       </Button>
                       <div className="flex space-x-1">
                         <Button
-                          onClick={() => router.push(`/trips/${trip.id}/edit`)}
+                          onClick={() => router.push(`/trips/${trip.display_id}/edit`)}
                           size="sm"
                           variant="outline"
                           className="border-gray-300 text-slate-900 hover:bg-gray-50"

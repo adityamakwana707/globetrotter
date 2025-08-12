@@ -164,68 +164,69 @@ export default function ActivitiesSearchPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 text-slate-900">
+      <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-4 flex items-center gap-2">
-          <Activity className="h-8 w-8 text-primary" />
+          <Activity className="h-8 w-8 text-emerald-600" />
           Activity Search
         </h1>
-        <p className="text-muted-foreground">Discover exciting activities and experiences for your next adventure</p>
+        <p className="text-slate-600">Discover exciting activities and experiences for your next adventure</p>
       </div>
 
       {/* Search Bar */}
       <div className="mb-6">
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
             <Input
               placeholder="Search activities by name, category, or description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              className="pl-10"
+              className="pl-10 bg-white border-gray-300 text-slate-900"
             />
           </div>
-          <Button onClick={() => handleSearch()} disabled={isLoading}>
+          <Button onClick={() => handleSearch()} disabled={isLoading} className="bg-emerald-600 hover:bg-emerald-700">
             {isLoading ? "Searching..." : "Search"}
           </Button>
         </div>
       </div>
 
       {/* Filters and Sorting */}
-      <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+      <div className="mb-6 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
         <div className="flex items-center gap-2 mb-4">
-          <Filter className="h-4 w-4" />
-          <span className="font-medium">Filters & Sorting</span>
+          <Filter className="h-4 w-4 text-slate-600" />
+          <span className="font-medium text-slate-900">Filters & Sorting</span>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
           <div>
-            <label className="text-sm font-medium mb-1 block">Category</label>
+            <label className="text-sm font-medium mb-1 block text-slate-800">Category</label>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-gray-200">
                 <SelectItem value="all">All Categories</SelectItem>
                 {uniqueCategories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                  <SelectItem key={category} value={category} className="text-slate-900 hover:bg-gray-50">{category}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">City</label>
+            <label className="text-sm font-medium mb-1 block text-slate-800">City</label>
             <Select value={cityFilter} onValueChange={(value) => { setCityFilter(value); handleSearch(); }}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                 <SelectValue placeholder="All Cities" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-gray-200">
                 <SelectItem value="all">All Cities</SelectItem>
                 {cities.map(city => (
-                  <SelectItem key={city.id} value={city.id}>
+                  <SelectItem key={city.id} value={city.id} className="text-slate-900 hover:bg-gray-50">
                     {city.name}, {city.country}
                   </SelectItem>
                 ))}
@@ -234,15 +235,15 @@ export default function ActivitiesSearchPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">Price Range</label>
+            <label className="text-sm font-medium mb-1 block text-slate-800">Price Range</label>
             <Select value={priceFilter} onValueChange={setPriceFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                 <SelectValue placeholder="All Prices" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-gray-200">
                 <SelectItem value="all">All Prices</SelectItem>
                 {uniquePriceRanges.map(price => (
-                  <SelectItem key={price} value={price}>
+                  <SelectItem key={price} value={price} className="text-slate-900 hover:bg-gray-50">
                     {price.charAt(0).toUpperCase() + price.slice(1)}
                   </SelectItem>
                 ))}
@@ -251,12 +252,12 @@ export default function ActivitiesSearchPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">Duration</label>
+            <label className="text-sm font-medium mb-1 block text-slate-800">Duration</label>
             <Select value={durationFilter} onValueChange={setDurationFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                 <SelectValue placeholder="Any Duration" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-gray-200">
                 <SelectItem value="all">Any Duration</SelectItem>
                 <SelectItem value="short">Short (≤2h)</SelectItem>
                 <SelectItem value="medium">Medium (2-6h)</SelectItem>
@@ -266,12 +267,12 @@ export default function ActivitiesSearchPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">Sort By</label>
+            <label className="text-sm font-medium mb-1 block text-slate-800">Sort By</label>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-gray-200">
                 <SelectItem value="rating">Rating</SelectItem>
                 <SelectItem value="name">Name</SelectItem>
                 <SelectItem value="price">Price</SelectItem>
@@ -281,11 +282,11 @@ export default function ActivitiesSearchPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">Order</label>
+            <label className="text-sm font-medium mb-1 block text-slate-800">Order</label>
             <Button
               variant="outline"
               onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-              className="w-full justify-start"
+              className="w-full justify-start border-gray-300 text-slate-700 hover:bg-gray-50"
             >
               {sortOrder === "asc" ? <SortAsc className="h-4 w-4 mr-2" /> : <SortDesc className="h-4 w-4 mr-2" />}
               {sortOrder === "asc" ? "Ascending" : "Descending"}
@@ -296,7 +297,8 @@ export default function ActivitiesSearchPage() {
         <div className="mt-4 flex flex-wrap gap-2">
           <Button 
             variant="outline" 
-            size="sm" 
+            size="sm"
+            className="border-gray-300 text-slate-700 hover:bg-gray-50"
             onClick={() => {
               setCategoryFilter("all")
               setCityFilter("all")
@@ -307,7 +309,7 @@ export default function ActivitiesSearchPage() {
           >
             Clear Filters
           </Button>
-          <div className="text-sm text-muted-foreground flex items-center">
+          <div className="text-sm text-slate-600 flex items-center">
             Showing {sortedAndFilteredActivities.length} activities
           </div>
         </div>
@@ -317,7 +319,7 @@ export default function ActivitiesSearchPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(9)].map((_, i) => (
-            <Card key={i} className="h-[320px]">
+            <Card key={i} className="h-[320px] bg-white border-gray-200 shadow-md">
               <CardHeader>
                 <Skeleton className="h-5 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
@@ -337,17 +339,17 @@ export default function ActivitiesSearchPage() {
       ) : sortedAndFilteredActivities.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedAndFilteredActivities.map((activity) => (
-            <Card key={activity.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+            <Card key={activity.id} className="bg-white border-gray-200 shadow-md hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <CardTitle className="text-lg line-clamp-1">{activity.name}</CardTitle>
+                    <CardTitle className="text-lg line-clamp-1 text-slate-900">{activity.name}</CardTitle>
                     <CardDescription className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs border-gray-300 text-slate-700">
                         {activity.category}
                       </Badge>
                       {activity.city_name && (
-                        <span className="text-xs flex items-center gap-1">
+                        <span className="text-xs flex items-center gap-1 text-slate-600">
                           <MapPin className="h-3 w-3" />
                           {activity.city_name}
                         </span>
@@ -355,7 +357,7 @@ export default function ActivitiesSearchPage() {
                     </CardDescription>
                   </div>
                   {activity.rating && !isNaN(Number(activity.rating)) && (
-                    <Badge variant="secondary" className="text-xs ml-2">
+                    <Badge variant="secondary" className="text-xs ml-2 bg-amber-100 text-amber-800">
                       <Star className="h-3 w-3 mr-1 fill-current" />
                       {Number(activity.rating).toFixed(1)}
                     </Badge>
@@ -363,7 +365,7 @@ export default function ActivitiesSearchPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                <p className="text-sm text-slate-600 mb-4 line-clamp-2">
                   {activity.description}
                 </p>
                 
@@ -371,7 +373,7 @@ export default function ActivitiesSearchPage() {
                   <div className="flex justify-between items-center text-sm">
                     <div className="flex items-center gap-1">
                       <DollarSign className="h-3 w-3" />
-                      <span className="capitalize font-medium">{activity.price_range}</span>
+                      <span className="capitalize font-medium text-slate-900">{activity.price_range}</span>
                       <span className="ml-1">{getPriceIcon(activity.price_range)}</span>
                     </div>
                     {activity.duration_hours && (
@@ -383,7 +385,7 @@ export default function ActivitiesSearchPage() {
                   </div>
                   
                   {(activity.min_participants || activity.max_participants) && (
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1 text-sm text-slate-500">
                       <Users className="h-3 w-3" />
                       <span>
                         {activity.min_participants && activity.max_participants
@@ -400,7 +402,7 @@ export default function ActivitiesSearchPage() {
                 <Separator className="my-3" />
                 
                 <div className="flex justify-between items-center">
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-slate-500">
                     {activity.available_dates && activity.available_dates.length > 0 ? (
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
@@ -413,6 +415,7 @@ export default function ActivitiesSearchPage() {
                   <Button 
                     size="sm" 
                     variant="outline"
+                    className="border-gray-300 text-slate-700 hover:bg-gray-50"
                     onClick={() => router.push(`/activities/${activity.id}`)}
                   >
                     View Details
@@ -424,11 +427,12 @@ export default function ActivitiesSearchPage() {
         </div>
       ) : searchQuery || categoryFilter !== "all" || priceFilter !== "all" || cityFilter !== "all" || durationFilter !== "all" ? (
         <div className="text-center py-12">
-          <Activity className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No activities found</h3>
-          <p className="text-muted-foreground mb-4">Try adjusting your search terms or filters</p>
+          <Activity className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+          <h3 className="text-lg font-semibold mb-2 text-slate-900">No activities found</h3>
+          <p className="text-slate-600 mb-4">Try adjusting your search terms or filters</p>
           <Button 
             variant="outline" 
+            className="border-gray-300 text-slate-700 hover:bg-gray-50"
             onClick={() => {
               setSearchQuery("")
               setCategoryFilter("all")
@@ -443,11 +447,12 @@ export default function ActivitiesSearchPage() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <Activity className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Discover Activities</h3>
-          <p className="text-muted-foreground">Search or browse our collection of exciting activities and experiences</p>
+          <Activity className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+          <h3 className="text-lg font-semibold mb-2 text-slate-900">Discover Activities</h3>
+          <p className="text-slate-600">Search or browse our collection of exciting activities and experiences</p>
         </div>
       )}
+      </div>
     </div>
   )
 }

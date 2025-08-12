@@ -575,7 +575,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                     <p className="text-3xl font-bold text-blue-600 mb-2">
                       {platformStats?.total_cities || 0}
                     </p>
-                    <p className="text-gray-400">Total cities in database</p>
+                    <p className="text-slate-600">Total cities in database</p>
                     <Button className="mt-4 w-full" variant="outline" onClick={() => router.push("/admin/cities")}>
                       <Settings className="w-4 h-4 mr-2" />
                       Manage Cities
@@ -593,7 +593,7 @@ export default function AdminDashboard({ user }: { user: User }) {
                     <p className="text-3xl font-bold text-emerald-600 mb-2">
                       {platformStats?.total_activities || 0}
                     </p>
-                    <p className="text-gray-400">Total activities in database</p>
+                    <p className="text-slate-600">Total activities in database</p>
                     <Button className="mt-4 w-full" variant="outline" onClick={() => router.push("/admin/activities")}>
                       <Settings className="w-4 h-4 mr-2" />
                       Manage Activities

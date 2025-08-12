@@ -238,10 +238,16 @@ export default function SharedTripContent({ trip }: SharedTripContentProps) {
                 <p className="text-sm text-gray-500">This trip doesn't have location coordinates available.</p>
               </div>
             ) : (
-              <InteractiveMap
-                locations={mapLocations}
+              <LeafletMap
+                locations={mapLocations.map((loc: any) => ({
+                  lat: loc.latitude,
+                  lng: loc.longitude,
+                  title: loc.name,
+                  description: loc.description
+                }))}
                 showRoute={mapLocations.length > 1}
                 height="500px"
+                zoom={mapLocations.length > 1 ? 7 : 10}
               />
             )}
           </CardContent>

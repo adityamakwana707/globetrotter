@@ -292,63 +292,53 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-gray-50 text-slate-900">
       {/* Header */}
-      <header className="border-b border-gray-800 bg-gray-800/50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              onClick={() => router.push('/admin')}
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Admin
-            </Button>
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                <Activity className="w-6 h-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Activities Management</h1>
-                <p className="text-gray-400 text-sm">Manage activities in the platform</p>
-              </div>
+      <header className="bg-transparent border-0">
+        <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-start sm:items-center gap-2">
+            <div className="w-8 h-8 sm:w-10 sm:h-10">
+              <Activity className="text-emerald-600 w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">Activities Management</h1>
+              <p className="text-slate-600 text-sm sm:text-base">Manage activities in the platform</p>
             </div>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Activity
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl bg-gray-800 border-gray-700 max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl bg-white border-gray-200 max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-white">Add New Activity</DialogTitle>
-                <DialogDescription className="text-gray-400">
+                <DialogTitle className="text-slate-900">Add New Activity</DialogTitle>
+                <DialogDescription className="text-slate-600">
                   Add a new activity to the platform
                 </DialogDescription>
               </DialogHeader>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name" className="text-gray-300">Activity Name</Label>
+                  <Label htmlFor="name" className="text-slate-800">Activity Name</Label>
                   <Input
                     id="name"
                     value={newActivity.name}
                     onChange={(e) => setNewActivity({ ...newActivity, name: e.target.value })}
                     placeholder="Enter activity name"
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="bg-white border-gray-300 text-slate-900"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="city_id" className="text-gray-300">City</Label>
+                  <Label htmlFor="city_id" className="text-slate-800">City</Label>
                   <Select onValueChange={(value) => setNewActivity({ ...newActivity, city_id: value })}>
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                       <SelectValue placeholder="Select city" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
+                    <SelectContent className="bg-white border-gray-200">
                       {cities.map(city => (
-                        <SelectItem key={city.id} value={city.id.toString()} className="text-white hover:bg-gray-600">
+                        <SelectItem key={city.id} value={city.id.toString()} className="text-slate-900 hover:bg-gray-50">
                           {city.name}, {city.country}
                         </SelectItem>
                       ))}
@@ -356,14 +346,14 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="category" className="text-gray-300">Category</Label>
+                  <Label htmlFor="category" className="text-slate-800">Category</Label>
                   <Select onValueChange={(value) => setNewActivity({ ...newActivity, category: value })}>
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
+                    <SelectContent className="bg-white border-gray-200">
                       {categories.map(category => (
-                        <SelectItem key={category} value={category} className="text-white hover:bg-gray-600">
+                        <SelectItem key={category} value={category} className="text-slate-900 hover:bg-gray-50">
                           {category}
                         </SelectItem>
                       ))}
@@ -371,7 +361,7 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="estimated_cost" className="text-gray-300">Estimated Cost ($)</Label>
+                  <Label htmlFor="estimated_cost" className="text-slate-800">Estimated Cost ($)</Label>
                   <Input
                     id="estimated_cost"
                     type="number"
@@ -379,11 +369,11 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
                     value={newActivity.estimated_cost}
                     onChange={(e) => setNewActivity({ ...newActivity, estimated_cost: e.target.value })}
                     placeholder="e.g., 50.00"
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="bg-white border-gray-300 text-slate-900"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="duration_hours" className="text-gray-300">Duration (hours)</Label>
+                  <Label htmlFor="duration_hours" className="text-slate-800">Duration (hours)</Label>
                   <Input
                     id="duration_hours"
                     type="number"
@@ -391,28 +381,28 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
                     value={newActivity.duration_hours}
                     onChange={(e) => setNewActivity({ ...newActivity, duration_hours: e.target.value })}
                     placeholder="e.g., 2.5"
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="bg-white border-gray-300 text-slate-900"
                   />
                 </div>
                 <div className="col-span-2">
-                  <Label htmlFor="description" className="text-gray-300">Description</Label>
+                  <Label htmlFor="description" className="text-slate-800">Description</Label>
                   <Textarea
                     id="description"
                     value={newActivity.description}
                     onChange={(e) => setNewActivity({ ...newActivity, description: e.target.value })}
                     placeholder="Enter activity description"
                     rows={3}
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="bg-white border-gray-300 text-slate-900"
                   />
                 </div>
                 <div className="col-span-2">
-                  <Label htmlFor="image_url" className="text-gray-300">Image URL</Label>
+                  <Label htmlFor="image_url" className="text-slate-800">Image URL</Label>
                   <Input
                     id="image_url"
                     value={newActivity.image_url}
                     onChange={(e) => setNewActivity({ ...newActivity, image_url: e.target.value })}
                     placeholder="Enter image URL"
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="bg-white border-gray-300 text-slate-900"
                   />
                 </div>
               </div>
@@ -420,12 +410,12 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
                 <Button 
                   variant="outline" 
                   onClick={() => setIsAddDialogOpen(false)}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                  className="border-gray-300 text-slate-700 hover:bg-gray-50"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleAddActivity} className="bg-purple-600 hover:bg-purple-700">
-                  <Save className="w-4 h-4 mr-2" />
+                <Button onClick={handleAddActivity} className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="w-4 h-4 mr-2" />
                   Add Activity
                 </Button>
               </div>
@@ -436,29 +426,27 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
 
       <div className="container mx-auto px-4 py-8">
         {/* Filters */}
-        <Card className="bg-gray-800 border-gray-700 mb-6">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="md:col-span-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Search activities..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 bg-gray-700 border-gray-600 text-white"
-                  />
-                </div>
+        <Card className="mb-6 bg-white border-gray-200 shadow-md">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search activities..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-white border-gray-300 text-slate-900"
+                />
               </div>
               <div>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                  <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                     <SelectValue placeholder="Filter by category" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-700 border-gray-600">
-                    <SelectItem value="all" className="text-white hover:bg-gray-600">All Categories</SelectItem>
+                  <SelectContent className="bg-white border-gray-200">
+                    <SelectItem value="all" className="text-slate-900 hover:bg-gray-50">All Categories</SelectItem>
                     {uniqueCategories.map(category => (
-                      <SelectItem key={category} value={category} className="text-white hover:bg-gray-600">
+                      <SelectItem key={category} value={category} className="text-slate-900 hover:bg-gray-50">
                         {category}
                       </SelectItem>
                     ))}
@@ -467,13 +455,13 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
               </div>
               <div>
                 <Select value={selectedCity} onValueChange={setSelectedCity}>
-                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                  <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                     <SelectValue placeholder="Filter by city" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-700 border-gray-600">
-                    <SelectItem value="all" className="text-white hover:bg-gray-600">All Cities</SelectItem>
+                  <SelectContent className="bg-white border-gray-200">
+                    <SelectItem value="all" className="text-slate-900 hover:bg-gray-50">All Cities</SelectItem>
                     {cities.map(city => (
-                      <SelectItem key={city.id} value={city.id.toString()} className="text-white hover:bg-gray-600">
+                      <SelectItem key={city.id} value={city.id.toString()} className="text-slate-900 hover:bg-gray-50">
                         {city.name}
                       </SelectItem>
                     ))}
@@ -489,21 +477,21 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
           {isLoading ? (
             // Loading skeletons
             Array.from({ length: 6 }).map((_, index) => (
-              <Card key={index} className="bg-gray-800 border-gray-700">
+              <Card key={index} className="bg-white border-gray-200 shadow-md">
                 <div className="animate-pulse">
-                  <div className="h-48 bg-gray-700 rounded-t-lg"></div>
+                  <div className="h-48 bg-gray-100 rounded-t-lg"></div>
                   <CardContent className="p-4">
-                    <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-1/2 mb-4"></div>
-                    <div className="h-3 bg-gray-700 rounded w-full mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-2/3"></div>
+                    <div className="h-4 bg-gray-100 rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-gray-100 rounded w-1/2 mb-4"></div>
+                    <div className="h-3 bg-gray-100 rounded w-full mb-2"></div>
+                    <div className="h-3 bg-gray-100 rounded w-2/3"></div>
                   </CardContent>
                 </div>
               </Card>
             ))
           ) : filteredActivities.length > 0 ? (
             filteredActivities.map(activity => (
-              <Card key={activity.id} className="bg-gray-800 border-gray-700 overflow-hidden">
+              <Card key={activity.id} className="bg-white border-gray-200 shadow-md overflow-hidden">
                 <div className="relative h-48">
                   {activity.image_url ? (
                     <img
@@ -512,8 +500,8 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-700 flex items-center justify-center">
-                      <ImageIcon className="w-12 h-12 text-gray-500" />
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                      <ImageIcon className="w-12 h-12 text-slate-400" />
                     </div>
                   )}
                   <div className="absolute top-2 right-2 flex gap-1">
@@ -521,7 +509,7 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
                       size="sm"
                       variant="outline"
                       onClick={() => openEditDialog(activity)}
-                      className="h-8 w-8 p-0 bg-gray-800/80 border-gray-600 hover:bg-gray-700"
+                      className="h-8 w-8 p-0 bg-white/90 border-gray-300 text-slate-700 hover:bg-gray-50"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -529,7 +517,7 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
                       size="sm"
                       variant="outline"
                       onClick={() => handleDeleteActivity(activity.id)}
-                      className="h-8 w-8 p-0 bg-red-800/80 border-red-600 hover:bg-red-700"
+                      className="h-8 w-8 p-0 bg-red-600 hover:bg-red-700 text-white"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -544,25 +532,25 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
                 </div>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-white font-semibold text-lg line-clamp-1">{activity.name}</h3>
+                    <h3 className="text-slate-900 font-semibold text-lg line-clamp-1">{activity.name}</h3>
                     {activity.rating && (
-                      <div className="flex items-center text-yellow-400">
+                      <div className="flex items-center text-amber-500">
                         <Star className="w-4 h-4 fill-current" />
                         <span className="text-sm ml-1">{Number(activity.rating).toFixed(1)}</span>
                       </div>
                     )}
                   </div>
-                  <p className="text-gray-400 text-sm mb-3 flex items-center">
+                  <p className="text-slate-600 text-sm mb-3 flex items-center">
                     <MapPin className="w-4 h-4 mr-1" />
                     {activity.city_name}, {activity.city_country}
                   </p>
                   {activity.description && (
-                    <p className="text-gray-300 text-sm mb-3 line-clamp-2">
+                    <p className="text-slate-600 text-sm mb-3 line-clamp-2">
                       {activity.description}
                     </p>
                   )}
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-4 text-xs text-gray-400">
+                    <div className="flex items-center gap-4 text-xs text-slate-500">
                       {activity.price_range && (
                         <span className="flex items-center">
                           <DollarSign className="w-3 h-3 mr-1" />
@@ -577,7 +565,7 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-gray-400">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
                     {activity.booking_count !== undefined && (
                       <span className="flex items-center">
                         <Users className="w-3 h-3 mr-1" />
@@ -591,45 +579,46 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
             ))
           ) : (
             <div className="col-span-full text-center py-12">
-              <Activity className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">No activities found</p>
-              <p className="text-gray-500 text-sm">Try adjusting your search or add a new activity</p>
+              <Activity className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+              <p className="text-slate-700 text-lg">No activities found</p>
+              <p className="text-slate-500 text-sm">Try adjusting your search or add a new activity</p>
             </div>
           )}
+        </div>
         </div>
 
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-3xl bg-gray-800 border-gray-700 max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl bg-white border-gray-200 max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-white">Edit Activity</DialogTitle>
-              <DialogDescription className="text-gray-400">
+              <DialogTitle className="text-slate-900">Edit Activity</DialogTitle>
+              <DialogDescription className="text-slate-600">
                 Update activity information
               </DialogDescription>
             </DialogHeader>
             {editingActivity && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit-name" className="text-gray-300">Activity Name</Label>
+                  <Label htmlFor="edit-name" className="text-slate-800">Activity Name</Label>
                   <Input
                     id="edit-name"
                     value={editingActivity.name}
                     onChange={(e) => setEditingActivity({ ...editingActivity, name: e.target.value })}
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="bg-white border-gray-300 text-slate-900"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-city_id" className="text-gray-300">City</Label>
+                  <Label htmlFor="edit-city_id" className="text-slate-800">City</Label>
                   <Select 
                     value={editingActivity.city_id.toString()} 
                     onValueChange={(value) => setEditingActivity({ ...editingActivity, city_id: parseInt(value) })}
                   >
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
+                    <SelectContent className="bg-white border-gray-200">
                       {cities.map(city => (
-                        <SelectItem key={city.id} value={city.id.toString()} className="text-white hover:bg-gray-600">
+                        <SelectItem key={city.id} value={city.id.toString()} className="text-slate-900 hover:bg-gray-50">
                           {city.name}, {city.country}
                         </SelectItem>
                       ))}
@@ -637,17 +626,17 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="edit-category" className="text-gray-300">Category</Label>
+                  <Label htmlFor="edit-category" className="text-slate-800">Category</Label>
                   <Select 
                     value={editingActivity.category || ""} 
                     onValueChange={(value) => setEditingActivity({ ...editingActivity, category: value })}
                   >
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectTrigger className="bg-white border-gray-300 text-slate-900">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
+                    <SelectContent className="bg-white border-gray-200">
                       {categories.map(category => (
-                        <SelectItem key={category} value={category} className="text-white hover:bg-gray-600">
+                        <SelectItem key={category} value={category} className="text-slate-900 hover:bg-gray-50">
                           {category}
                         </SelectItem>
                       ))}
@@ -655,44 +644,44 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="edit-estimated_cost" className="text-gray-300">Estimated Cost ($)</Label>
+                  <Label htmlFor="edit-estimated_cost" className="text-slate-800">Estimated Cost ($)</Label>
                   <Input
                     id="edit-estimated_cost"
                     type="number"
                     step="0.01"
                     value={editingActivity.price_range?.replace('$', '') || ""}
                     onChange={(e) => setEditingActivity({ ...editingActivity, price_range: e.target.value ? `$${e.target.value}` : null })}
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="bg-white border-gray-300 text-slate-900"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-duration_hours" className="text-gray-300">Duration (hours)</Label>
+                  <Label htmlFor="edit-duration_hours" className="text-slate-800">Duration (hours)</Label>
                   <Input
                     id="edit-duration_hours"
                     type="number"
                     step="0.5"
                     value={editingActivity.duration_hours || ""}
                     onChange={(e) => setEditingActivity({ ...editingActivity, duration_hours: e.target.value ? parseFloat(e.target.value) : null })}
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="bg-white border-gray-300 text-slate-900"
                   />
                 </div>
                 <div className="col-span-2">
-                  <Label htmlFor="edit-description" className="text-gray-300">Description</Label>
+                  <Label htmlFor="edit-description" className="text-slate-800">Description</Label>
                   <Textarea
                     id="edit-description"
                     value={editingActivity.description || ""}
                     onChange={(e) => setEditingActivity({ ...editingActivity, description: e.target.value })}
                     rows={3}
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="bg-white border-gray-300 text-slate-900"
                   />
                 </div>
                 <div className="col-span-2">
-                  <Label htmlFor="edit-image_url" className="text-gray-300">Image URL</Label>
+                  <Label htmlFor="edit-image_url" className="text-slate-800">Image URL</Label>
                   <Input
                     id="edit-image_url"
                     value={editingActivity.image_url || ""}
                     onChange={(e) => setEditingActivity({ ...editingActivity, image_url: e.target.value })}
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="bg-white border-gray-300 text-slate-900"
                   />
                 </div>
               </div>
@@ -701,11 +690,11 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
               <Button 
                 variant="outline" 
                 onClick={() => setIsEditDialogOpen(false)}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                className="border-gray-300 text-slate-700 hover:bg-gray-50"
               >
                 Cancel
               </Button>
-              <Button onClick={handleEditActivity} className="bg-purple-600 hover:bg-purple-700">
+              <Button onClick={handleEditActivity} className="bg-emerald-600 hover:bg-emerald-700">
                 <Save className="w-4 h-4 mr-2" />
                 Save Changes
               </Button>
@@ -713,6 +702,6 @@ export default function AdminActivitiesManagement({ user }: { user: User }) {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+   
   )
 }
